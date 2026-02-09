@@ -34,6 +34,11 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
         { id: 'bot4', name: 'Chris T.', avatar: 'https://picsum.photos/seed/Chris T./100/100', balance: 5100, hand: [], isFolded: false, currentBet: 0, isHuman: false, isActive: true },
     ]);
 
+    // Sync external user balance if it changes (e.g. from deposits), but only if not in a hand or match logic
+    useEffect(() => {
+        setPlayers(prev => prev.map(p => p.isHuman ? { ...p, balance: initialUserBalance } : p));
+    }, [initialUserBalance]);
+
     // Start a new hand
     const startNewHand = useCallback(() => {
         const newDeck = shuffleDeck(createDeck());
@@ -89,12 +94,18 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
             } else if (action === 'call') {
                 // Deduct from balance
                 // For MVP, we assume call matches minBet
-                updateGlobalBalance(-minBet);
-                setPot(prev => prev + minBet);
+                if (currentPlayer.balance >= minBet) {
+                    updateGlobalBalance(-minBet);
+                    setPot(prev => prev + minBet);
+                    setPlayers(prev => prev.map((p, i) => i === currentTurn ? { ...p, balance: p.balance - minBet, currentBet: p.currentBet + minBet } : p));
+                }
             } else if (action === 'raise') {
-                updateGlobalBalance(-amount);
-                setPot(prev => prev + amount);
-                setMinBet(amount); // Raise the stakes
+                if (currentPlayer.balance >= amount) {
+                    updateGlobalBalance(-amount);
+                    setPot(prev => prev + amount);
+                    setMinBet(amount); // Raise the stakes
+                    setPlayers(prev => prev.map((p, i) => i === currentTurn ? { ...p, balance: p.balance - amount, currentBet: p.currentBet + amount } : p));
+                }
             }
         }
 
@@ -148,7 +159,8 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
                 setPlayers(prev => prev.map((p, i) => i === currentTurn ? {
                     ...p,
                     isFolded: decision === 'fold',
-                    currentBet: decision === 'call' ? minBet : 0
+                    currentBet: decision === 'call' ? minBet : 0,
+                    balance: decision === 'call' ? p.balance - minBet : p.balance
                 } : p));
 
                 if (decision === 'call') setPot(prev => prev + minBet);

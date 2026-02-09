@@ -102,6 +102,7 @@ const GameTable: React.FC = () => {
                 active={index === currentTurn}
                 inactive={player.isFolded}
                 dealer={player.isDealer}
+                currentBet={player.currentBet}
               />
             );
           })}
@@ -169,7 +170,7 @@ const GameTable: React.FC = () => {
   );
 };
 
-const PlayerSeat = ({ position, name, balance, active, inactive, dealer }: any) => {
+const PlayerSeat = ({ position, name, balance, active, inactive, dealer, currentBet }: any) => {
   const positions: any = {
     'top': '-top-12 left-1/2 -translate-x-1/2',
     'top-left': 'top-4 left-[15%]',
@@ -179,16 +180,30 @@ const PlayerSeat = ({ position, name, balance, active, inactive, dealer }: any) 
   };
 
   return (
-    <div className={`absolute ${positions[position]} flex flex-col items-center gap-2 z-10`}>
-      <div className={`size-16 rounded-full border-4 ${active ? 'border-primary ring-4 ring-primary/20' : 'border-slate-800'} bg-slate-700 overflow-hidden ${inactive ? 'grayscale' : ''}`}>
+    <div className={`absolute ${positions[position]} flex flex-col items-center gap-2 z-10 transition-all duration-500`}>
+      <div className={`relative size-16 rounded-full border-4 ${active ? 'border-primary ring-4 ring-primary/20 scale-110' : 'border-slate-800'} bg-slate-700 overflow-hidden ${inactive ? 'grayscale opacity-50' : ''} transition-all duration-300`}>
         <img className="w-full h-full object-cover" src={`https://picsum.photos/seed/${name}/100/100`} />
       </div>
       <div className={`bg-background/90 px-3 py-1 rounded-md text-center border ${inactive ? 'border-slate-800' : 'border-slate-700'} min-w-[80px]`}>
         <p className={`text-[10px] font-bold ${inactive ? 'text-slate-600' : 'text-slate-400'} truncate`}>{name}</p>
         <p className={`text-xs font-bold ${inactive ? 'text-slate-600' : 'text-white'}`}>{balance}</p>
       </div>
+
+      {/* Dealer Button */}
       {dealer && (
-        <div className="absolute -right-8 top-1/2 -translate-y-1/2 bg-gold text-black font-black size-6 rounded-full flex items-center justify-center text-[10px] border-2 border-slate-900">D</div>
+        <div className="absolute -right-6 top-0 bg-white text-black font-black size-5 rounded-full flex items-center justify-center text-[10px] border-2 border-slate-300 shadow-md">D</div>
+      )}
+
+      {/* Chips Representation - Current Bet */}
+      {currentBet > 0 && (
+        <div className="absolute -bottom-8 flex flex-col items-center animate-bounce-short">
+          <div className="flex -space-x-1">
+            <div className="size-4 rounded-full bg-red-500 border border-white shadow-sm"></div>
+            <div className="size-4 rounded-full bg-blue-500 border border-white shadow-sm"></div>
+            <div className="size-4 rounded-full bg-black border border-white shadow-sm"></div>
+          </div>
+          <span className="bg-black/80 text-white text-[10px] font-bold px-1.5 rounded mt-0.5 border border-white/10">${currentBet}</span>
+        </div>
       )}
     </div>
   );
