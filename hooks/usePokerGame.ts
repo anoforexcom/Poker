@@ -119,8 +119,12 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
             loops++;
         }
 
-        // If back to start or everyone acted (simplified round logic)
-        if (nextTurn === 0) {
+        const activePlayersCount = players.filter(p => !p.isFolded).length;
+
+        // If we wrapped around (nextTurn <= currentTurn) OR we are the only one left
+        if (activePlayersCount < 2) {
+            setPhase('showdown'); // End immediately if everyone else folded
+        } else if (nextTurn <= currentTurn) {
             nextPhase();
         } else {
             setCurrentTurn(nextTurn);
@@ -173,7 +177,12 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
                     loops++;
                 }
 
-                if (nextTurn === 0) {
+                // If we wrapped around (nextTurn <= currentTurn) OR we are the only one left
+                const activePlayersCount = players.filter(p => !p.isFolded).length;
+
+                if (activePlayersCount < 2) {
+                    setPhase('showdown'); // End immediately if everyone else folded
+                } else if (nextTurn <= currentTurn) {
                     nextPhase();
                 } else {
                     setCurrentTurn(nextTurn);
