@@ -19,14 +19,37 @@ const GameTable: React.FC = () => {
     winner
   } = usePokerGame(user.balance, updateBalance);
 
+  // Restored Game Logic
   const [betValue, setBetValue] = useState(20);
+  const activeUser = players.find(p => p.isHuman);
 
   // Start game loop
   React.useEffect(() => {
     if (players.every(p => p.hand.length === 0)) startNewHand();
   }, []);
 
-  const activeUser = players.find(p => p.isHuman);
+  const [chatMessage, setChatMessage] = useState('');
+  const [chatHistory, setChatHistory] = useState<{ sender: string, text: string, type?: 'system' | 'user' }[]>([
+    { sender: 'System', text: `Welcome to Table #${id}!`, type: 'system' }
+  ]);
+  const [showSettings, setShowSettings] = useState(false);
+
+  const handleSendMessage = () => {
+    if (!chatMessage.trim()) return;
+    setChatHistory(prev => [...prev, { sender: 'You', text: chatMessage, type: 'user' }]);
+    setChatMessage('');
+
+    // Simulate bot response occasionally
+    if (Math.random() > 0.7) {
+      setTimeout(() => {
+        const botNames = players.filter(p => !p.isHuman).map(p => p.name);
+        const randomBot = botNames[Math.floor(Math.random() * botNames.length)];
+        const responses = ['Nice move!', 'I fold.', 'Thinking...', 'Unlucky!', 'Next time.'];
+        const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+        setChatHistory(prev => [...prev, { sender: randomBot, text: randomResponse }]);
+      }, 1000 + Math.random() * 2000);
+    }
+  };
 
   return (
     <div className="relative flex flex-col h-full bg-slate-900 overflow-hidden">
@@ -41,15 +64,39 @@ const GameTable: React.FC = () => {
       <div className="absolute top-6 right-8 z-20 flex gap-4">
         <button
           onClick={() => navigate('/')}
-          className="bg-white/5 hover:bg-white/10 px-4 py-2 rounded-lg text-xs font-bold transition-all border border-white/10 flex items-center gap-2"
+          className="bg-white/5 hover:bg-white/10 px-4 py-2 rounded-lg text-xs font-bold transition-all border border-white/10 flex items-center gap-2 text-white"
         >
           <span className="material-symbols-outlined text-sm">logout</span> LOBBY
         </button>
       </div>
 
+      {/* Settings Modal (Simple) */}
+      {showSettings && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowSettings(false)}>
+          <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-2xl w-80" onClick={e => e.stopPropagation()}>
+            <h3 className="text-white font-bold text-lg mb-4">Settings</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between text-slate-400 text-sm">
+                <span>Sound Effects</span>
+                <input type="checkbox" defaultChecked className="accent-primary" />
+              </div>
+              <div className="flex justify-between text-slate-400 text-sm">
+                <span>Music</span>
+                <input type="checkbox" className="accent-primary" />
+              </div>
+              <div className="flex justify-between text-slate-400 text-sm">
+                <span>Auto Muck</span>
+                <input type="checkbox" defaultChecked className="accent-primary" />
+              </div>
+            </div>
+            <button onClick={() => setShowSettings(false)} className="mt-6 w-full bg-primary hover:bg-blue-600 text-white font-bold py-2 rounded-lg transition">Close</button>
+          </div>
+        </div>
+      )}
+
       {/* The Poker Table Rendering */}
       <div className="flex-1 flex items-center justify-center p-12">
-        <div className="poker-table relative w-full max-w-5xl aspect-[2/1] bg-emerald-900 border-[16px] border-[#3a2a1a] flex flex-col items-center justify-center">
+        <div className="poker-table relative w-full max-w-5xl aspect-[2/1] bg-emerald-900 border-[16px] border-[#3a2a1a] flex flex-col items-center justify-center shadow-2xl">
 
           {/* Table Center: Pot & Cards */}
           <div className="flex flex-col items-center gap-6">
@@ -109,20 +156,30 @@ const GameTable: React.FC = () => {
         </div>
       </div>
 
-      {/* Hero Footer Controls */}
       <footer className="p-8 grid grid-cols-12 items-end gap-8 bg-gradient-to-t from-background to-transparent">
         <div className="col-span-3">
-          <div className="bg-background/80 backdrop-blur-lg border border-slate-700 rounded-xl overflow-hidden flex flex-col h-40">
-            <div className="p-3 border-b border-slate-700 flex justify-between">
+          <div className="bg-background/80 backdrop-blur-lg border border-slate-700 rounded-xl overflow-hidden flex flex-col h-40 shadow-lg">
+            <div className="p-3 border-b border-slate-700 flex justify-between cursor-pointer hover:bg-white/5 transition" onClick={() => setShowSettings(true)}>
               <span className="text-[10px] font-bold text-slate-400 uppercase">Chat da Mesa</span>
-              <span className="material-symbols-outlined text-slate-500 text-sm">settings</span>
+              <span className="material-symbols-outlined text-slate-500 text-sm hover:text-white transition">settings</span>
             </div>
-            <div className="flex-1 overflow-y-auto p-3 space-y-2 text-[11px]">
-              <p className="text-slate-500 italic">Phase: {phase}</p>
-              {activeUser?.isFolded && <p className="text-red-500 font-bold">You Folded.</p>}
+            <div className="flex-1 overflow-y-auto p-3 space-y-1 text-[11px] scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+              <p className="text-slate-500 italic border-l-2 border-primary pl-2 mb-2">Phase: {phase}</p>
+              {chatHistory.map((msg, idx) => (
+                <p key={idx} className={`${msg.type === 'system' ? 'text-yellow-500 italic' : msg.sender === 'You' ? 'text-primary font-bold' : 'text-slate-300'}`}>
+                  <span className="opacity-50 mr-1 text-[9px]">{msg.sender}:</span> {msg.text}
+                </p>
+              ))}
+              {activeUser?.isFolded && <p className="text-red-500 font-bold border-l-2 border-red-500 pl-2">You Folded.</p>}
             </div>
-            <div className="p-3 bg-slate-900/50">
-              <input className="w-full bg-slate-800 border-none rounded-lg text-xs py-2 px-3 focus:ring-1 focus:ring-primary" placeholder="Diga algo..." />
+            <div className="p-2 bg-slate-900/50">
+              <input
+                className="w-full bg-slate-800 border-none rounded-lg text-xs py-2 px-3 focus:ring-1 focus:ring-primary text-white placeholder-slate-500"
+                placeholder="Type & Enter..."
+                value={chatMessage}
+                onChange={(e) => setChatMessage(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+              />
             </div>
           </div>
         </div>
