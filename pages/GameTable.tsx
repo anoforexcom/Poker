@@ -134,9 +134,21 @@ const GameTable: React.FC = () => {
             ))}
             {(!activeUser?.hand.length) && <div className="text-slate-500 font-bold">Waiting...</div>}
           </div>
-          <div className={`bg-primary/10 border-2 ${currentTurn === 0 ? 'border-gold animate-pulse' : 'border-primary'} backdrop-blur-md px-10 py-3 rounded-xl flex flex-col items-center shadow-lg shadow-primary/20`}>
+          <div className={`relative bg-primary/10 border-2 ${currentTurn === 0 ? 'border-gold animate-pulse' : 'border-primary'} backdrop-blur-md px-10 py-3 rounded-xl flex flex-col items-center shadow-lg shadow-primary/20`}>
             <span className="text-[10px] font-black uppercase tracking-widest text-primary">{currentTurn === 0 ? 'SUA VEZ' : `VEZ DE ${players[currentTurn]?.name}`}</span>
             <span className="text-2xl font-black text-white">${activeUser?.balance.toLocaleString()}</span>
+
+            {/* Human Player Chips */}
+            {(activeUser?.currentBet || 0) > 0 && (
+              <div className="absolute -top-10 flex flex-col items-center animate-bounce-short">
+                <div className="flex -space-x-1">
+                  <div className="size-6 rounded-full bg-red-500 border-2 border-white shadow-sm"></div>
+                  <div className="size-6 rounded-full bg-blue-500 border-2 border-white shadow-sm"></div>
+                  <div className="size-6 rounded-full bg-black border-2 border-white shadow-sm"></div>
+                </div>
+                <span className="bg-black/80 text-white text-xs font-bold px-2 rounded mt-0.5 border border-white/10 shadow-lg">${activeUser?.currentBet}</span>
+              </div>
+            )}
           </div>
         </div>
 
