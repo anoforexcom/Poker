@@ -1,35 +1,32 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGame } from '../contexts/GameContext';
+import { usePokerGame } from '../hooks/usePokerGame';
 
 const GameTable: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, updateBalance } = useGame();
 
-  const [betValue, setBetValue] = useState(450);
-  const [pot, setPot] = useState(1250);
-  const [lastAction, setLastAction] = useState<string>('');
+  const {
+    players,
+    communityCards,
+    pot,
+    phase,
+    currentTurn,
+    startNewHand,
+    handlePlayerAction,
+    winner
+  } = usePokerGame(user.balance, updateBalance);
 
-  const handleAction = (action: string) => {
-    if (action === 'fold') {
-      setLastAction('Folded');
-      // Logic for fold
-    } else if (action === 'call') {
-      const callAmount = 100; // Simplified
-      updateBalance(-callAmount);
-      setPot(prev => prev + callAmount);
-      setLastAction(`Called $${callAmount}`);
-    } else if (action === 'raise') {
-      if (user.balance >= betValue) {
-        updateBalance(-betValue);
-        setPot(prev => prev + betValue);
-        setLastAction(`Raised to $${betValue}`);
-      } else {
-        alert("Insufficient funds!");
-      }
-    }
-  };
+  const [betValue, setBetValue] = useState(20);
+
+  // Start game loop
+  React.useEffect(() => {
+    if (players.every(p => p.hand.length === 0)) startNewHand();
+  }, []);
+
+  const activeUser = players.find(p => p.isHuman);
 
   return (
     <div className="relative flex flex-col h-full bg-slate-900 overflow-hidden">
@@ -61,34 +58,53 @@ const GameTable: React.FC = () => {
               <span className="text-2xl font-black text-white">${pot.toLocaleString()}</span>
             </div>
 
-            <div className="flex gap-3">
-              <div className="w-14 h-20 bg-white rounded-lg border-2 border-slate-200 flex flex-col p-1.5 items-center justify-between text-red-600 shadow-xl scale-110">
-                <span className="text-lg font-black self-start leading-none tracking-tighter">A♦</span>
-                <span className="material-symbols-outlined text-3xl">diamond</span>
-              </div>
-              <div className="w-14 h-20 bg-white rounded-lg border-2 border-slate-200 flex flex-col p-1.5 items-center justify-between text-slate-900 shadow-xl scale-110">
-                <span className="text-lg font-black self-start leading-none tracking-tighter">K♠</span>
-                <span className="material-symbols-outlined text-3xl">playing_cards</span>
-              </div>
-              <div className="w-14 h-20 bg-white rounded-lg border-2 border-slate-200 flex flex-col p-1.5 items-center justify-between text-slate-900 shadow-xl scale-110">
-                <span className="text-lg font-black self-start leading-none tracking-tighter">10♣</span>
-                <span className="material-symbols-outlined text-3xl">groups</span>
-              </div>
-              <div className="w-14 h-20 bg-slate-100/10 border-2 border-dashed border-white/20 rounded-lg flex items-center justify-center">
-                <span className="material-symbols-outlined text-white/20">help</span>
-              </div>
-              <div className="w-14 h-20 bg-slate-100/10 border-2 border-dashed border-white/20 rounded-lg flex items-center justify-center">
-                <span className="material-symbols-outlined text-white/20">help</span>
-              </div>
+            <div className="flex gap-3 h-28 items-center">
+              {communityCards.map((card, i) => (
+                <HeroCard key={i} suit={card.suit} value={card.rank} color={['hearts', 'diamonds'].includes(card.suit) ? 'red' : 'black'} />
+              ))}
+              {Array.from({ length: 5 - communityCards.length }).map((_, i) => (
+                <div key={`empty-${i}`} className="w-20 h-28 bg-slate-100/10 border-2 border-dashed border-white/20 rounded-lg flex items-center justify-center">
+                  <span className="material-symbols-outlined text-white/20">help</span>
+                </div>
+              ))}
             </div>
+
+            {winner && (
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/90 p-6 rounded-2xl z-50 text-center border-2 border-gold shadow-2xl animate-fade-in-up">
+                <p className="text-gold font-bold text-xl uppercase tracking-widest mb-2">Winner</p>
+                <p className="text-white text-3xl font-black mb-4">{winner.name}</p>
+                <div className="flex gap-2 justify-center mb-6">
+                  {winner.hand.map((card, i) => (
+                    <HeroCard key={i} suit={card.suit} value={card.rank} color={['hearts', 'diamonds'].includes(card.suit) ? 'red' : 'black'} />
+                  ))}
+                </div>
+                <button onClick={startNewHand} className="bg-primary hover:bg-primary-light px-8 py-3 rounded-xl font-bold text-white uppercase tracking-wider shadow-lg transform transition hover:scale-105">
+                  Next Hand
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Players Seats */}
-          <PlayerSeat position="top" name="Alex G." balance="$4,230" active />
-          <PlayerSeat position="top-left" name="Sarah L." balance="$2,800" />
-          <PlayerSeat position="mid-left" name="Mike P." balance="$12,450" dealer />
-          <PlayerSeat position="mid-right" name="Chris T." balance="$5,100" />
-          <PlayerSeat position="top-right" name="Elena R." balance="Sitting Out" inactive />
+          {/* Players Seats */}
+          {players.map((player, index) => {
+            if (player.isHuman) return null; // Render user separately
+            const posMap = ['mid-right', 'top-right', 'top', 'top-left'];
+            // Map index 1->mid-right (0), 2->top-right (1)...
+            const pos = posMap[index - 1] || 'top';
+
+            return (
+              <PlayerSeat
+                key={player.id}
+                position={pos}
+                name={player.name}
+                balance={`$${player.balance}`}
+                active={index === currentTurn}
+                inactive={player.isFolded}
+                dealer={player.isDealer}
+              />
+            );
+          })}
         </div>
       </div>
 
@@ -101,10 +117,8 @@ const GameTable: React.FC = () => {
               <span className="material-symbols-outlined text-slate-500 text-sm">settings</span>
             </div>
             <div className="flex-1 overflow-y-auto p-3 space-y-2 text-[11px]">
-              <p><span className="text-primary font-bold">Mike P.:</span> Nice hand Alex!</p>
-              <p><span className="text-red-400 font-bold">Daniel K.:</span> I was so close...</p>
-              <p className="text-slate-500 italic">Dealer: Hand #29481 started.</p>
-              {lastAction && <p className="text-gold font-bold italic">You: {lastAction}</p>}
+              <p className="text-slate-500 italic">Phase: {phase}</p>
+              {activeUser?.isFolded && <p className="text-red-500 font-bold">You Folded.</p>}
             </div>
             <div className="p-3 bg-slate-900/50">
               <input className="w-full bg-slate-800 border-none rounded-lg text-xs py-2 px-3 focus:ring-1 focus:ring-primary" placeholder="Diga algo..." />
@@ -114,12 +128,14 @@ const GameTable: React.FC = () => {
 
         <div className="col-span-6 flex flex-col items-center gap-4">
           <div className="flex gap-4">
-            <HeroCard suit="spades" value="J" color="black" rotate="-rotate-6" />
-            <HeroCard suit="diamond" value="J" color="red" rotate="rotate-6" />
+            {activeUser?.hand.map((card, i) => (
+              <HeroCard key={i} suit={card.suit} value={card.rank} color={['hearts', 'diamonds'].includes(card.suit) ? 'red' : 'black'} rotate={i === 0 ? '-rotate-6' : 'rotate-6'} />
+            ))}
+            {(!activeUser?.hand.length) && <div className="text-slate-500 font-bold">Waiting...</div>}
           </div>
-          <div className="bg-primary/10 border-2 border-primary backdrop-blur-md px-10 py-3 rounded-xl flex flex-col items-center shadow-lg shadow-primary/20">
-            <span className="text-[10px] font-black uppercase tracking-widest text-primary">SUA VEZ</span>
-            <span className="text-2xl font-black text-white">${user.balance.toLocaleString()}</span>
+          <div className={`bg-primary/10 border-2 ${currentTurn === 0 ? 'border-gold animate-pulse' : 'border-primary'} backdrop-blur-md px-10 py-3 rounded-xl flex flex-col items-center shadow-lg shadow-primary/20`}>
+            <span className="text-[10px] font-black uppercase tracking-widest text-primary">{currentTurn === 0 ? 'SUA VEZ' : `VEZ DE ${players[currentTurn]?.name}`}</span>
+            <span className="text-2xl font-black text-white">${activeUser?.balance.toLocaleString()}</span>
           </div>
         </div>
 
@@ -128,10 +144,10 @@ const GameTable: React.FC = () => {
             <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
               <span>MIN: $20</span>
               <span className="text-primary text-sm font-mono">${betValue}</span>
-              <span>MAX: ${(user.balance).toLocaleString()}</span>
+              <span>MAX: ${(activeUser?.balance || 0).toLocaleString()}</span>
             </div>
             <input
-              type="range" min="20" max={user.balance} value={betValue}
+              type="range" min="20" max={activeUser?.balance || 100} value={betValue}
               onChange={(e) => setBetValue(Number(e.target.value))}
               className="w-full h-1.5 bg-slate-700 rounded-full appearance-none accent-primary cursor-pointer"
             />
@@ -139,13 +155,13 @@ const GameTable: React.FC = () => {
               <button onClick={() => setBetValue(Math.floor(pot / 2))} className="bg-slate-800 hover:bg-slate-700 text-[10px] font-bold py-1.5 rounded transition">1/2 POT</button>
               <button onClick={() => setBetValue(Math.floor(pot * 0.75))} className="bg-slate-800 hover:bg-slate-700 text-[10px] font-bold py-1.5 rounded transition">3/4 POT</button>
               <button onClick={() => setBetValue(pot)} className="bg-slate-800 hover:bg-slate-700 text-[10px] font-bold py-1.5 rounded transition">POT</button>
-              <button onClick={() => setBetValue(user.balance)} className="bg-slate-800 hover:bg-slate-700 text-[10px] font-bold py-1.5 rounded transition">ALL-IN</button>
+              <button onClick={() => setBetValue(activeUser?.balance || 0)} className="bg-slate-800 hover:bg-slate-700 text-[10px] font-bold py-1.5 rounded transition">ALL-IN</button>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3">
-            <button onClick={() => handleAction('fold')} className="bg-slate-800 hover:bg-slate-700 text-white font-black py-4 rounded-xl shadow-lg uppercase text-sm">Fold</button>
-            <button onClick={() => handleAction('call')} className="bg-slate-800 hover:bg-slate-700 text-white font-black py-4 rounded-xl shadow-lg uppercase text-sm border-b-4 border-slate-900">Call</button>
-            <button onClick={() => handleAction('raise')} className="bg-primary hover:bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg uppercase text-sm border-b-4 border-blue-800">Raise</button>
+            <button disabled={currentTurn !== 0} onClick={() => handlePlayerAction('fold')} className="disabled:opacity-50 disabled:cursor-not-allowed bg-slate-800 hover:bg-slate-700 text-white font-black py-4 rounded-xl shadow-lg uppercase text-sm">Fold</button>
+            <button disabled={currentTurn !== 0} onClick={() => handlePlayerAction('call')} className="disabled:opacity-50 disabled:cursor-not-allowed bg-slate-800 hover:bg-slate-700 text-white font-black py-4 rounded-xl shadow-lg uppercase text-sm border-b-4 border-slate-900">Check/Call</button>
+            <button disabled={currentTurn !== 0} onClick={() => handlePlayerAction('raise', betValue)} className="disabled:opacity-50 disabled:cursor-not-allowed bg-primary hover:bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg uppercase text-sm border-b-4 border-blue-800">Raise</button>
           </div>
         </div>
       </footer>
