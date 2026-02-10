@@ -76,6 +76,31 @@ const Cashier: React.FC = () => {
               </div>
             </div>
 
+            {/* Payment Methods */}
+            <div className="mt-6 pt-6 border-t border-border-dark">
+              <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-3">Payment Methods</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-white px-2 py-1.5 rounded flex items-center justify-center">
+                  <span className="text-blue-600 font-black text-xs">VISA</span>
+                </div>
+                <div className="bg-gradient-to-r from-red-600 to-orange-500 px-2 py-1.5 rounded flex items-center justify-center">
+                  <span className="text-white font-black text-xs">MC</span>
+                </div>
+                <div className="bg-orange-500 px-2 py-1.5 rounded flex items-center justify-center gap-1">
+                  <span className="text-white font-black text-xs">₿ BTC</span>
+                </div>
+                <div className="bg-gradient-to-r from-purple-600 to-blue-600 px-2 py-1.5 rounded flex items-center justify-center gap-1">
+                  <span className="text-white font-black text-xs">◆ ETH</span>
+                </div>
+                <div className="bg-green-600 px-2 py-1.5 rounded flex items-center justify-center gap-1">
+                  <span className="text-white font-black text-xs">₮ USDT</span>
+                </div>
+                <div className="bg-blue-600 px-2 py-1.5 rounded flex items-center justify-center">
+                  <span className="text-white font-black text-xs">PayPal</span>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
 

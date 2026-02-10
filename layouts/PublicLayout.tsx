@@ -90,6 +90,60 @@ const Footer = () => {
                     </div>
                 </div>
 
+                {/* Payment Methods Section */}
+                <div className="border-t border-white/5 pt-8 pb-6">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div className="flex flex-col items-center md:items-start gap-3">
+                            <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Accepted Payment Methods</span>
+                            <div className="flex items-center gap-3 flex-wrap justify-center md:justify-start">
+                                {/* Credit Cards */}
+                                <div className="bg-white px-3 py-2 rounded-md flex items-center gap-1.5 shadow-sm">
+                                    <span className="text-blue-600 font-black text-sm">VISA</span>
+                                </div>
+                                <div className="bg-gradient-to-r from-red-600 to-orange-500 px-3 py-2 rounded-md flex items-center gap-1.5 shadow-sm">
+                                    <span className="text-white font-black text-sm">MC</span>
+                                </div>
+
+                                {/* Crypto */}
+                                <div className="bg-orange-500 px-3 py-2 rounded-md flex items-center gap-1.5 shadow-sm">
+                                    <span className="text-white font-black text-xs">₿</span>
+                                    <span className="text-white font-bold text-xs">BTC</span>
+                                </div>
+                                <div className="bg-gradient-to-r from-purple-600 to-blue-600 px-3 py-2 rounded-md flex items-center gap-1.5 shadow-sm">
+                                    <span className="text-white font-black text-xs">◆</span>
+                                    <span className="text-white font-bold text-xs">ETH</span>
+                                </div>
+                                <div className="bg-green-600 px-3 py-2 rounded-md flex items-center gap-1.5 shadow-sm">
+                                    <span className="text-white font-black text-xs">₮</span>
+                                    <span className="text-white font-bold text-xs">USDT</span>
+                                </div>
+
+                                {/* E-wallets */}
+                                <div className="bg-blue-600 px-3 py-2 rounded-md shadow-sm">
+                                    <span className="text-white font-black text-sm">PayPal</span>
+                                </div>
+                                <div className="bg-purple-600 px-3 py-2 rounded-md shadow-sm">
+                                    <span className="text-white font-black text-sm">Skrill</span>
+                                </div>
+                                <div className="bg-green-700 px-3 py-2 rounded-md shadow-sm">
+                                    <span className="text-white font-black text-sm">Neteller</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col items-center md:items-end gap-2">
+                            <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined text-green-500 text-sm">verified</span>
+                                <span className="text-slate-400 text-xs">SSL Secured</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined text-gold text-sm">workspace_premium</span>
+                                <span className="text-slate-400 text-xs">Licensed & Regulated</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="border-t border-white/5 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
                     <p className="text-slate-500 text-xs text-center md:text-left">
                         © {new Date().getFullYear()} BestPoker.Cash. All rights reserved.
