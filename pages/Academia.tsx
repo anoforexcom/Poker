@@ -317,12 +317,45 @@ const Academia: React.FC = () => {
 
           {/* Explanation / Next */}
           {isAnswered && (
-            <div className="bg-slate-800/50 p-6 rounded-xl border border-slate-700 animate-fade-in">
-              <h4 className="font-bold text-white mb-2 flex items-center gap-2">
+            <div className="bg-slate-800/50 p-6 rounded-xl border border-slate-700 animate-fade-in relative overflow-hidden">
+              {/* Background decorative elements */}
+              <div className="absolute top-0 right-0 p-16 bg-gold/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
+
+              <h4 className="font-bold text-white mb-4 flex items-center gap-2 relative z-10">
                 <span className="material-symbols-outlined text-gold">lightbulb</span> Explanation
               </h4>
-              <p className="text-slate-300 text-sm mb-6">{currentQ.explanation}</p>
-              <div className="flex justify-end">
+
+              {/* Main Text */}
+              <p className="text-slate-300 text-sm mb-6 leading-relaxed relative z-10 border-l-2 border-slate-600 pl-4">
+                {currentQ.explanation.text}
+              </p>
+
+              {/* Pro Tip Section */}
+              {currentQ.explanation.tip && (
+                <div className="bg-gold/10 border border-gold/30 rounded-lg p-4 mb-6 relative z-10">
+                  <div className="flex gap-3">
+                    <span className="material-symbols-outlined text-gold shrink-0">verified</span>
+                    <div>
+                      <p className="text-gold font-black text-xs uppercase tracking-wider mb-1">Pro Tip</p>
+                      <p className="text-gold/90 text-sm italic">"{currentQ.explanation.tip}"</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Visual Section */}
+              {currentQ.explanation.visual && (
+                <div className="mb-6 rounded-lg overflow-hidden border border-slate-600 relative z-10 bg-black/50">
+                  <img
+                    src={currentQ.explanation.visual}
+                    alt="Strategy Diagram"
+                    className="w-full h-auto max-h-60 object-contain mx-auto"
+                  />
+                  <p className="text-[10px] text-center text-slate-500 py-1 bg-black/80 w-full">Visual Aid</p>
+                </div>
+              )}
+
+              <div className="flex justify-end relative z-10">
                 <button onClick={handleNext} className="px-8 py-3 rounded-lg bg-primary text-white font-bold shadow-lg hover:bg-blue-600 transition flex items-center gap-2">
                   {currentQuestionIndex + 1 === activeModule.questions.length ? 'Finish Quiz' : 'Next Question'}
                   <span className="material-symbols-outlined">arrow_forward</span>

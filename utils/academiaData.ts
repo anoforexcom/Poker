@@ -1,9 +1,15 @@
+export interface Explanation {
+    text: string;
+    tip?: string;
+    visual?: string;
+}
+
 export interface Question {
     id: string;
     text: string;
     options: string[];
     correctIndex: number;
-    explanation: string;
+    explanation: Explanation;
 }
 
 export interface Module {
@@ -58,25 +64,35 @@ const generateBasicQuestion = (index: number): Question => {
             text: "Which hand beats a Full House?",
             options: ["Flush", "Straight", "Four of a Kind", "Three of a Kind"],
             correct: 2,
-            expl: "Four of a Kind ranks higher than a Full House."
+            expl: {
+                text: "Four of a Kind ranks higher than a Full House. The only hand stronger than Four of a Kind is a Straight Flush (or Royal Flush).",
+                tip: "Remember: 'Four beats Full'. It's rare but powerful."
+            }
         },
         {
             text: "What is the 'Big Blind'?",
             options: ["The dealer button", "A forced bet", "The highest card", "A type of bluff"],
             correct: 1,
-            expl: "The Big Blind is a mandatory bet posted by the player two positions to the left of the dealer."
+            expl: {
+                text: "The Big Blind is a mandatory bet posted by the player two positions to the left of the dealer to stimulate action.",
+                tip: "The Big Blind defines the stakes of the game (e.g., $1/$2 means the Big Blind is $2)."
+            }
         },
         {
             text: "How many betting rounds are there in Texas Hold'em?",
             options: ["2", "3", "4", "5"],
             correct: 2,
-            expl: "There are 4 rounds: Pre-flop, Flop, Turn, and River."
+            expl: {
+                text: "There are 4 rounds: Pre-flop, Flop, Turn, and River.",
+                visual: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Poker_Holdem_Preflop.jpg/320px-Poker_Holdem_Preflop.jpg"
+            }
         }
     ];
     return {
         id: `basics-${index}`,
         ...templates[index % templates.length],
-        text: `${templates[index % templates.length].text} (Var ${index + 1})` // Adding variation suffix to simulate uniqueness
+        text: `${templates[index % templates.length].text} (Var ${index + 1})`,
+        explanation: templates[index % templates.length].expl // Explicitly map struct
     };
 };
 
@@ -84,12 +100,19 @@ const generatePreflopQuestion = (index: number): Question => {
     const pos = POSITIONS[index % POSITIONS.length];
     const hand = HANDS[index % HANDS.length];
 
+    const isEarlyPos = pos === 'UTG' || pos === 'MP';
+    const isSmallPair = hand === '22' || hand === '76s'; // Simplified logic
+
     return {
         id: `pre-${index}`,
         text: `You are in ${pos} with ${hand}. It is folded to you. What is the standard GTO play?`,
         options: ["Fold", "Limp", "Raise 2.5bb", "Shove All-in"],
-        correctIndex: (hand === '22' && pos === 'UTG') ? 0 : 2, // Simplified logic
-        explanation: "Opening ranges generally dictate raising with strong premiums or folding weak pairs early."
+        correctIndex: (isSmallPair && isEarlyPos) ? 0 : 2, // Simplified logic
+        explanation: {
+            text: `In ${pos} position, your opening range should be tighter. ${hand} is ${isSmallPair && isEarlyPos ? 'too loose to open' : 'a standard open'} from here.`,
+            tip: "Position is power. Play tighter in early position (UTG/MP) and looser in late position (BTN/CO).",
+            visual: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Poker_Holdem_Starting_Hands.jpg/320px-Poker_Holdem_Starting_Hands.jpg"
+        }
     };
 };
 
@@ -100,7 +123,10 @@ const generatePostflopQuestion = (index: number): Question => {
         text: `Hero c-bets range on ${board}. Villain raises 3x. What is the plan?`,
         options: ["Fold range", "Call with top range only", "Re-raise all-in", "Click back min-raise"],
         correctIndex: 1,
-        explanation: "Facing a check-raise on this texture usually requires continuing only with strong equity hands."
+        explanation: {
+            text: `Facing a check-raise on a board like ${board} represents strength. You should defend only with your strongest hands and high-equity draws.`,
+            tip: "Don't over-fold, but don't call with marginal hands out of position."
+        }
     };
 };
 
@@ -110,7 +136,10 @@ const generateTournamentQuestion = (index: number): Question => {
         text: `You have ${(index + 1) * 5}bb on the Bubble. 5 players left to money. UTG shoves. You have AKo. call?`,
         options: ["Snap Call", "Fold (ICM Pressure)", "Tank Call", "Flip a coin"],
         correctIndex: index < 5 ? 1 : 0, // Fold if short stack logic (simplified)
-        explanation: "On the bubble, preserving your stack is often more important than chips gained (ICM)."
+        explanation: {
+            text: "On the bubble, the value of survival (ICM) is massive. Calling an all-in puts your tournament life at risk.",
+            tip: "There is no 'Chip EV' on the bubble. Survival is key."
+        }
     };
 };
 
@@ -120,7 +149,10 @@ const generateMentalQuestion = (index: number): Question => {
         text: "You lost 5 buy-ins in a row due to coolers. What do you do?",
         options: ["Play higher stakes to recover", "Quit and take a break", "Complain in chat", "Play looser"],
         correctIndex: 1,
-        explanation: "Stop-loss and mental reset are crucial to avoiding tilt."
+        explanation: {
+            text: "Chasing losses is the quickest way to destroy a bankroll. A strict Stop-Loss rule helps preserve your capital and mental state.",
+            tip: "Set a 'Stop Loss' of 3-5 buy-ins per session. If you hit it, quit immediately."
+        }
     };
 };
 
