@@ -254,6 +254,7 @@ const AppRoutes = () => {
 const App: React.FC = () => {
   return (
     <HashRouter>
+      <ScrollToTop />
       <AuthProvider>
         <AppRoutes />
       </AuthProvider>
