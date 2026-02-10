@@ -7,6 +7,24 @@ const Lobby: React.FC = () => {
   const [filter, setFilter] = useState('ALL');
   const navigate = useNavigate();
 
+  const filteredTournaments = tournaments.filter(t => {
+    if (filter === 'ALL') return true;
+    if (filter === 'MICRO') return t.buyIn < 5;
+    if (filter === 'LOW') return t.buyIn >= 5 && t.buyIn < 20;
+    if (filter === 'MID') return t.buyIn >= 20 && t.buyIn < 100;
+    if (filter === 'HIGH') return t.buyIn >= 100;
+    return true;
+  });
+
+  const getFilterCount = (f: string) => {
+    if (f === 'ALL') return tournaments.length;
+    if (f === 'MICRO') return tournaments.filter(t => t.buyIn < 5).length;
+    if (f === 'LOW') return tournaments.filter(t => t.buyIn >= 5 && t.buyIn < 20).length;
+    if (f === 'MID') return tournaments.filter(t => t.buyIn >= 20 && t.buyIn < 100).length;
+    if (f === 'HIGH') return tournaments.filter(t => t.buyIn >= 100).length;
+    return 0;
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Registering': return 'text-poker-green';
@@ -29,7 +47,7 @@ const Lobby: React.FC = () => {
           <div className="flex gap-4">
             <div className="bg-poker-green/10 text-poker-green text-[10px] font-bold px-3 py-1.5 rounded border border-poker-green/20 flex items-center gap-2">
               <span className="size-2 bg-poker-green rounded-full animate-pulse"></span>
-              {activeTables.toLocaleString()} TABLES ACTIVE
+              {tournaments.length.toLocaleString()} TOURNAMENTS ACTIVE
             </div>
             <div className="bg-primary/10 text-primary text-[10px] font-bold px-3 py-1.5 rounded border border-primary/20 flex items-center gap-2">
               <span className="size-2 bg-primary rounded-full animate-pulse"></span>
@@ -46,10 +64,10 @@ const Lobby: React.FC = () => {
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
-                  className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${filter === f ? 'bg-primary text-white shadow-lg' : 'text-slate-400 hover:text-white'
+                  className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-2 ${filter === f ? 'bg-primary text-white shadow-lg' : 'text-slate-400 hover:text-white'
                     }`}
                 >
-                  {f}
+                  {f} <span className={`text-[10px] opacity-70 ${filter === f ? 'text-white' : 'text-slate-500'}`}>({getFilterCount(f)})</span>
                 </button>
               ))}
             </div>
@@ -109,14 +127,13 @@ const Lobby: React.FC = () => {
                     <td className="py-5 px-6 text-sm font-mono text-gold font-bold">${t.prizePool.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                     <td className="py-5 px-6 text-right">
                       <button
-                        onClick={() => navigate(`/table/${t.id}`)}
+                        onClick={() => navigate(`/tournament/${t.id}`)}
                         disabled={t.status === 'Finished'}
-                        className={`px-6 py-1.5 rounded-lg text-xs font-bold transition-all border ${t.status === 'Running' || t.status === 'Final Table'
-                          ? 'bg-slate-800 text-white border-slate-700 hover:bg-slate-700'
-                          : t.status === 'Finished'
-                            ? 'bg-transparent text-slate-600 border-transparent cursor-default'
-                            : 'bg-poker-green/20 hover:bg-poker-green text-poker-green hover:text-white border-poker-green/30'
-                          }`}>
+                        className={`w-full py-2 rounded-lg font-black text-xs transition-all shadow-lg hover:brightness-110 flex items-center justify-center gap-2 ${t.status === 'Registering' || t.status === 'Late Reg' ? 'bg-poker-green text-white shadow-poker-green/20' :
+                          t.status === 'Running' ? 'bg-blue-600 text-white shadow-blue-600/20' :
+                            'bg-slate-700 text-slate-400 cursor-not-allowed'
+                          }`}
+                      >
                         {t.status === 'Running' || t.status === 'Final Table' ? 'OBSERVE' : t.status === 'Finished' ? 'ENDED' : 'REGISTER'}
                       </button>
                     </td>

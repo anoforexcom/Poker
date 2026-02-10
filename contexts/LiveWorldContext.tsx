@@ -47,13 +47,8 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
     // Simulation Heartbeat
     useEffect(() => {
         const mainTimer = setInterval(() => {
-            // 1. Fluctuate Global Stats
-            setOnlinePlayers(prev => Math.max(100, prev + Math.floor(Math.random() * 20) - 10));
-            setActiveTables(prev => Math.max(10, prev + Math.floor(Math.random() * 4) - 2));
-
-            // 2. Update Tournaments
             setTournaments(prev => {
-                return prev.map(t => {
+                const updatedTournaments = prev.map(t => {
                     // Logic for Tournament Lifecycle
 
                     // REGISTERING -> Fills up
@@ -91,6 +86,17 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
                     if (t.status === 'Finished' && Math.random() > 0.95) return false;
                     return true;
                 });
+
+                // Calculate Derived Global Stats
+                const tournamentPlayers = updatedTournaments.reduce((acc, t) => acc + t.players, 0);
+                const cashGamePlayers = Math.floor(Math.random() * 1000) + 500; // Mock cash game players
+                const totalOnline = tournamentPlayers + cashGamePlayers;
+                const totalTables = Math.ceil(cashGamePlayers / 6) + Math.ceil(tournamentPlayers / 9);
+
+                setOnlinePlayers(totalOnline);
+                setActiveTables(totalTables);
+
+                return updatedTournaments;
 
             });
         }, 2000); // Update every 2 seconds

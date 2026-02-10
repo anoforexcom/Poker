@@ -107,7 +107,7 @@ const GameTable: React.FC = () => {
 
             <div className="flex gap-3 h-28 items-center">
               {communityCards.map((card, i) => (
-                <HeroCard key={i} suit={card.suit} value={card.rank} color={['hearts', 'diamonds'].includes(card.suit) ? 'red' : 'black'} />
+                <HeroCard key={i} suit={card.suit} value={card.rank} />
               ))}
               {Array.from({ length: 5 - communityCards.length }).map((_, i) => (
                 <div key={`empty-${i}`} className="w-20 h-28 bg-slate-100/10 border-2 border-dashed border-white/20 rounded-lg flex items-center justify-center">
@@ -122,7 +122,7 @@ const GameTable: React.FC = () => {
                 <p className="text-white text-3xl font-black mb-4">{winner.name}</p>
                 <div className="flex gap-2 justify-center mb-6">
                   {winner.hand.map((card, i) => (
-                    <HeroCard key={i} suit={card.suit} value={card.rank} color={['hearts', 'diamonds'].includes(card.suit) ? 'red' : 'black'} />
+                    <HeroCard key={i} suit={card.suit} value={card.rank} />
                   ))}
                 </div>
                 <button onClick={startNewHand} className="bg-primary hover:bg-primary-light px-8 py-3 rounded-xl font-bold text-white uppercase tracking-wider shadow-lg transform transition hover:scale-105">
@@ -187,7 +187,7 @@ const GameTable: React.FC = () => {
         <div className="col-span-6 flex flex-col items-center gap-4">
           <div className="flex gap-4">
             {activeUser?.hand.map((card, i) => (
-              <HeroCard key={i} suit={card.suit} value={card.rank} color={['hearts', 'diamonds'].includes(card.suit) ? 'red' : 'black'} rotate={i === 0 ? '-rotate-6' : 'rotate-6'} />
+              <HeroCard key={i} suit={card.suit} value={card.rank} rotate={i === 0 ? '-rotate-6' : 'rotate-6'} />
             ))}
             {(!activeUser?.hand.length) && <div className="text-slate-500 font-bold">Waiting...</div>}
           </div>
@@ -278,12 +278,44 @@ const PlayerSeat = ({ position, name, balance, active, inactive, dealer, current
   );
 };
 
-const HeroCard = ({ suit, value, color, rotate }: any) => (
-  <div className={`w-20 h-28 bg-white rounded-xl border-2 border-primary flex flex-col p-2 items-center justify-between shadow-2xl transform transition-transform hover:-translate-y-2 cursor-pointer ${rotate} ${color === 'red' ? 'text-red-600' : 'text-slate-900'}`}>
-    <span className="text-2xl font-black self-start leading-none tracking-tighter">{value}{suit === 'diamond' ? '♦' : '♠'}</span>
-    <span className="material-symbols-outlined text-5xl">{suit === 'diamond' ? 'diamond' : 'playing_cards'}</span>
-    <span className="text-2xl font-black self-end leading-none tracking-tighter rotate-180">{value}{suit === 'diamond' ? '♦' : '♠'}</span>
-  </div>
-);
+const HeroCard = ({ suit, value, rotate }: any) => {
+  const getSuitColor = (s: string) => {
+    switch (s) {
+      case 'hearts': return 'text-red-600';
+      case 'diamonds': return 'text-blue-600'; // Blue for Diamonds
+      case 'clubs': return 'text-green-600'; // Green for Clubs
+      case 'spades': return 'text-slate-900'; // Black for Spades
+      default: return 'text-slate-900';
+    }
+  };
+
+  const getSuitSymbol = (s: string) => {
+    switch (s) {
+      case 'hearts': return '♥';
+      case 'diamonds': return '♦';
+      case 'clubs': return '♣';
+      case 'spades': return '♠';
+      default: return '?';
+    }
+  };
+
+  const getMaterialIcon = (s: string) => {
+    switch (s) {
+      case 'hearts': return 'heart_plus'; // approximate
+      case 'diamonds': return 'diamond';
+      case 'clubs': return 'local_florist'; // approximate for club
+      case 'spades': return 'spades'; // might need custom or different icon
+      default: return 'help';
+    }
+  }
+
+  return (
+    <div className={`w-20 h-28 bg-white rounded-xl border-2 border-primary flex flex-col p-2 items-center justify-between shadow-2xl transform transition-transform hover:-translate-y-2 cursor-pointer ${rotate} ${getSuitColor(suit)}`}>
+      <span className="text-2xl font-black self-start leading-none tracking-tighter">{value}{getSuitSymbol(suit)}</span>
+      <span className="text-4xl">{getSuitSymbol(suit)}</span>
+      <span className="text-2xl font-black self-end leading-none tracking-tighter rotate-180">{value}{getSuitSymbol(suit)}</span>
+    </div>
+  );
+};
 
 export default GameTable;
