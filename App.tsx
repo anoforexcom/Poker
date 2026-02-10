@@ -7,6 +7,7 @@ import Academia from './pages/Academia';
 import Community from './pages/Community';
 import TournamentLobby from './pages/TournamentLobby';
 import Cashier from './pages/Cashier';
+import Rewards from './pages/Rewards';
 import { GameProvider, useGame } from './contexts/GameContext';
 import { LiveWorldProvider } from './contexts/LiveWorldContext';
 
@@ -140,6 +141,7 @@ const AppContent = () => {
               <Route path="/academia" element={<Academia />} />
               <Route path="/community" element={<Community />} />
               <Route path="/cashier" element={<Cashier />} />
+              <Route path="/rewards" element={<Rewards />} />
             </Routes>
           </main>
         </div>
