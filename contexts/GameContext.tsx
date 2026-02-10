@@ -12,6 +12,7 @@ interface GameContextType {
   deposit: (amount: number) => void;
   withdraw: (amount: number) => void;
   updateBalance: (amount: number) => void;
+  updateUser: (updates: Partial<UserState>) => void;
 }
 
 const defaultUser: UserState = {
@@ -24,7 +25,15 @@ const defaultUser: UserState = {
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
 export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<UserState>(defaultUser);
+  const [user, setUser] = useState<UserState>(() => {
+    const saved = localStorage.getItem('poker_user_profile');
+    return saved ? JSON.parse(saved) : defaultUser;
+  });
+
+  // Persist user changes
+  React.useEffect(() => {
+    localStorage.setItem('poker_user_profile', JSON.stringify(user));
+  }, [user]);
 
   const deposit = (amount: number) => {
     setUser(prev => ({ ...prev, balance: prev.balance + amount }));
@@ -35,16 +44,19 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(prev => ({ ...prev, balance: prev.balance - amount }));
     } else {
       alert("Insufficient funds!");
-      // In a real app, we'd use a toast notification
     }
   };
 
   const updateBalance = (amount: number) => {
-      setUser(prev => ({ ...prev, balance: prev.balance + amount }));
+    setUser(prev => ({ ...prev, balance: prev.balance + amount }));
   }
 
+  const updateUser = (updates: Partial<UserState>) => {
+    setUser(prev => ({ ...prev, ...updates }));
+  };
+
   return (
-    <GameContext.Provider value={{ user, deposit, withdraw, updateBalance }}>
+    <GameContext.Provider value={{ user, deposit, withdraw, updateBalance, updateUser }}>
       {children}
     </GameContext.Provider>
   );

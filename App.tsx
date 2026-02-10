@@ -8,6 +8,7 @@ import Community from './pages/Community';
 import TournamentLobby from './pages/TournamentLobby';
 import Cashier from './pages/Cashier';
 import Rewards from './pages/Rewards';
+import Profile from './pages/Profile';
 import { GameProvider, useGame } from './contexts/GameContext';
 import { LiveWorldProvider } from './contexts/LiveWorldContext';
 
@@ -83,11 +84,11 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
       </nav>
 
       <div className="p-4 border-t border-border-dark mt-auto">
-        <div className="bg-background/50 p-3 rounded-xl flex items-center gap-3">
+        <Link to="/profile" className="bg-background/50 p-3 rounded-xl flex items-center gap-3 hover:bg-background/80 transition-colors group cursor-pointer">
           <div className="relative">
             <img
               alt="User avatar"
-              className="size-10 rounded-full border border-primary/50"
+              className="size-10 rounded-full border border-primary/50 group-hover:border-primary transition-colors"
               src={user.avatar}
             />
             <div className="absolute bottom-0 right-0 size-3 bg-poker-green rounded-full border-2 border-surface"></div>
@@ -96,7 +97,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
             <p className="text-sm font-semibold truncate text-white">{user.name}</p>
             <p className="text-xs text-gold font-medium">{user.rank}</p>
           </div>
-        </div>
+        </Link>
       </div>
     </aside>
   );
@@ -172,6 +173,7 @@ const AppContent = () => {
               <Route path="/community" element={<Community />} />
               <Route path="/cashier" element={<Cashier />} />
               <Route path="/rewards" element={<Rewards />} />
+              <Route path="/profile" element={<Profile />} />
             </Routes>
           </main>
         </div>
