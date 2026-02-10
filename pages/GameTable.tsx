@@ -14,9 +14,11 @@ const GameTable: React.FC = () => {
     pot,
     phase,
     currentTurn,
+    currentBet,
     startNewHand,
     handlePlayerAction,
-    winner
+    winner,
+    winningHand
   } = usePokerGame(user.balance, updateBalance);
 
   // Restored Game Logic
@@ -117,15 +119,22 @@ const GameTable: React.FC = () => {
             </div>
 
             {winner && (
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/90 p-6 rounded-2xl z-50 text-center border-2 border-gold shadow-2xl animate-fade-in-up">
-                <p className="text-gold font-bold text-xl uppercase tracking-widest mb-2">Winner</p>
-                <p className="text-white text-3xl font-black mb-4">{winner.name}</p>
-                <div className="flex gap-2 justify-center mb-6">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/95 p-8 rounded-2xl z-50 text-center border-4 border-gold shadow-2xl animate-fade-in-up max-w-md">
+                <p className="text-gold font-bold text-2xl uppercase tracking-widest mb-3">🏆 Winner 🏆</p>
+                <p className="text-white text-4xl font-black mb-2">{winner.name}</p>
+                {winningHand && (
+                  <p className="text-primary text-lg font-bold mb-4">{winningHand.name}</p>
+                )}
+                <div className="flex gap-2 justify-center mb-4">
                   {winner.hand.map((card, i) => (
                     <HeroCard key={i} suit={card.suit} value={card.rank} />
                   ))}
                 </div>
-                <button onClick={startNewHand} className="bg-primary hover:bg-primary-light px-8 py-3 rounded-xl font-bold text-white uppercase tracking-wider shadow-lg transform transition hover:scale-105">
+                <div className="bg-gold/20 border border-gold/50 rounded-lg p-3 mb-6">
+                  <p className="text-slate-400 text-sm mb-1">Pot Won</p>
+                  <p className="text-gold text-3xl font-black">${pot.toLocaleString()}</p>
+                </div>
+                <button onClick={startNewHand} className="bg-primary hover:bg-primary-light px-10 py-4 rounded-xl font-black text-white uppercase tracking-wider shadow-lg transform transition hover:scale-105">
                   Next Hand
                 </button>
               </div>
@@ -258,9 +267,43 @@ const GameTable: React.FC = () => {
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3">
-            <button disabled={currentTurn !== 0} onClick={() => handlePlayerAction('fold')} className="disabled:opacity-50 disabled:cursor-not-allowed bg-slate-800 hover:bg-slate-700 text-white font-black py-4 rounded-xl shadow-lg uppercase text-sm">Fold</button>
-            <button disabled={currentTurn !== 0} onClick={() => handlePlayerAction('call')} className="disabled:opacity-50 disabled:cursor-not-allowed bg-slate-800 hover:bg-slate-700 text-white font-black py-4 rounded-xl shadow-lg uppercase text-sm border-b-4 border-slate-900">Check/Call</button>
-            <button disabled={currentTurn !== 0} onClick={() => handlePlayerAction('raise', betValue)} className="disabled:opacity-50 disabled:cursor-not-allowed bg-primary hover:bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg uppercase text-sm border-b-4 border-blue-800">Raise</button>
+            <button
+              disabled={currentTurn !== 0}
+              onClick={() => handlePlayerAction('fold')}
+              className="disabled:opacity-50 disabled:cursor-not-allowed bg-slate-800 hover:bg-red-600 text-white font-black py-4 rounded-xl shadow-lg uppercase text-sm transition-colors"
+            >
+              Fold
+            </button>
+
+            {/* Check or Call button */}
+            {currentBet === 0 || (activeUser && activeUser.currentBet === currentBet) ? (
+              <button
+                disabled={currentTurn !== 0}
+                onClick={() => handlePlayerAction('check')}
+                className="disabled:opacity-50 disabled:cursor-not-allowed bg-slate-800 hover:bg-green-600 text-white font-black py-4 rounded-xl shadow-lg uppercase text-sm border-b-4 border-slate-900 transition-colors"
+              >
+                Check
+              </button>
+            ) : (
+              <button
+                disabled={currentTurn !== 0}
+                onClick={() => handlePlayerAction('call')}
+                className="disabled:opacity-50 disabled:cursor-not-allowed bg-slate-800 hover:bg-green-600 text-white font-black py-4 rounded-xl shadow-lg text-sm border-b-4 border-slate-900 transition-colors"
+              >
+                <div className="flex flex-col items-center">
+                  <span className="uppercase">Call</span>
+                  <span className="text-xs">${activeUser ? currentBet - activeUser.currentBet : 0}</span>
+                </div>
+              </button>
+            )}
+
+            <button
+              disabled={currentTurn !== 0}
+              onClick={() => handlePlayerAction('raise', betValue)}
+              className="disabled:opacity-50 disabled:cursor-not-allowed bg-primary hover:bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg uppercase text-sm border-b-4 border-blue-800 transition-colors"
+            >
+              Raise
+            </button>
           </div>
         </div>
       </footer>
