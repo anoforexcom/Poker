@@ -19,6 +19,7 @@ interface LiveWorldContextType {
     onlinePlayers: number;
     activeTables: number;
     tournaments: Tournament[];
+    registerForTournament: (id: string) => void;
 }
 
 const LiveWorldContext = createContext<LiveWorldContextType | undefined>(undefined);
@@ -148,8 +149,17 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
         };
     };
 
+    const registerForTournament = (tournamentId: string) => {
+        setTournaments(prev => prev.map(t => {
+            if (t.id === tournamentId) {
+                return { ...t, players: t.players + 1 };
+            }
+            return t;
+        }));
+    };
+
     return (
-        <LiveWorldContext.Provider value={{ onlinePlayers, activeTables, tournaments }}>
+        <LiveWorldContext.Provider value={{ onlinePlayers, activeTables, tournaments, registerForTournament }}>
             {children}
         </LiveWorldContext.Provider>
     );

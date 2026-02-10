@@ -7,9 +7,15 @@ import { useGame } from '../contexts/GameContext';
 
 const TournamentLobby: React.FC = () => {
     const { id } = useParams<{ id: string }>();
-    const { tournaments, onlinePlayers } = useLiveWorld();
-    const { user } = useGame();
+    const { tournaments, onlinePlayers, registerForTournament } = useLiveWorld();
+    const { user, withdraw } = useGame();
     const navigate = useNavigate();
+
+    // Check persistence
+    const [myRegistrations, setMyRegistrations] = useState<string[]>(() => {
+        const saved = localStorage.getItem('poker_tournament_registrations');
+        return saved ? JSON.parse(saved) : [];
+    });
 
     const tournament = tournaments.find(t => t.id === id);
     const [activeTab, setActiveTab] = useState<'home' | 'players' | 'tables'>('home');
@@ -25,6 +31,26 @@ const TournamentLobby: React.FC = () => {
 
     const isRegistering = tournament.status === 'Registering' || tournament.status === 'Late Reg';
     const isRunning = tournament.status === 'Running' || tournament.status === 'Final Table';
+    const isRegistered = myRegistrations.includes(tournament.id);
+
+    const handleRegister = () => {
+        if (!tournament) return;
+        if (user.balance < tournament.buyIn) {
+            alert("Insufficient funds to register!");
+            return;
+        }
+
+        if (window.confirm(`Register for ${tournament.name} for $${tournament.buyIn}?`)) {
+            withdraw(tournament.buyIn);
+            registerForTournament(tournament.id);
+
+            // Persist
+            const newRegs = [...myRegistrations, tournament.id];
+            setMyRegistrations(newRegs);
+            localStorage.setItem('poker_tournament_registrations', JSON.stringify(newRegs));
+            alert("Successfully registered! Good luck!");
+        }
+    };
 
     // Mock Players List
     const [mockPlayers] = useState(() => Array.from({ length: 50 }).map(() => ({
@@ -47,8 +73,8 @@ const TournamentLobby: React.FC = () => {
                         <div>
                             <div className="flex items-center gap-3 mb-2">
                                 <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider border ${isRegistering ? 'bg-poker-green/10 text-poker-green border-poker-green/20' :
-                                        isRunning ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                                            'bg-slate-500/10 text-slate-500 border-slate-500/20'
+                                    isRunning ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                        'bg-slate-500/10 text-slate-500 border-slate-500/20'
                                     }`}>
                                     {tournament.status}
                                 </span>
@@ -72,8 +98,8 @@ const TournamentLobby: React.FC = () => {
                             key={tab}
                             onClick={() => setActiveTab(tab)}
                             className={`px-6 py-4 text-sm font-bold border-b-2 transition-colors uppercase tracking-wider ${activeTab === tab
-                                    ? 'border-primary text-white'
-                                    : 'border-transparent text-slate-500 hover:text-slate-300'
+                                ? 'border-primary text-white'
+                                : 'border-transparent text-slate-500 hover:text-slate-300'
                                 }`}
                         >
                             {tab}
@@ -196,13 +222,21 @@ const TournamentLobby: React.FC = () => {
                 <div>
                     <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Your Status</h2>
                     <div className="bg-surface border border-border-dark rounded-xl p-4 text-center">
-                        <div className="text-slate-400 text-sm mb-1">Not Registered</div>
+                        <div className="text-slate-400 text-sm mb-1">{isRegistered ? 'Registered' : 'Not Registered'}</div>
                         <div className="text-white font-bold">Balance: ${user.balance.toLocaleString()}</div>
                     </div>
                 </div>
 
-                {isRegistering ? (
-                    <button className="w-full py-4 bg-poker-green hover:bg-green-500 text-white font-black rounded-xl shadow-lg shadow-poker-green/20 transition-all transform hover:scale-[1.02] active:scale-[0.98]">
+                {isRegistered ? (
+                    <button className="w-full py-4 bg-green-500/10 border border-green-500 text-green-500 font-black rounded-xl cursor-default flex flex-col items-center justify-center gap-1">
+                        <div className="flex items-center gap-2"><span className="material-symbols-outlined">check_circle</span> REGISTERED</div>
+                        <span className="text-xs font-normal opacity-80">Good Luck!</span>
+                    </button>
+                ) : isRegistering ? (
+                    <button
+                        onClick={handleRegister}
+                        className="w-full py-4 bg-poker-green hover:bg-green-500 text-white font-black rounded-xl shadow-lg shadow-poker-green/20 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+                    >
                         REGISTER NOW <span className="block text-xs font-normal opacity-80 mt-1">${tournament.buyIn} Buy-in</span>
                     </button>
                 ) : (
