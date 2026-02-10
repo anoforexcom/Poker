@@ -9,13 +9,9 @@ import TournamentLobby from './pages/TournamentLobby';
 import Cashier from './pages/Cashier';
 import Rewards from './pages/Rewards';
 import Profile from './pages/Profile';
-import { GameProvider, useGame } from './contexts/GameContext';
-import { LiveWorldProvider } from './contexts/LiveWorldContext';
-
 import Login from './pages/Login';
 import Register from './pages/Register';
-import { GameProvider, useGame } from './contexts/GameContext';
-import { LiveWorldProvider } from './contexts/LiveWorldContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
