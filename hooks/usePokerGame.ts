@@ -56,8 +56,24 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
         const newDealerPos = (dealerPosition + 1) % players.length;
         setDealerPosition(newDealerPos);
 
-        // Deal 2 cards to each player
+        // Deal 2 cards to each player WHO HAS BALANCE
         const updatedPlayers = players.map((p, index) => {
+            // Check if player has enough for at least big blind
+            const canPlay = p.balance >= BIG_BLIND;
+
+            if (!canPlay) {
+                // Player is broke, mark as inactive and don't deal cards
+                return {
+                    ...p,
+                    hand: [],
+                    isFolded: true, // Automatically folded
+                    currentBet: 0,
+                    isDealer: index === newDealerPos,
+                    hasActed: true,
+                    isActive: false // Mark as inactive
+                };
+            }
+
             const { hand, remainingDeck } = dealCards(currentDeck, 2);
             currentDeck = remainingDeck;
             return {
@@ -66,25 +82,47 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
                 isFolded: false,
                 currentBet: 0,
                 isDealer: index === newDealerPos,
-                hasActed: false
+                hasActed: false,
+                isActive: true
             };
         });
 
-        // Post blinds
+        // Post blinds (only if players have balance)
         const smallBlindPos = (newDealerPos + 1) % players.length;
         const bigBlindPos = (newDealerPos + 2) % players.length;
 
-        updatedPlayers[smallBlindPos].currentBet = SMALL_BLIND;
-        updatedPlayers[smallBlindPos].balance -= SMALL_BLIND;
-        updatedPlayers[bigBlindPos].currentBet = BIG_BLIND;
-        updatedPlayers[bigBlindPos].balance -= BIG_BLIND;
-
-        // Update human balance if they posted blind
-        if (updatedPlayers[smallBlindPos].isHuman) {
-            updateGlobalBalance(-SMALL_BLIND);
+        // Find next active player for small blind
+        let actualSmallBlindPos = smallBlindPos;
+        let loops = 0;
+        while (!updatedPlayers[actualSmallBlindPos].isActive && loops < players.length) {
+            actualSmallBlindPos = (actualSmallBlindPos + 1) % players.length;
+            loops++;
         }
-        if (updatedPlayers[bigBlindPos].isHuman) {
-            updateGlobalBalance(-BIG_BLIND);
+
+        // Find next active player for big blind
+        let actualBigBlindPos = bigBlindPos;
+        loops = 0;
+        while (!updatedPlayers[actualBigBlindPos].isActive && loops < players.length) {
+            actualBigBlindPos = (actualBigBlindPos + 1) % players.length;
+            loops++;
+        }
+
+        if (updatedPlayers[actualSmallBlindPos].isActive) {
+            updatedPlayers[actualSmallBlindPos].currentBet = SMALL_BLIND;
+            updatedPlayers[actualSmallBlindPos].balance -= SMALL_BLIND;
+
+            if (updatedPlayers[actualSmallBlindPos].isHuman) {
+                updateGlobalBalance(-SMALL_BLIND);
+            }
+        }
+
+        if (updatedPlayers[actualBigBlindPos].isActive) {
+            updatedPlayers[actualBigBlindPos].currentBet = BIG_BLIND;
+            updatedPlayers[actualBigBlindPos].balance -= BIG_BLIND;
+
+            if (updatedPlayers[actualBigBlindPos].isHuman) {
+                updateGlobalBalance(-BIG_BLIND);
+            }
         }
 
         setDeck(currentDeck);
@@ -94,10 +132,16 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
         setPhase('pre-flop');
         setCurrentBet(BIG_BLIND);
 
-        // Start action after big blind
-        const firstToAct = (newDealerPos + 3) % players.length;
+        // Start action after big blind (find first active player)
+        let firstToAct = (actualBigBlindPos + 1) % players.length;
+        loops = 0;
+        while ((!updatedPlayers[firstToAct].isActive || updatedPlayers[firstToAct].isFolded) && loops < players.length) {
+            firstToAct = (firstToAct + 1) % players.length;
+            loops++;
+        }
+
         setCurrentTurn(firstToAct);
-        setLastRaiser(bigBlindPos); // Big blind is initial "raiser"
+        setLastRaiser(actualBigBlindPos); // Big blind is initial "raiser"
     }, [dealerPosition, players, updateGlobalBalance]);
 
     // Check if betting round is complete
@@ -214,18 +258,18 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
         setPlayers(updatedPlayers);
         setPot(prev => prev + addToPot);
 
-        // Check if only one player left
-        const activePlayers = updatedPlayers.filter(p => !p.isFolded);
+        // Check if only one player left (active and not folded)
+        const activePlayers = updatedPlayers.filter(p => !p.isFolded && p.isActive);
         if (activePlayers.length === 1) {
             setPhase('showdown');
             return;
         }
 
-        // Move to next player
+        // Move to next player (skip folded and inactive)
         let nextTurn = (currentTurn + 1) % players.length;
         let loops = 0;
 
-        while (updatedPlayers[nextTurn].isFolded && loops < players.length) {
+        while ((updatedPlayers[nextTurn].isFolded || !updatedPlayers[nextTurn].isActive) && loops < players.length) {
             nextTurn = (nextTurn + 1) % players.length;
             loops++;
         }
@@ -234,7 +278,7 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
 
         // Check if betting round complete
         setTimeout(() => {
-            const allActed = updatedPlayers.filter(p => !p.isFolded).every(p =>
+            const allActed = updatedPlayers.filter(p => !p.isFolded && p.isActive).every(p =>
                 p.hasActed && (p.currentBet === currentBet || p.balance === 0)
             );
 
@@ -252,7 +296,7 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
     useEffect(() => {
         const currentPlayer = players[currentTurn];
 
-        if (!currentPlayer || currentPlayer.isHuman || currentPlayer.isFolded || phase === 'showdown') {
+        if (!currentPlayer || currentPlayer.isHuman || currentPlayer.isFolded || !currentPlayer.isActive || phase === 'showdown') {
             return;
         }
 
@@ -293,7 +337,7 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
     // Showdown Logic
     useEffect(() => {
         if (phase === 'showdown' && !winner) {
-            const activePlayers = players.filter(p => !p.isFolded);
+            const activePlayers = players.filter(p => !p.isFolded && p.isActive);
 
             if (activePlayers.length === 1) {
                 // Only one player left, they win
