@@ -93,7 +93,7 @@ const Lobby: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-dark">
-                {tournaments.map((t) => (
+                {filteredTournaments.map((t) => (
                   <tr key={t.id} className="hover:bg-primary/5 transition-all group">
                     <td className="py-5 px-6">
                       <div className="flex items-center gap-3">
