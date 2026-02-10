@@ -228,10 +228,17 @@ const TournamentLobby: React.FC = () => {
                 </div>
 
                 {isRegistered ? (
-                    <button className="w-full py-4 bg-green-500/10 border border-green-500 text-green-500 font-black rounded-xl cursor-default flex flex-col items-center justify-center gap-1">
-                        <div className="flex items-center gap-2"><span className="material-symbols-outlined">check_circle</span> REGISTERED</div>
-                        <span className="text-xs font-normal opacity-80">Good Luck!</span>
-                    </button>
+                    <div className="space-y-3">
+                        <button className="w-full py-4 bg-green-500/10 border border-green-500 text-green-500 font-black rounded-xl cursor-default flex flex-col items-center justify-center gap-1">
+                            <div className="flex items-center gap-2"><span className="material-symbols-outlined">check_circle</span> REGISTERED</div>
+                        </button>
+                        <button
+                            onClick={() => navigate(`/table/${tournament.id}`)}
+                            className="w-full py-4 bg-primary hover:bg-blue-600 text-white font-black rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2 animate-pulse"
+                        >
+                            GO TO TABLE <span className="material-symbols-outlined">login</span>
+                        </button>
+                    </div>
                 ) : isRegistering ? (
                     <button
                         onClick={handleRegister}
