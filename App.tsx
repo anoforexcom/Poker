@@ -15,6 +15,7 @@ import LandingPage from './pages/LandingPage';
 import FAQPage from './pages/FAQPage';
 import TestimonialsPage from './pages/TestimonialsPage';
 import LegalPage from './pages/LegalPage';
+import FeaturesPage from './pages/FeaturesPage';
 import { PublicLayout } from './layouts/PublicLayout';
 import { GameProvider, useGame } from './contexts/GameContext';
 import { LiveWorldProvider } from './contexts/LiveWorldContext';
@@ -204,6 +205,7 @@ const AppRoutes = () => {
       {/* Public Routes */}
       <Route element={<PublicLayout />}>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/features" element={<FeaturesPage />} />
         <Route path="/faq" element={<FAQPage />} />
         <Route path="/testimonials" element={<TestimonialsPage />} />
         <Route path="/terms" element={<LegalPage />} />

@@ -28,7 +28,7 @@ const PublicNavbar = () => {
 
                 <div className="hidden md:flex items-center gap-8">
                     <Link to="/" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Home</Link>
-                    <Link to="/#features" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Features</Link>
+                    <Link to="/features" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Features</Link>
                     <Link to="/testimonials" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Testimonials</Link>
                     <Link to="/faq" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">FAQ</Link>
                 </div>

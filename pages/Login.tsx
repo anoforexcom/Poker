@@ -95,9 +95,30 @@ const Login: React.FC = () => {
                         {isSubmitting ? 'LOGGING IN...' : 'LOGIN TO TABLE'}
                         {!isSubmitting && <span className="material-symbols-outlined">login</span>}
                     </button>
+
+                    {/* Demo Button */}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setEmail('demo@pokerpro.com');
+                            setPassword('demo123');
+                            login('demo@pokerpro.com', 'demo123').then(() => navigate('/play'));
+                        }}
+                        className="w-full bg-gold hover:bg-yellow-600 text-slate-900 font-black py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
+                    >
+                        TRY DEMO
+                        <span className="material-symbols-outlined">play_circle</span>
+                    </button>
                 </form>
 
-                <p className="mt-8 text-center text-slate-400 text-sm">
+                <div className="mt-6 text-center">
+                    <Link to="/" className="text-slate-400 hover:text-white text-sm flex items-center justify-center gap-2">
+                        <span className="material-symbols-outlined text-sm">arrow_back</span>
+                        Back to Home
+                    </Link>
+                </div>
+
+                <p className="mt-6 text-center text-slate-400 text-sm">
                     Don't have an account? <Link to="/register" className="text-white font-bold hover:underline">Register Free</Link>
                 </p>
             </div>
