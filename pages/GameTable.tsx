@@ -185,17 +185,46 @@ const GameTable: React.FC = () => {
         </div>
 
         <div className="col-span-6 flex flex-col items-center gap-4">
-          <div className="flex gap-4">
-            {activeUser?.hand.map((card, i) => (
-              <HeroCard key={i} suit={card.suit} value={card.rank} rotate={i === 0 ? '-rotate-6' : 'rotate-6'} />
-            ))}
-            {(!activeUser?.hand.length) && <div className="text-slate-500 font-bold">Waiting...</div>}
+          {/* Player Cards with Avatar */}
+          <div className="flex items-center gap-6">
+            {/* User Avatar */}
+            <div className="flex flex-col items-center gap-2">
+              <div className={`relative size-20 rounded-full border-4 ${currentTurn === 0 ? 'border-gold ring-4 ring-gold/30 animate-pulse' : 'border-primary'} bg-slate-700 overflow-hidden shadow-2xl transition-all duration-300`}>
+                <img
+                  className="w-full h-full object-cover"
+                  src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name}`}
+                  alt={user?.name || 'You'}
+                />
+              </div>
+              <div className="bg-background/90 backdrop-blur-sm px-3 py-1 rounded-lg border-2 border-primary">
+                <p className="text-xs font-bold text-white">{user?.name || 'You'}</p>
+              </div>
+            </div>
+
+            {/* Player Cards */}
+            <div className="flex gap-4">
+              {activeUser?.hand.map((card, i) => (
+                <HeroCard key={i} suit={card.suit} value={card.rank} rotate={i === 0 ? '-rotate-6' : 'rotate-6'} />
+              ))}
+              {(!activeUser?.hand.length) && <div className="text-slate-500 font-bold">Waiting...</div>}
+            </div>
           </div>
+
+          {/* Player Balance and Turn Indicator */}
           <div className={`relative bg-primary/10 border-2 ${currentTurn === 0 ? 'border-gold animate-pulse' : 'border-primary'} backdrop-blur-md px-10 py-3 rounded-xl flex flex-col items-center shadow-lg shadow-primary/20`}>
             <span className="text-[10px] font-black uppercase tracking-widest text-primary">{currentTurn === 0 ? 'SUA VEZ' : `VEZ DE ${players[currentTurn]?.name}`}</span>
-            <span className="text-2xl font-black text-white">${activeUser?.balance.toLocaleString()}</span>
 
-            {/* Human Player Chips */}
+            {/* Chip Stack Display */}
+            <div className="flex items-center gap-2">
+              <div className="flex -space-x-1">
+                <div className="size-5 rounded-full bg-red-500 border-2 border-white shadow-sm"></div>
+                <div className="size-5 rounded-full bg-blue-500 border-2 border-white shadow-sm"></div>
+                <div className="size-5 rounded-full bg-black border-2 border-white shadow-sm"></div>
+              </div>
+              <span className="text-2xl font-black text-white">${activeUser?.balance.toLocaleString()}</span>
+            </div>
+
+            {/* Human Player Current Bet Chips */}
             {(activeUser?.currentBet || 0) > 0 && (
               <div className="absolute -top-10 flex flex-col items-center animate-bounce-short">
                 <div className="flex -space-x-1">
@@ -250,28 +279,39 @@ const PlayerSeat = ({ position, name, balance, active, inactive, dealer, current
 
   return (
     <div className={`absolute ${positions[position]} flex flex-col items-center gap-2 z-10 transition-all duration-500`}>
-      <div className={`relative size-16 rounded-full border-4 ${active ? 'border-primary ring-4 ring-primary/20 scale-110' : 'border-slate-800'} bg-slate-700 overflow-hidden ${inactive ? 'grayscale opacity-50' : ''} transition-all duration-300`}>
-        <img className="w-full h-full object-cover" src={`https://picsum.photos/seed/${name}/100/100`} />
+      <div className={`relative size-20 rounded-full border-4 ${active ? 'border-primary ring-4 ring-primary/20 scale-110' : 'border-slate-800'} bg-slate-700 overflow-hidden ${inactive ? 'grayscale opacity-50' : ''} transition-all duration-300 shadow-xl`}>
+        <img className="w-full h-full object-cover" src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`} alt={name} />
       </div>
-      <div className={`bg-background/90 px-3 py-1 rounded-md text-center border ${inactive ? 'border-slate-800' : 'border-slate-700'} min-w-[80px]`}>
-        <p className={`text-[10px] font-bold ${inactive ? 'text-slate-600' : 'text-slate-400'} truncate`}>{name}</p>
-        <p className={`text-xs font-bold ${inactive ? 'text-slate-600' : 'text-white'}`}>{balance}</p>
+
+      {/* Player Info with Stack */}
+      <div className={`bg-background/95 backdrop-blur-sm px-4 py-2 rounded-lg text-center border-2 ${inactive ? 'border-slate-800' : active ? 'border-primary' : 'border-slate-700'} min-w-[100px] shadow-lg`}>
+        <p className={`text-xs font-bold ${inactive ? 'text-slate-600' : 'text-white'} truncate mb-1`}>{name}</p>
+
+        {/* Chip Stack Display */}
+        <div className="flex items-center justify-center gap-1.5 mb-1">
+          <div className="flex -space-x-1">
+            <div className="size-4 rounded-full bg-red-500 border-2 border-white shadow-sm"></div>
+            <div className="size-4 rounded-full bg-blue-500 border-2 border-white shadow-sm"></div>
+            <div className="size-4 rounded-full bg-black border-2 border-white shadow-sm"></div>
+          </div>
+          <p className={`text-sm font-black ${inactive ? 'text-slate-600' : 'text-gold'}`}>{balance}</p>
+        </div>
       </div>
 
       {/* Dealer Button */}
       {dealer && (
-        <div className="absolute -right-6 top-0 bg-white text-black font-black size-5 rounded-full flex items-center justify-center text-[10px] border-2 border-slate-300 shadow-md">D</div>
+        <div className="absolute -right-6 top-0 bg-white text-black font-black size-6 rounded-full flex items-center justify-center text-xs border-2 border-gold shadow-lg">D</div>
       )}
 
-      {/* Chips Representation - Current Bet */}
+      {/* Current Bet Chips */}
       {currentBet > 0 && (
-        <div className="absolute -bottom-8 flex flex-col items-center animate-bounce-short">
-          <div className="flex -space-x-1">
-            <div className="size-4 rounded-full bg-red-500 border border-white shadow-sm"></div>
-            <div className="size-4 rounded-full bg-blue-500 border border-white shadow-sm"></div>
-            <div className="size-4 rounded-full bg-black border border-white shadow-sm"></div>
+        <div className="absolute -bottom-12 flex flex-col items-center animate-bounce-short">
+          <div className="flex -space-x-1.5">
+            <div className="size-5 rounded-full bg-red-500 border-2 border-white shadow-md"></div>
+            <div className="size-5 rounded-full bg-blue-500 border-2 border-white shadow-md"></div>
+            <div className="size-5 rounded-full bg-black border-2 border-white shadow-md"></div>
           </div>
-          <span className="bg-black/80 text-white text-[10px] font-bold px-1.5 rounded mt-0.5 border border-white/10">${currentBet}</span>
+          <span className="bg-black/90 text-white text-xs font-bold px-2 py-0.5 rounded mt-1 border border-gold/50 shadow-lg">${currentBet}</span>
         </div>
       )}
     </div>
