@@ -38,50 +38,50 @@ const Lobby: React.FC = () => {
 
   return (
     <div className="flex h-full">
-      <div className="flex-1 p-8 overflow-y-auto custom-scrollbar">
-        <div className="flex items-center justify-between mb-8">
+      <div className="flex-1 p-4 md:p-8 overflow-y-auto custom-scrollbar">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
             <h2 className="text-3xl font-bold text-white tracking-tight font-display">Tournament Lobby</h2>
             <p className="text-slate-400 mt-1">Join the action. Big prizes, live drama.</p>
           </div>
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-2 md:gap-4">
             <div className="bg-poker-green/10 text-poker-green text-[10px] font-bold px-3 py-1.5 rounded border border-poker-green/20 flex items-center gap-2">
               <span className="size-2 bg-poker-green rounded-full animate-pulse"></span>
-              {tournaments.length.toLocaleString()} TOURNAMENTS ACTIVE
+              {tournaments.length.toLocaleString()} <span className="hidden sm:inline">TOURNAMENTS</span> ACTIVE
             </div>
             <div className="bg-primary/10 text-primary text-[10px] font-bold px-3 py-1.5 rounded border border-primary/20 flex items-center gap-2">
               <span className="size-2 bg-primary rounded-full animate-pulse"></span>
-              {onlinePlayers.toLocaleString()} PLAYERS ONLINE
+              {onlinePlayers.toLocaleString()} <span className="hidden sm:inline">PLAYERS</span> ONLINE
             </div>
           </div>
         </div>
 
         <div className="bg-surface/30 rounded-xl border border-border-dark overflow-hidden">
           {/* Filters */}
-          <div className="p-4 flex items-center gap-4 bg-surface/10 border-b border-border-dark">
-            <div className="flex bg-surface rounded-lg p-1 border border-border-dark">
+          <div className="p-4 flex flex-col md:flex-row items-center gap-4 bg-surface/10 border-b border-border-dark">
+            <div className="flex bg-surface rounded-lg p-1 border border-border-dark w-full md:w-auto overflow-x-auto">
               {['ALL', 'MICRO', 'LOW', 'MID', 'HIGH'].map((f) => (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
-                  className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-2 ${filter === f ? 'bg-primary text-white shadow-lg' : 'text-slate-400 hover:text-white'
+                  className={`flex-1 md:flex-none px-4 py-1.5 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-2 whitespace-nowrap ${filter === f ? 'bg-primary text-white shadow-lg' : 'text-slate-400 hover:text-white'
                     }`}
                 >
                   {f} <span className={`text-[10px] opacity-70 ${filter === f ? 'text-white' : 'text-slate-500'}`}>({getFilterCount(f)})</span>
                 </button>
               ))}
             </div>
-            <div className="ml-auto relative">
+            <div className="w-full md:ml-auto md:w-auto relative">
               <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-lg">search</span>
               <input
-                className="bg-surface border-border-dark text-xs rounded-lg pl-9 pr-4 py-1.5 w-48 focus:ring-primary outline-none placeholder:text-slate-600 text-white"
+                className="bg-surface border-border-dark text-xs rounded-lg pl-9 pr-4 py-1.5 w-full md:w-48 focus:ring-primary outline-none placeholder:text-slate-600 text-white"
                 placeholder="Find tournament..."
               />
             </div>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full text-left min-w-[800px]">
               <thead>
                 <tr className="text-slate-500 text-[10px] font-bold uppercase tracking-widest border-b border-border-dark">
                   <th className="py-4 px-6">Tournament</th>
@@ -99,7 +99,7 @@ const Lobby: React.FC = () => {
                       <div className="flex items-center gap-3">
                         <div className={`size-1.5 rounded-full ${t.status === 'Running' ? 'bg-blue-500' : 'bg-slate-600'}`}></div>
                         <div>
-                          <span className="text-sm font-bold text-white block">{t.name}</span>
+                          <span className="text-sm font-bold text-white block truncate max-w-[150px]">{t.name}</span>
                           <span className="text-[10px] text-slate-500 font-mono">{t.id.split('-')[1]}</span>
                         </div>
                       </div>
@@ -111,12 +111,12 @@ const Lobby: React.FC = () => {
                     </td>
                     <td className="py-5 px-6 text-sm font-bold text-white">${t.buyIn.toFixed(2)}</td>
                     <td className="py-5 px-6">
-                      <div className="flex flex-col gap-1">
+                      <div className="flex flex-col gap-1 w-24">
                         <div className="flex justify-between text-[10px] text-slate-400 font-mono">
                           <span>{t.players}</span>
                           <span>{t.maxPlayers}</span>
                         </div>
-                        <div className="w-24 h-1 bg-slate-800 rounded-full overflow-hidden">
+                        <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
                           <div
                             className={`h-full rounded-full ${t.status === 'Running' ? 'bg-blue-500' : 'bg-poker-green'}`}
                             style={{ width: `${(t.players / t.maxPlayers) * 100}%` }}

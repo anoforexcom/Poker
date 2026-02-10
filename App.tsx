@@ -11,7 +11,7 @@ import Rewards from './pages/Rewards';
 import { GameProvider, useGame } from './contexts/GameContext';
 import { LiveWorldProvider } from './contexts/LiveWorldContext';
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
   const location = useLocation();
   const { user } = useGame();
   const isActive = (path: string) => location.pathname === path;
@@ -29,19 +29,29 @@ const Sidebar = () => {
   ];
 
   return (
-    <aside className="w-64 bg-surface border-r border-border-dark flex flex-col shrink-0 h-screen">
-      <div className="p-6 flex items-center gap-3">
-        <div className="bg-primary p-2 rounded-lg">
-          <span className="material-symbols-outlined text-white">style</span>
+    <aside className={`
+      fixed inset-y-0 left-0 z-50 w-64 bg-surface border-r border-border-dark flex flex-col h-screen transition-transform duration-300 ease-in-out shadow-2xl md:shadow-none
+      md:translate-x-0 md:static md:shrink-0
+      ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+    `}>
+      <div className="p-6 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="bg-primary p-2 rounded-lg">
+            <span className="material-symbols-outlined text-white">style</span>
+          </div>
+          <h1 className="text-xl font-bold tracking-tight text-white font-display">POKER PRO</h1>
         </div>
-        <h1 className="text-xl font-bold tracking-tight text-white font-display">POKER PRO</h1>
+        <button onClick={onClose} className="md:hidden text-slate-400 hover:text-white">
+          <span className="material-symbols-outlined">close</span>
+        </button>
       </div>
 
-      <nav className="flex-1 px-4 space-y-2 mt-4">
+      <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto custom-scrollbar">
         {navItems.map((item) => (
           <Link
             key={item.path}
             to={item.path}
+            onClick={() => onClose()} // Close on navigate (mobile)
             className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${isActive(item.path)
               ? 'bg-primary/10 text-primary'
               : 'text-slate-400 hover:text-white hover:bg-white/5'
@@ -60,6 +70,7 @@ const Sidebar = () => {
           <Link
             key={item.path}
             to={item.path}
+            onClick={() => onClose()}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${isActive(item.path)
               ? 'bg-primary/10 text-primary'
               : 'text-slate-400 hover:text-white hover:bg-white/5'
@@ -71,7 +82,7 @@ const Sidebar = () => {
         ))}
       </nav>
 
-      <div className="p-4 border-t border-border-dark">
+      <div className="p-4 border-t border-border-dark mt-auto">
         <div className="bg-background/50 p-3 rounded-xl flex items-center gap-3">
           <div className="relative">
             <img
@@ -91,28 +102,36 @@ const Sidebar = () => {
   );
 };
 
-const Header = () => {
+const Header = ({ onToggle }: { onToggle: () => void }) => {
   const { user } = useGame();
   return (
-    <header className="h-16 border-b border-border-dark bg-surface/50 flex items-center justify-between px-8">
+    <header className="h-16 border-b border-border-dark bg-surface/50 flex items-center justify-between px-4 md:px-8 sticky top-0 z-30 backdrop-blur-md">
       <div className="flex items-center gap-4">
-        <div className="flex items-center bg-background rounded-lg px-3 py-1.5 border border-border-dark">
+        <button onClick={onToggle} className="md:hidden text-slate-400 hover:text-white">
+          <span className="material-symbols-outlined">menu</span>
+        </button>
+
+        <div className="hidden md:flex items-center bg-background rounded-lg px-3 py-1.5 border border-border-dark">
           <span className="text-gold text-xs font-bold mr-2 uppercase">Balance:</span>
           <span className="text-white font-mono text-sm">${user.balance.toLocaleString()}</span>
         </div>
+        {/* Mobile Balance specialized view if needed, or just keep Deposit */}
         <Link to="/cashier" className="bg-primary hover:bg-primary/90 text-white text-xs font-bold py-2 px-4 rounded-lg transition-all flex items-center gap-2">
           <span className="material-symbols-outlined text-sm">add_circle</span>
-          DEPOSIT
+          <span className="hidden md:inline">DEPOSIT</span>
         </Link>
+        {/* Mobile Balance display next to deposit */}
+        <span className="md:hidden text-white font-mono text-sm font-bold">${user.balance.toLocaleString()}</span>
       </div>
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2 text-slate-400">
+
+      <div className="flex items-center gap-4 md:gap-6">
+        <div className="hidden md:flex items-center gap-2 text-slate-400">
           <span className="material-symbols-outlined text-lg">language</span>
-          <span className="text-xs font-medium">Global 01</span>
+          <span className="text-xs font-medium">Global</span>
         </div>
-        <div className="flex items-center gap-2 text-slate-400">
+        <div className="hidden md:flex items-center gap-2 text-slate-400">
           <span className="material-symbols-outlined text-lg">schedule</span>
-          <span className="text-xs font-medium">14:25 UTC</span>
+          <span className="text-xs font-medium">UTC</span>
         </div>
         <button className="text-slate-400 hover:text-white">
           <span className="material-symbols-outlined">notifications</span>
@@ -126,13 +145,24 @@ const Header = () => {
 };
 
 const AppContent = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   return (
     <HashRouter>
       <div className="flex h-screen bg-background text-slate-100 font-sans overflow-hidden">
-        <Sidebar />
+        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+
+        {/* Mobile Overlay */}
+        {isSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm transition-opacity"
+            onClick={() => setIsSidebarOpen(false)}
+          ></div>
+        )}
+
         <div className="flex-1 flex flex-col min-w-0">
-          <Header />
-          <main className="flex-1 overflow-auto custom-scrollbar">
+          <Header onToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
+          <main className="flex-1 overflow-auto custom-scrollbar relative">
             <Routes>
               <Route path="/" element={<Lobby />} />
               <Route path="/table/:id" element={<GameTable />} />
