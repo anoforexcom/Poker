@@ -7,6 +7,7 @@ import Academia from './pages/Academia';
 import Community from './pages/Community';
 import Cashier from './pages/Cashier';
 import { GameProvider, useGame } from './contexts/GameContext';
+import { LiveWorldProvider } from './contexts/LiveWorldContext';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -40,8 +41,8 @@ const Sidebar = () => {
             key={item.path}
             to={item.path}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${isActive(item.path)
-                ? 'bg-primary/10 text-primary'
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
+              ? 'bg-primary/10 text-primary'
+              : 'text-slate-400 hover:text-white hover:bg-white/5'
               }`}
           >
             <span className="material-symbols-outlined">{item.icon}</span>
@@ -58,8 +59,8 @@ const Sidebar = () => {
             key={item.path}
             to={item.path}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${isActive(item.path)
-                ? 'bg-primary/10 text-primary'
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
+              ? 'bg-primary/10 text-primary'
+              : 'text-slate-400 hover:text-white hover:bg-white/5'
               }`}
           >
             <span className="material-symbols-outlined">{item.icon}</span>
@@ -148,7 +149,9 @@ const AppContent = () => {
 const App: React.FC = () => {
   return (
     <GameProvider>
-      <AppContent />
+      <LiveWorldProvider>
+        <AppContent />
+      </LiveWorldProvider>
     </GameProvider>
   );
 };

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useGame } from '../contexts/GameContext';
+import { generateBotName } from '../utils/nameGenerator';
 
 const Community: React.FC = () => {
   const { user } = useGame();
@@ -16,18 +17,18 @@ const Community: React.FC = () => {
       votes: 242, comments: 84, time: "3h ago", tag: "Pinned",
       body: "Here is a deep dive into how to construct your checking ranges when out of position...",
       thread: [
-        { id: 101, author: "PokerFan123", text: "Great analysis! Helped my game a lot.", time: "2h ago" },
-        { id: 102, author: "Bot_Slayer", text: "I disagree with the river bluff frequency.", time: "1h ago" }
+        { id: 101, author: generateBotName(), text: "Great analysis! Helped my game a lot.", time: "2h ago" },
+        { id: 102, author: generateBotName(), text: "I disagree with the river bluff frequency.", time: "1h ago" }
       ]
     },
     {
-      id: 2, pinned: false, author: "TheShark_MT", title: "How to deal with aggressive limpers in Micro Stakes?",
+      id: 2, pinned: false, author: generateBotName(), title: "How to deal with aggressive limpers in Micro Stakes?",
       votes: 56, comments: 12, time: "1h ago", tag: "Question",
       body: "I'm struggling against players who limp-raise every hand. Any tips?",
       thread: []
     },
     {
-      id: 3, pinned: false, author: "Luckbox99", title: "My journey from NL2 to NL25 in 3 months",
+      id: 3, pinned: false, author: generateBotName(), title: "My journey from NL2 to NL25 in 3 months",
       votes: 128, comments: 54, time: "5h ago", tag: "Success",
       body: "It wasn't easy, but strict bankroll management was key...",
       thread: []
@@ -37,12 +38,11 @@ const Community: React.FC = () => {
   // Side Chat Data
   const [chatMessage, setChatMessage] = useState('');
   const [globalChat, setGlobalChat] = useState([
-    { author: "Pro_Dealer", time: "14:02", message: "Did anyone see the Sunday Million field? It's soft.", color: "text-primary" },
-    { author: "FishMagnet", time: "14:03", message: "Soft for you, I got 3 bad beats in 10 mins... 😭", color: "text-slate-400" },
+    { author: generateBotName(), time: "14:02", message: "Did anyone see the Sunday Million field? It's soft.", color: "text-primary" },
+    { author: generateBotName(), time: "14:03", message: "Soft for you, I got 3 bad beats in 10 mins... 😭", color: "text-slate-400" },
     { author: "Coach_Matheus", time: "14:05", message: "Ranges class starting in 15 mins in Room 2!", color: "text-gold", staff: true },
-    { author: "RiverRat", time: "14:07", message: "I'll be there! Need to adjust my 3-bets.", color: "text-slate-400" }
+    { author: generateBotName(), time: "14:07", message: "I'll be there! Need to adjust my 3-bets.", color: "text-slate-400" }
   ]);
-
   // New Topic Inputs
   const [newTitle, setNewTitle] = useState('');
   const [newBody, setNewBody] = useState('');
@@ -91,7 +91,7 @@ const Community: React.FC = () => {
     // Sim Reply
     setTimeout(() => {
       setGlobalChat(prev => [...prev, {
-        author: "Random_User" + Math.floor(Math.random() * 100),
+        author: generateBotName(),
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         message: ["Lol", "True", "Aggree", "Nice", "Anyone for HU?"][Math.floor(Math.random() * 5)],
         color: "text-slate-400"

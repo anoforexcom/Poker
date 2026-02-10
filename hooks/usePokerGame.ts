@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, createDeck, shuffleDeck, dealCards, Suit, Rank } from '../utils/pokerLogic';
+import { generateBotName } from '../utils/nameGenerator';
 
 export type GamePhase = 'pre-flop' | 'flop' | 'turn' | 'river' | 'showdown';
 
@@ -28,10 +29,10 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
     // Initialize Players (1 Human + 4 Bots)
     const [players, setPlayers] = useState<Player[]>([
         { id: 'user', name: 'You', avatar: 'https://picsum.photos/seed/pokerhero/100/100', balance: initialUserBalance, hand: [], isFolded: false, currentBet: 0, isHuman: true, isActive: true },
-        { id: 'bot1', name: 'Alex G.', avatar: 'https://picsum.photos/seed/Alex G./100/100', balance: 4230, hand: [], isFolded: false, currentBet: 0, isHuman: false, isActive: true },
-        { id: 'bot2', name: 'Sarah L.', avatar: 'https://picsum.photos/seed/Sarah L./100/100', balance: 2800, hand: [], isFolded: false, currentBet: 0, isHuman: false, isActive: true },
-        { id: 'bot3', name: 'Mike P.', avatar: 'https://picsum.photos/seed/Mike P./100/100', balance: 12450, hand: [], isFolded: false, currentBet: 0, isHuman: false, isActive: true, isDealer: true },
-        { id: 'bot4', name: 'Chris T.', avatar: 'https://picsum.photos/seed/Chris T./100/100', balance: 5100, hand: [], isFolded: false, currentBet: 0, isHuman: false, isActive: true },
+        { id: 'bot1', name: generateBotName(), avatar: `https://picsum.photos/seed/${Math.random()}/100/100`, balance: 4230, hand: [], isFolded: false, currentBet: 0, isHuman: false, isActive: true },
+        { id: 'bot2', name: generateBotName(), avatar: `https://picsum.photos/seed/${Math.random()}/100/100`, balance: 2800, hand: [], isFolded: false, currentBet: 0, isHuman: false, isActive: true },
+        { id: 'bot3', name: generateBotName(), avatar: `https://picsum.photos/seed/${Math.random()}/100/100`, balance: 12450, hand: [], isFolded: false, currentBet: 0, isHuman: false, isActive: true, isDealer: true },
+        { id: 'bot4', name: generateBotName(), avatar: `https://picsum.photos/seed/${Math.random()}/100/100`, balance: 5100, hand: [], isFolded: false, currentBet: 0, isHuman: false, isActive: true },
     ]);
 
     // Sync external user balance if it changes (e.g. from deposits), but only if not in a hand or match logic
