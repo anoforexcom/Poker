@@ -11,7 +11,8 @@ import Rewards from './pages/Rewards';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { GameProvider, useGame } from './contexts/GameContext';
+import { LiveWorldProvider } from './contexts/LiveWorldContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
