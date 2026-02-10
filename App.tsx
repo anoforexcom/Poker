@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HashRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import Lobby from './pages/Lobby';
 import GameTable from './pages/GameTable';
 import Dashboard from './pages/Dashboard';
@@ -11,6 +11,11 @@ import Rewards from './pages/Rewards';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import LandingPage from './pages/LandingPage';
+import FAQPage from './pages/FAQPage';
+import TestimonialsPage from './pages/TestimonialsPage';
+import LegalPage from './pages/LegalPage';
+import { PublicLayout } from './layouts/PublicLayout';
 import { GameProvider, useGame } from './contexts/GameContext';
 import { LiveWorldProvider } from './contexts/LiveWorldContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -21,7 +26,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
   const isActive = (path: string) => location.pathname === path;
 
   const navItems = [
-    { name: 'Play', path: '/', icon: 'casino' },
+    { name: 'Play', path: '/play', icon: 'casino' },
     { name: 'Learn', path: '/academia', icon: 'menu_book' },
     { name: 'Community', path: '/community', icon: 'groups' },
     { name: 'Analytics', path: '/dashboard', icon: 'grid_view' },
@@ -109,7 +114,9 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
 const Header = ({ onToggle }: { onToggle: () => void }) => {
   const { user } = useGame();
   const { logout } = useAuth();
+  const location = useLocation();
 
+  // Don't show header on public pages if we are not in protected layout (though this component is only used in protected layout now)
   return (
     <header className="h-16 border-b border-border-dark bg-surface/50 flex items-center justify-between px-4 md:px-8 sticky top-0 z-30 backdrop-blur-md">
       <div className="flex items-center gap-4">
@@ -194,13 +201,23 @@ const AppRoutes = () => {
 
   return (
     <Routes>
-      <Route path="/login" element={!isAuthenticated ? <Login /> : <Lobby />} />
-      <Route path="/register" element={!isAuthenticated ? <Register /> : <Lobby />} />
+      {/* Public Routes */}
+      <Route element={<PublicLayout />}>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/faq" element={<FAQPage />} />
+        <Route path="/testimonials" element={<TestimonialsPage />} />
+        <Route path="/terms" element={<LegalPage />} />
+        <Route path="/privacy" element={<LegalPage />} />
+      </Route>
+
+      {/* Auth Routes */}
+      <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/play" />} />
+      <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/play" />} />
 
       {/* Protected Routes */}
       {isAuthenticated ? (
         <>
-          <Route path="/" element={<ProtectedLayout><Lobby /></ProtectedLayout>} />
+          <Route path="/play" element={<ProtectedLayout><Lobby /></ProtectedLayout>} />
           <Route path="/table/:id" element={<ProtectedLayout><GameTable /></ProtectedLayout>} />
           <Route path="/tournament/:id" element={<ProtectedLayout><TournamentLobby /></ProtectedLayout>} />
           <Route path="/dashboard" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
@@ -211,8 +228,12 @@ const AppRoutes = () => {
           <Route path="/profile" element={<ProtectedLayout><Profile /></ProtectedLayout>} />
         </>
       ) : (
-        <Route path="*" element={<Login />} />
+        // Redirect any other protected route access attempt to login
+        <Route path="/play" element={<Navigate to="/login" />} />
       )}
+
+      {/* Catch all - 404 - Redirect to Home */}
+      <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );
 };
