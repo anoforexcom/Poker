@@ -158,7 +158,7 @@ const FeaturesPage = () => {
                             Everything You Need to <span className="text-primary">Win</span>
                         </h1>
                         <p className="text-xl text-slate-400 mb-8">
-                            Poker Pro combines cutting-edge technology with player-first features to deliver the ultimate online poker experience.
+                            BestPoker.Cash combines cutting-edge technology with player-first features to deliver the ultimate online poker experience.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
                             <Link

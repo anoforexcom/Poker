@@ -94,7 +94,7 @@ You can control cookies through your browser settings, but disabling them may af
                 content: `If you have questions about this Privacy Policy, please contact us:
 
 Email: privacy@pokerpro.com
-Address: Poker Pro Platform, 123 Gaming Street, Suite 100, Las Vegas, NV 89101
+Address: BestPoker.Cash, 123 Gaming Street, Suite 100, Las Vegas, NV 89101
 Phone: +1 (555) 123-4567`
             }
         ]
@@ -219,7 +219,7 @@ Upon termination, you may withdraw your remaining balance subject to verificatio
                 content: `For questions about these Terms of Service:
 
 Email: legal@pokerpro.com
-Address: Poker Pro Platform, 123 Gaming Street, Suite 100, Las Vegas, NV 89101
+Address: BestPoker.Cash, 123 Gaming Street, Suite 100, Las Vegas, NV 89101
 Phone: +1 (555) 123-4567`
             }
         ]

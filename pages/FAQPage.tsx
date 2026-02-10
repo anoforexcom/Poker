@@ -7,7 +7,7 @@ const ALL_FAQS = [
     { category: "Getting Started", q: "Is this platform free to play?", a: "Yes! You can start playing for free. We also offer premium tournaments and cash games for verified users." },
     { category: "Getting Started", q: "How do I create an account?", a: "Click 'Start Playing' on the homepage, fill in your details, verify your email, and you're ready to go!" },
     { category: "Getting Started", q: "What poker variants are available?", a: "Currently we support No-Limit Texas Hold'em. Omaha and Short Deck are in development." },
-    { category: "Getting Started", q: "Can I play on mobile?", a: "Yes, Poker Pro is fully responsive and works directly in your mobile browser. Native apps coming soon." },
+    { category: "Getting Started", q: "Can I play on mobile?", a: "Yes, BestPoker.Cash is fully responsive and works directly in your mobile browser. Native apps coming soon." },
     { category: "Getting Started", q: "Do I need to download software?", a: "No downloads required! Play directly in your browser on any device." },
 
     // Account & Security
@@ -88,7 +88,7 @@ const FAQPage = () => {
                             Frequently Asked Questions
                         </h1>
                         <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-                            Find answers to common questions about Poker Pro. Can't find what you're looking for? Contact our support team.
+                            Find answers to common questions about BestPoker.Cash. Can't find what you're looking for? Contact our support team.
                         </p>
                     </motion.div>
                 </div>

@@ -49,7 +49,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
           <div className="bg-primary p-2 rounded-lg">
             <span className="material-symbols-outlined text-white">style</span>
           </div>
-          <h1 className="text-xl font-bold tracking-tight text-white font-display">POKER PRO</h1>
+          <h1 className="text-xl font-bold tracking-tight text-white font-display">BESTPOKER.CASH</h1>
         </div>
         <button onClick={onClose} className="md:hidden text-slate-400 hover:text-white">
           <span className="material-symbols-outlined">close</span>
@@ -194,7 +194,7 @@ const AppRoutes = () => {
       <div className="h-screen w-full bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <span className="size-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></span>
-          <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">Loading Poker Pro...</p>
+          <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">Loading BestPoker.Cash...</p>
         </div>
       </div>
     );

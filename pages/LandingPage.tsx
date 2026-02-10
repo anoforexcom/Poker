@@ -25,7 +25,7 @@ const FAQS = [
     { q: "Is this platform free to play?", a: "Yes! You can start playing for free. We also offer premium tournaments and cash games for verified users." },
     { q: "How do I withdraw my winnings?", a: "Withdrawals are processed instantly via crypto or typically within 24 hours for bank transfers." },
     { q: "Is the game fair?", a: "Absolutely. We use a certified RNG (Random Number Generator) and have 24/7 anti-cheat monitoring." },
-    { q: "Can I play on mobile?", a: "Yes, Poker Pro is fully responsive and works directly in your mobile browser. Native apps coming soon." },
+    { q: "Can I play on mobile?", a: "Yes, BestPoker.Cash is fully responsive and works directly in your mobile browser. Native apps coming soon." },
     { q: "What poker variants are available?", a: "Currently we support No-Limit Texas Hold'em. Omaha and Short Deck are in development." },
 ];
 
@@ -182,7 +182,7 @@ const FeaturesSection = () => {
             <div className="container mx-auto px-4">
                 <FadeIn>
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl lg:text-4xl font-display font-bold text-white mb-4">Why Choose Poker Pro?</h2>
+                        <h2 className="text-3xl lg:text-4xl font-display font-bold text-white mb-4">Why Choose BestPoker.Cash?</h2>
                         <p className="text-slate-400 text-lg max-w-2xl mx-auto">We've built the most secure and feature-rich platform in the industry.</p>
                     </div>
                 </FadeIn>

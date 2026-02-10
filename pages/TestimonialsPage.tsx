@@ -126,7 +126,7 @@ const TestimonialsPage = () => {
                             Player Testimonials
                         </h1>
                         <p className="text-slate-400 text-lg max-w-2xl mx-auto mb-2">
-                            Join thousands of satisfied players who trust Poker Pro.
+                            Join thousands of satisfied players who trust BestPoker.Cash.
                         </p>
                         <p className="text-primary font-bold">
                             {ALL_TESTIMONIALS.length.toLocaleString()} reviews and counting!

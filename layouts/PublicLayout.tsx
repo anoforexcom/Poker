@@ -23,7 +23,7 @@ const PublicNavbar = () => {
                     <div className="bg-primary p-2 rounded-lg group-hover:scale-110 transition-transform">
                         <span className="material-symbols-outlined text-white">style</span>
                     </div>
-                    <span className="text-xl font-display font-bold text-white tracking-tight">POKER PRO</span>
+                    <span className="text-xl font-display font-bold text-white tracking-tight">BESTPOKER.CASH</span>
                 </Link>
 
                 <div className="hidden md:flex items-center gap-8">
@@ -52,10 +52,10 @@ const Footer = () => {
                     <div className="space-y-4">
                         <div className="flex items-center gap-2">
                             <span className="material-symbols-outlined text-primary text-3xl">style</span>
-                            <span className="text-xl font-display font-bold text-white">POKER PRO</span>
+                            <span className="text-xl font-display font-bold text-white">BESTPOKER.CASH</span>
                         </div>
                         <p className="text-slate-400 text-sm leading-relaxed">
-                            The most advanced poker platform for professionals and enthusiasts. Experience the thrill of the game with state-of-the-art technology.
+                            The most advanced poker platform for professionals and enthusiasts. Experience the thrill of the game with state-of-the-art technology at BestPoker.Cash.
                         </p>
                     </div>
 
@@ -92,7 +92,7 @@ const Footer = () => {
 
                 <div className="border-t border-white/5 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
                     <p className="text-slate-500 text-xs text-center md:text-left">
-                        © {new Date().getFullYear()} Poker Pro Platform. All rights reserved.
+                        © {new Date().getFullYear()} BestPoker.Cash. All rights reserved.
                     </p>
                     <div className="flex items-center gap-6">
                         <span className="text-slate-500 text-xs">18+ Play Responsibly</span>

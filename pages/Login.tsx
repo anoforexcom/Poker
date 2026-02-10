@@ -38,7 +38,7 @@ const Login: React.FC = () => {
                     <div className="inline-flex items-center justify-center size-16 bg-primary/10 rounded-xl mb-4 text-primary border border-primary/20">
                         <span className="material-symbols-outlined text-3xl">style</span>
                     </div>
-                    <h1 className="text-3xl font-black text-white font-display mb-2">POKER PRO</h1>
+                    <h1 className="text-3xl font-black text-white font-display mb-2">BESTPOKER.CASH</h1>
                     <p className="text-slate-400">Welcome back. Ready to fold 'em?</p>
                 </div>
 
