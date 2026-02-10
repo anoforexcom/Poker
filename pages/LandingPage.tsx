@@ -45,7 +45,7 @@ const HeroSection = () => {
     const y2 = useTransform(scrollY, [0, 500], [0, -150]);
 
     return (
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+        <section className="relative min-h-screen flex items-center justify-center pt-20">
             {/* Background Effects */}
             <div className="absolute inset-0 z-0">
                 <div className="absolute inset-0 bg-gradient-to-b from-blue-900/20 via-background to-background" />
@@ -339,7 +339,7 @@ const CTASection = () => {
 
 const LandingPage = () => {
     return (
-        <div className="bg-background min-h-screen">
+        <div className="bg-background">
             <HeroSection />
             <FeaturesSection />
             <TestimonialsSection />

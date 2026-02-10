@@ -99,10 +99,31 @@ const Login: React.FC = () => {
                     {/* Demo Button */}
                     <button
                         type="button"
-                        onClick={() => {
-                            setEmail('demo@pokerpro.com');
-                            setPassword('demo123');
-                            login('demo@pokerpro.com', 'demo123').then(() => navigate('/play'));
+                        onClick={async () => {
+                            try {
+                                await login('demo@pokerpro.com', 'demo123');
+                                navigate('/play');
+                            } catch (err) {
+                                // If demo user doesn't exist, create it
+                                try {
+                                    const db = JSON.parse(localStorage.getItem('poker_users_db') || '[]');
+                                    const demoUser = {
+                                        id: 'demo@pokerpro.com',
+                                        name: 'Demo Player',
+                                        email: 'demo@pokerpro.com',
+                                        password: 'demo123',
+                                        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=demo',
+                                        balance: 50000,
+                                        rank: 'Gold'
+                                    };
+                                    db.push(demoUser);
+                                    localStorage.setItem('poker_users_db', JSON.stringify(db));
+                                    await login('demo@pokerpro.com', 'demo123');
+                                    navigate('/play');
+                                } catch (e) {
+                                    setError('Demo login failed');
+                                }
+                            }
                         }}
                         className="w-full bg-gold hover:bg-yellow-600 text-slate-900 font-black py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
                     >
