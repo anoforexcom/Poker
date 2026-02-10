@@ -10,6 +10,15 @@ const Academia: React.FC = () => {
     return saved ? JSON.parse(saved) : {};
   });
 
+  const [isPro, setIsPro] = useState<boolean>(() => {
+    return localStorage.getItem('poker_academy_pro_status') === 'true';
+  });
+
+  const [bookmarks, setBookmarks] = useState<string[]>(() => {
+    const saved = localStorage.getItem('poker_academy_bookmarks');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [activeModule, setActiveModule] = useState<Module | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -25,11 +34,39 @@ const Academia: React.FC = () => {
   // --- Actions ---
 
   const handleStartModule = (module: Module) => {
+    // Check Lock Status
+    const isLocked = !isPro && (module.id === 'mtt' || module.id === 'mental'); // Lock last 2 modules
+    if (isLocked) {
+      alert("This module is for PRO members only. Upgrade to unlock!");
+      return;
+    }
+
     setActiveModule(module);
     setCurrentQuestionIndex(0);
     setScore(0);
     setShowResult(false);
     resetQuestionState();
+  };
+
+  const handleUpgrade = () => {
+    // Simulate Payment
+    const confirm = window.confirm("Upgrade to PRO for $9.99/mo?\n\n- Unlock All Modules\n- Ad-free Experience\n- Elite Badge");
+    if (confirm) {
+      setIsPro(true);
+      localStorage.setItem('poker_academy_pro_status', 'true');
+      alert("Welcome to the Elite! You are now a PRO member.");
+    }
+  };
+
+  const toggleBookmark = (questionId: string) => {
+    setBookmarks(prev => {
+      const newBookmarks = prev.includes(questionId)
+        ? prev.filter(id => id !== questionId)
+        : [...prev, questionId];
+
+      localStorage.setItem('poker_academy_bookmarks', JSON.stringify(newBookmarks));
+      return newBookmarks;
+    });
   };
 
   const resetQuestionState = () => {
@@ -61,7 +98,7 @@ const Academia: React.FC = () => {
     if (!activeModule) return;
 
     // Calculate final score
-    // We need to account for the last answer if it was just clicked? 
+    // We need to account for the last answer if it was just clicked?
     // handleAnswer updates score immediately, so 'score' is current.
     // Wait, handleAnswer updates 'score' state, which might be async batched, but usually fine here.
 
@@ -103,7 +140,17 @@ const Academia: React.FC = () => {
             <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase mb-2">
               Poker <span className="text-primary">Academia</span>
             </h1>
-            <p className="text-slate-400 font-bold">Master the game with our structured learning modules.</p>
+            <p className="text-slate-400 font-bold mb-4">Master the game with our structured learning modules.</p>
+
+            {!isPro ? (
+              <button onClick={handleUpgrade} className="px-6 py-2 bg-gradient-to-r from-amber-500 to-yellow-600 text-black font-black uppercase tracking-widest rounded-lg shadow-lg hover:scale-105 transition-transform flex items-center gap-2">
+                <span className="material-symbols-outlined">verified</span> Upgrade to PRO
+              </button>
+            ) : (
+              <div className="px-4 py-2 bg-slate-800 border border-gold/50 text-gold font-black uppercase tracking-widest rounded-lg inline-flex items-center gap-2">
+                <span className="material-symbols-outlined">workspace_premium</span> PRO Member
+              </div>
+            )}
           </div>
           <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 w-64 shadow-lg">
             <div className="flex justify-between text-xs font-bold mb-2">
@@ -123,9 +170,15 @@ const Academia: React.FC = () => {
             const isCompleted = progress?.completed;
             const bestScore = progress?.bestScore || 0;
 
+            // Logic for locking premium modules
+            const isPremium = module.id === 'mtt' || module.id === 'mental';
+            const isLocked = isPremium && !isPro;
+
             return (
-              <div key={module.id} className={`group bg-slate-800 rounded-2xl border p-6 transition-all cursor-pointer shadow-lg relative overflow-hidden ${isCompleted ? 'border-green-500/30' : 'border-slate-700 hover:border-primary/50'}`} onClick={() => handleStartModule(module)}>
+              <div key={module.id} className={`group bg-slate-800 rounded-2xl border p-6 transition-all cursor-pointer shadow-lg relative overflow-hidden ${isLocked ? 'opacity-75 grayscale-[0.5]' : ''} ${isCompleted ? 'border-green-500/30' : 'border-slate-700 hover:border-primary/50'}`} onClick={() => handleStartModule(module)}>
                 {isCompleted && <div className="absolute top-4 right-4 text-green-500"><span className="material-symbols-outlined">check_circle</span></div>}
+                {isPremium && !isPro && <div className="absolute top-4 right-4 text-amber-500"><span className="material-symbols-outlined">lock</span></div>}
+
                 <div className="absolute top-0 right-0 p-20 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-all"></div>
 
                 <div className="relative z-10">
@@ -146,9 +199,10 @@ const Academia: React.FC = () => {
                         style={{ width: `${(bestScore / module.questions.length) * 100}%` }}
                       ></div>
                     </div>
-                    <button className={`w-full py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1 transition-all mt-2 ${isCompleted ? 'bg-green-500/10 text-green-500' : 'bg-slate-700 text-slate-300 group-hover:bg-primary group-hover:text-white'}`}>
-                      {isCompleted ? 'REVIEW MODULE' : bestScore > 0 ? 'CONTINUE' : 'START MODULE'}
-                      {!isCompleted && <span className="material-symbols-outlined text-sm">arrow_forward</span>}
+                    <button className={`w-full py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1 transition-all mt-2 ${isLocked ? 'bg-slate-700 text-slate-500 cursor-not-allowed' : isCompleted ? 'bg-green-500/10 text-green-500' : 'bg-slate-700 text-slate-300 group-hover:bg-primary group-hover:text-white'}`}>
+                      {isLocked ? 'PRO ONLY' : isCompleted ? 'REVIEW MODULE' : bestScore > 0 ? 'CONTINUE' : 'START MODULE'}
+                      {!isLocked && !isCompleted && <span className="material-symbols-outlined text-sm">arrow_forward</span>}
+                      {isLocked && <span className="material-symbols-outlined text-sm">lock</span>}
                     </button>
                   </div>
                 </div>
@@ -201,6 +255,7 @@ const Academia: React.FC = () => {
   // Active Quiz View
   const currentQ = activeModule.questions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + 1) / activeModule.questions.length) * 100;
+  const isBookmarked = bookmarks.includes(currentQ.id);
 
   return (
     <div className="h-full flex flex-col bg-slate-900">
@@ -214,9 +269,16 @@ const Academia: React.FC = () => {
           <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest">{activeModule.title}</h2>
           <p className="text-white font-mono text-xs mt-1">Question {currentQuestionIndex + 1} of {activeModule.questions.length}</p>
         </div>
-        <button onClick={handleExit} className="text-slate-400 hover:text-white flex items-center gap-2 text-xs font-bold uppercase">
-          <span className="material-symbols-outlined text-lg">close</span> Quit
-        </button>
+        <div className="flex items-center gap-4">
+          <button onClick={() => toggleBookmark(currentQ.id)} className={`flex items-center gap-2 text-xs font-bold uppercase transition-colors ${isBookmarked ? 'text-primary' : 'text-slate-400 hover:text-white'}`}>
+            <span className={`material-symbols-outlined text-lg ${isBookmarked ? 'fill-1' : ''}`}>bookmark</span>
+            {isBookmarked ? 'Saved' : 'Save'}
+          </button>
+          <div className="h-4 w-px bg-slate-700"></div>
+          <button onClick={handleExit} className="text-slate-400 hover:text-white flex items-center gap-2 text-xs font-bold uppercase">
+            <span className="material-symbols-outlined text-lg">close</span> Quit
+          </button>
+        </div>
       </header>
 
       {/* Question Area */}
