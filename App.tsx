@@ -12,6 +12,12 @@ import Profile from './pages/Profile';
 import { GameProvider, useGame } from './contexts/GameContext';
 import { LiveWorldProvider } from './contexts/LiveWorldContext';
 
+import Login from './pages/Login';
+import Register from './pages/Register';
+import { GameProvider, useGame } from './contexts/GameContext';
+import { LiveWorldProvider } from './contexts/LiveWorldContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+
 const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
   const location = useLocation();
   const { user } = useGame();
@@ -105,6 +111,8 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
 
 const Header = ({ onToggle }: { onToggle: () => void }) => {
   const { user } = useGame();
+  const { logout } = useAuth();
+
   return (
     <header className="h-16 border-b border-border-dark bg-surface/50 flex items-center justify-between px-4 md:px-8 sticky top-0 z-30 backdrop-blur-md">
       <div className="flex items-center gap-4">
@@ -134,61 +142,91 @@ const Header = ({ onToggle }: { onToggle: () => void }) => {
           <span className="material-symbols-outlined text-lg">schedule</span>
           <span className="text-xs font-medium">UTC</span>
         </div>
-        <button className="text-slate-400 hover:text-white">
+        <button className="text-slate-400 hover:text-white" title="Notifications">
           <span className="material-symbols-outlined">notifications</span>
         </button>
-        <button className="text-slate-400 hover:text-white">
-          <span className="material-symbols-outlined">settings</span>
+        <button onClick={logout} className="text-slate-400 hover:text-red-400" title="Logout">
+          <span className="material-symbols-outlined">logout</span>
         </button>
       </div>
     </header>
   )
 };
 
-const AppContent = () => {
+const ProtectedLayout = ({ children }: { children: React.ReactNode }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  return (
-    <HashRouter>
-      <div className="flex h-screen bg-background text-slate-100 font-sans overflow-hidden">
-        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-
-        {/* Mobile Overlay */}
-        {isSidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm transition-opacity"
-            onClick={() => setIsSidebarOpen(false)}
-          ></div>
-        )}
-
-        <div className="flex-1 flex flex-col min-w-0">
-          <Header onToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
-          <main className="flex-1 overflow-auto custom-scrollbar relative">
-            <Routes>
-              <Route path="/" element={<Lobby />} />
-              <Route path="/table/:id" element={<GameTable />} />
-              <Route path="/tournament/:id" element={<TournamentLobby />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/academia" element={<Academia />} />
-              <Route path="/community" element={<Community />} />
-              <Route path="/cashier" element={<Cashier />} />
-              <Route path="/rewards" element={<Rewards />} />
-              <Route path="/profile" element={<Profile />} />
-            </Routes>
-          </main>
-        </div>
-      </div>
-    </HashRouter>
-  )
-}
-
-const App: React.FC = () => {
   return (
     <GameProvider>
       <LiveWorldProvider>
-        <AppContent />
+        <div className="flex h-screen bg-background text-slate-100 font-sans overflow-hidden">
+          <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+
+          {/* Mobile Overlay */}
+          {isSidebarOpen && (
+            <div
+              className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm transition-opacity"
+              onClick={() => setIsSidebarOpen(false)}
+            ></div>
+          )}
+
+          <div className="flex-1 flex flex-col min-w-0">
+            <Header onToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
+            <main className="flex-1 overflow-auto custom-scrollbar relative">
+              {children}
+            </main>
+          </div>
+        </div>
       </LiveWorldProvider>
     </GameProvider>
+  );
+};
+
+const AppRoutes = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="h-screen w-full bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <span className="size-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></span>
+          <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">Loading Poker Pro...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Routes>
+      <Route path="/login" element={!isAuthenticated ? <Login /> : <Lobby />} />
+      <Route path="/register" element={!isAuthenticated ? <Register /> : <Lobby />} />
+
+      {/* Protected Routes */}
+      {isAuthenticated ? (
+        <>
+          <Route path="/" element={<ProtectedLayout><Lobby /></ProtectedLayout>} />
+          <Route path="/table/:id" element={<ProtectedLayout><GameTable /></ProtectedLayout>} />
+          <Route path="/tournament/:id" element={<ProtectedLayout><TournamentLobby /></ProtectedLayout>} />
+          <Route path="/dashboard" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
+          <Route path="/academia" element={<ProtectedLayout><Academia /></ProtectedLayout>} />
+          <Route path="/community" element={<ProtectedLayout><Community /></ProtectedLayout>} />
+          <Route path="/cashier" element={<ProtectedLayout><Cashier /></ProtectedLayout>} />
+          <Route path="/rewards" element={<ProtectedLayout><Rewards /></ProtectedLayout>} />
+          <Route path="/profile" element={<ProtectedLayout><Profile /></ProtectedLayout>} />
+        </>
+      ) : (
+        <Route path="*" element={<Login />} />
+      )}
+    </Routes>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <HashRouter>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </HashRouter>
   );
 };
 
