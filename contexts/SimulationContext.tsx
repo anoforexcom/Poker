@@ -41,6 +41,12 @@ export const SimulationProvider: React.FC<{ children: ReactNode }> = ({ children
     const [topBots, setTopBots] = useState<SimulatedBot[]>([]);
     const [isRunning, setIsRunning] = useState(false);
 
+    // Auto-start simulation on mount
+    useEffect(() => {
+        startSimulation();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Run once on mount
+
     // Atualizar dados a cada 2 segundos
     useEffect(() => {
         if (!isRunning) return;
