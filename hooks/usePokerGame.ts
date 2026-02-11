@@ -115,10 +115,14 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
         const newDealerPos = (dealerPosition + 1) % players.length;
         setDealerPosition(newDealerPos);
 
+        // Get current blind values (includes ante)
+        const { smallBlind, bigBlind, ante } = getCurrentBlindValues();
+        let totalAntes = 0;
+
         // Deal 2 cards to each player WHO HAS BALANCE
         const updatedPlayers = players.map((p, index) => {
-            // Check if player has enough for at least big blind
-            const canPlay = p.balance >= BIG_BLIND;
+            // Check if player has enough for at least big blind + ante
+            const canPlay = p.balance >= bigBlind + ante;
 
             if (!canPlay) {
                 // Player is broke, mark as inactive and don't deal cards
@@ -133,6 +137,18 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
                 };
             }
 
+            // Charge ante from active players
+            let playerBalance = p.balance;
+            if (ante > 0) {
+                const anteAmount = Math.min(ante, playerBalance);
+                playerBalance -= anteAmount;
+                totalAntes += anteAmount;
+
+                if (p.isHuman) {
+                    updateGlobalBalance(-anteAmount);
+                }
+            }
+
             const { hand, remainingDeck } = dealCards(currentDeck, 2);
             currentDeck = remainingDeck;
             return {
@@ -140,6 +156,7 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
                 hand,
                 isFolded: false,
                 currentBet: 0,
+                balance: playerBalance,
                 isDealer: index === newDealerPos,
                 hasActed: false,
                 isActive: true
@@ -167,20 +184,20 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
         }
 
         if (updatedPlayers[actualSmallBlindPos].isActive) {
-            updatedPlayers[actualSmallBlindPos].currentBet = SMALL_BLIND;
-            updatedPlayers[actualSmallBlindPos].balance -= SMALL_BLIND;
+            updatedPlayers[actualSmallBlindPos].currentBet = smallBlind;
+            updatedPlayers[actualSmallBlindPos].balance -= smallBlind;
 
             if (updatedPlayers[actualSmallBlindPos].isHuman) {
-                updateGlobalBalance(-SMALL_BLIND);
+                updateGlobalBalance(-smallBlind);
             }
         }
 
         if (updatedPlayers[actualBigBlindPos].isActive) {
-            updatedPlayers[actualBigBlindPos].currentBet = BIG_BLIND;
-            updatedPlayers[actualBigBlindPos].balance -= BIG_BLIND;
+            updatedPlayers[actualBigBlindPos].currentBet = bigBlind;
+            updatedPlayers[actualBigBlindPos].balance -= bigBlind;
 
             if (updatedPlayers[actualBigBlindPos].isHuman) {
-                updateGlobalBalance(-BIG_BLIND);
+                updateGlobalBalance(-bigBlind);
             }
         }
 
@@ -193,12 +210,12 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
         setCommunityCards([]);
         setWinner(null);
         setWinningHand(null);
-        setLastRaiseAmount(BIG_BLIND);
+        setLastRaiseAmount(bigBlind);
 
-        // Now set pot with blinds
-        setPot(SMALL_BLIND + BIG_BLIND);
+        // Now set pot with blinds + antes
+        setPot(smallBlind + bigBlind + totalAntes);
         setPhase('pre-flop');
-        setCurrentBet(BIG_BLIND);
+        setCurrentBet(bigBlind);
 
         // Start action after big blind (find first active player)
         let firstToAct = (actualBigBlindPos + 1) % players.length;
@@ -337,16 +354,19 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
         } else if (action === 'raise') {
             const callAmount = currentBet - currentPlayer.currentBet;
             const raiseAmount = amount - currentBet;
+            const minimumRaise = currentBet + lastRaiseAmount;
 
             // Validate minimum raise (must be at least the size of the last raise)
             // Exception: all-in is always allowed
-            const isAllIn = amount >= currentPlayer.balance;
-            if (!isAllIn && raiseAmount < lastRaiseAmount) {
-                console.warn(`Minimum raise is ${currentBet + lastRaiseAmount}. Raise amount ${raiseAmount} is less than last raise ${lastRaiseAmount}`);
+            const totalBetWithBalance = Math.min(amount, currentPlayer.balance + currentPlayer.currentBet);
+            const isAllIn = totalBetWithBalance >= currentPlayer.balance + currentPlayer.currentBet;
+
+            if (!isAllIn && amount < minimumRaise) {
+                console.warn(`Minimum raise is ${minimumRaise}. You tried to raise to ${amount}.`);
                 return; // Reject invalid raise
             }
 
-            const totalBet = Math.min(amount, currentPlayer.balance);
+            const totalBet = Math.min(amount, currentPlayer.balance + currentPlayer.currentBet);
             const addAmount = totalBet - currentPlayer.currentBet;
 
             updatedPlayers[currentTurn] = {
@@ -509,27 +529,40 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
                         hand: evaluateHand(p.hand, communityCards)
                     }));
 
-                    // Find best hand among eligible players
-                    let bestEval = evaluations[0];
-                    for (let i = 1; i < evaluations.length; i++) {
-                        if (compareHands(evaluations[i].hand, bestEval.hand) > 0) {
-                            bestEval = evaluations[i];
+                    // Find ALL winners (detect ties/split pots)
+                    const winners: typeof evaluations = [];
+                    let bestHand = evaluations[0].hand;
+
+                    evaluations.forEach(eval => {
+                        const comparison = compareHands(eval.hand, bestHand);
+                        if (comparison > 0) {
+                            // New best hand found - reset winners
+                            winners.length = 0;
+                            winners.push(eval);
+                            bestHand = eval.hand;
+                        } else if (comparison === 0) {
+                            // Tie - add to winners
+                            winners.push(eval);
                         }
-                    }
+                    });
 
-                    // Award pot to winner
-                    if (bestEval.player.isHuman) {
-                        totalWinnings += sidePot.amount;
-                    } else {
-                        setPlayers(prev => prev.map(p =>
-                            p.id === bestEval.player.id ? { ...p, balance: p.balance + sidePot.amount } : p
-                        ));
-                    }
+                    // Split pot equally among all winners
+                    const splitAmount = sidePot.amount / winners.length;
 
-                    // Track main winner (for display)
-                    if (!mainWinner) {
-                        mainWinner = bestEval.player;
-                        mainWinningHand = bestEval.hand;
+                    winners.forEach(winnerEval => {
+                        if (winnerEval.player.isHuman) {
+                            totalWinnings += splitAmount;
+                        } else {
+                            setPlayers(prev => prev.map(p =>
+                                p.id === winnerEval.player.id ? { ...p, balance: p.balance + splitAmount } : p
+                            ));
+                        }
+                    });
+
+                    // Track main winner (for display - use first winner)
+                    if (!mainWinner && winners.length > 0) {
+                        mainWinner = winners[0].player;
+                        mainWinningHand = winners[0].hand;
                     }
                 });
 
