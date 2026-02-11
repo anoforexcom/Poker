@@ -1,18 +1,49 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveWorld } from '../contexts/LiveWorldContext';
+import { useSimulation } from '../contexts/SimulationContext';
+
+type LobbyTab = 'tournaments' | 'cash' | 'sitgo' | 'spingo';
+type ViewMode = 'list' | 'grid';
 
 const Lobby: React.FC = () => {
-  const { onlinePlayers, activeTables, tournaments } = useLiveWorld();
+  const { onlinePlayers, activeTables } = useLiveWorld();
+  const { tournaments: simulatedTournaments } = useSimulation();
+  const [activeTab, setActiveTab] = useState<LobbyTab>('tournaments');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [filter, setFilter] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [speedFilter, setSpeedFilter] = useState<string[]>([]);
   const navigate = useNavigate();
 
+  // Use simulated tournaments
+  const tournaments = simulatedTournaments;
+
   const filteredTournaments = tournaments.filter(t => {
-    if (filter === 'ALL') return true;
-    if (filter === 'MICRO') return t.buyIn < 5;
-    if (filter === 'LOW') return t.buyIn >= 5 && t.buyIn < 20;
-    if (filter === 'MID') return t.buyIn >= 20 && t.buyIn < 100;
-    if (filter === 'HIGH') return t.buyIn >= 100;
+    // Buy-in filter
+    if (filter !== 'ALL') {
+      if (filter === 'MICRO' && t.buyIn >= 5) return false;
+      if (filter === 'LOW' && (t.buyIn < 5 || t.buyIn >= 20)) return false;
+      if (filter === 'MID' && (t.buyIn < 20 || t.buyIn >= 100)) return false;
+      if (filter === 'HIGH' && t.buyIn < 100) return false;
+    }
+
+    // Search filter
+    if (searchQuery && !t.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+
+    // Speed filter
+    if (speedFilter.length > 0) {
+      const isTurbo = t.name.toLowerCase().includes('turbo');
+      const isDeep = t.name.toLowerCase().includes('deep');
+      const isRegular = !isTurbo && !isDeep;
+
+      if (speedFilter.includes('turbo') && !isTurbo) return false;
+      if (speedFilter.includes('regular') && !isRegular) return false;
+      if (speedFilter.includes('deep') && !isDeep) return false;
+    }
+
     return true;
   });
 
@@ -36,154 +67,303 @@ const Lobby: React.FC = () => {
     }
   };
 
+  const toggleSpeedFilter = (speed: string) => {
+    setSpeedFilter(prev =>
+      prev.includes(speed) ? prev.filter(s => s !== speed) : [...prev, speed]
+    );
+  };
+
   return (
-    <div className="flex h-full">
-      <div className="flex-1 p-4 md:p-8 overflow-y-auto custom-scrollbar">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-          <div>
-            <h2 className="text-3xl font-bold text-white tracking-tight font-display">Tournament Lobby</h2>
-            <p className="text-slate-400 mt-1">Join the action. Big prizes, live drama.</p>
+    <div className="flex flex-col lg:flex-row h-full overflow-hidden">
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="p-4 md:p-6 border-b border-border-dark bg-surface/20">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight font-display">Lobby</h2>
+              <p className="text-slate-400 text-sm mt-1">Join thousands of players worldwide</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <div className="bg-poker-green/10 text-poker-green text-[10px] font-bold px-3 py-1.5 rounded border border-poker-green/20 flex items-center gap-2">
+                <span className="size-2 bg-poker-green rounded-full animate-pulse"></span>
+                {tournaments.length.toLocaleString()} <span className="hidden sm:inline">TOURNAMENTS</span>
+              </div>
+              <div className="bg-primary/10 text-primary text-[10px] font-bold px-3 py-1.5 rounded border border-primary/20 flex items-center gap-2">
+                <span className="size-2 bg-primary rounded-full animate-pulse"></span>
+                {onlinePlayers.toLocaleString()} <span className="hidden sm:inline">PLAYERS</span>
+              </div>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2 md:gap-4">
-            <div className="bg-poker-green/10 text-poker-green text-[10px] font-bold px-3 py-1.5 rounded border border-poker-green/20 flex items-center gap-2">
-              <span className="size-2 bg-poker-green rounded-full animate-pulse"></span>
-              {tournaments.length.toLocaleString()} <span className="hidden sm:inline">TOURNAMENTS</span> ACTIVE
-            </div>
-            <div className="bg-primary/10 text-primary text-[10px] font-bold px-3 py-1.5 rounded border border-primary/20 flex items-center gap-2">
-              <span className="size-2 bg-primary rounded-full animate-pulse"></span>
-              {onlinePlayers.toLocaleString()} <span className="hidden sm:inline">PLAYERS</span> ONLINE
-            </div>
+
+          {/* Tabs */}
+          <div className="flex gap-1 mt-4 overflow-x-auto pb-2 scrollbar-hide">
+            {[
+              { id: 'tournaments', label: 'Tournaments', icon: 'emoji_events' },
+              { id: 'cash', label: 'Cash Games', icon: 'attach_money' },
+              { id: 'sitgo', label: 'Sit & Go', icon: 'group' },
+              { id: 'spingo', label: 'Spin & Go', icon: 'casino' }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as LobbyTab)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-bold text-sm whitespace-nowrap transition-all ${activeTab === tab.id
+                    ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                    : 'bg-surface/50 text-slate-400 hover:text-white hover:bg-surface'
+                  }`}
+              >
+                <span className="material-symbols-outlined text-lg">{tab.icon}</span>
+                <span className="hidden sm:inline">{tab.label}</span>
+              </button>
+            ))}
           </div>
         </div>
 
-        <div className="bg-surface/30 rounded-xl border border-border-dark overflow-hidden">
-          {/* Filters */}
-          <div className="p-4 flex flex-col md:flex-row items-center gap-4 bg-surface/10 border-b border-border-dark">
-            <div className="flex bg-surface rounded-lg p-1 border border-border-dark w-full md:w-auto overflow-x-auto">
-              {['ALL', 'MICRO', 'LOW', 'MID', 'HIGH'].map((f) => (
+        {/* Filters & Controls */}
+        <div className="p-4 md:p-6 border-b border-border-dark bg-surface/10">
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Buy-in Filters */}
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {['ALL', 'MICRO', 'LOW', 'MID', 'HIGH'].map(f => (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
-                  className={`flex-1 md:flex-none px-4 py-1.5 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-2 whitespace-nowrap ${filter === f ? 'bg-primary text-white shadow-lg' : 'text-slate-400 hover:text-white'
+                  className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap ${filter === f
+                      ? 'bg-primary text-white shadow-lg'
+                      : 'bg-surface text-slate-400 hover:text-white'
                     }`}
                 >
-                  {f} <span className={`text-[10px] opacity-70 ${filter === f ? 'text-white' : 'text-slate-500'}`}>({getFilterCount(f)})</span>
+                  {f} <span className="text-[10px] opacity-70">({getFilterCount(f)})</span>
                 </button>
               ))}
             </div>
-            <div className="w-full md:ml-auto md:w-auto relative">
-              <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-lg">search</span>
-              <input
-                className="bg-surface border-border-dark text-xs rounded-lg pl-9 pr-4 py-1.5 w-full md:w-48 focus:ring-primary outline-none placeholder:text-slate-600 text-white"
-                placeholder="Find tournament..."
-              />
+
+            {/* Speed Filters */}
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {['turbo', 'regular', 'deep'].map(speed => (
+                <button
+                  key={speed}
+                  onClick={() => toggleSpeedFilter(speed)}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all capitalize whitespace-nowrap ${speedFilter.includes(speed)
+                      ? 'bg-gold text-background shadow-lg'
+                      : 'bg-surface text-slate-400 hover:text-white'
+                    }`}
+                >
+                  {speed}
+                </button>
+              ))}
+            </div>
+
+            {/* Search & View Toggle */}
+            <div className="flex gap-2 lg:ml-auto">
+              <div className="relative flex-1 lg:flex-none">
+                <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-lg">search</span>
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-surface border border-border-dark text-xs rounded-lg pl-9 pr-4 py-2 w-full lg:w-48 focus:ring-primary outline-none placeholder:text-slate-600 text-white"
+                  placeholder="Search tournaments..."
+                />
+              </div>
+
+              <div className="flex bg-surface rounded-lg border border-border-dark">
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`px-3 py-2 rounded-l-lg transition-all ${viewMode === 'list' ? 'bg-primary text-white' : 'text-slate-400 hover:text-white'
+                    }`}
+                >
+                  <span className="material-symbols-outlined text-lg">view_list</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`px-3 py-2 rounded-r-lg transition-all ${viewMode === 'grid' ? 'bg-primary text-white' : 'text-slate-400 hover:text-white'
+                    }`}
+                >
+                  <span className="material-symbols-outlined text-lg">grid_view</span>
+                </button>
+              </div>
             </div>
           </div>
+        </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left min-w-[800px]">
-              <thead>
-                <tr className="text-slate-500 text-[10px] font-bold uppercase tracking-widest border-b border-border-dark">
-                  <th className="py-4 px-6">Tournament</th>
-                  <th className="py-4 px-6">State</th>
-                  <th className="py-4 px-6">Buy-in</th>
-                  <th className="py-4 px-6">Players</th>
-                  <th className="py-4 px-6">Prize Pool</th>
-                  <th className="py-4 px-6 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-dark">
-                {filteredTournaments.map((t) => (
-                  <tr key={t.id} className="hover:bg-primary/5 transition-all group">
-                    <td className="py-5 px-6">
-                      <div className="flex items-center gap-3">
-                        <div className={`size-1.5 rounded-full ${t.status === 'Running' ? 'bg-blue-500' : 'bg-slate-600'}`}></div>
-                        <div>
-                          <span className="text-sm font-bold text-white block truncate max-w-[150px]">{t.name}</span>
-                          <span className="text-[10px] text-slate-500 font-mono">{t.id.split('-')[1]}</span>
+        {/* Tournament List/Grid */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6">
+          {activeTab === 'tournaments' && (
+            viewMode === 'list' ? (
+              // List View
+              <div className="space-y-3">
+                {filteredTournaments.map(t => (
+                  <div
+                    key={t.id}
+                    className="bg-surface/30 rounded-xl border border-border-dark p-4 hover:bg-surface/50 transition-all cursor-pointer group"
+                    onClick={() => navigate(`/tournament/${t.id}`)}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`size-2 rounded-full ${t.status === 'Running' ? 'bg-blue-500' : 'bg-slate-600'}`}></span>
+                          <h3 className="text-sm font-bold text-white truncate">{t.name}</h3>
+                          <span className={`text-[10px] font-black uppercase tracking-wider ${getStatusColor(t.status)}`}>
+                            {t.status}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                          <span className="flex items-center gap-1">
+                            <span className="material-symbols-outlined text-sm">attach_money</span>
+                            ${t.buyIn.toFixed(2)}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span className="material-symbols-outlined text-sm">group</span>
+                            {t.players}/{t.maxPlayers}
+                          </span>
+                          <span className="flex items-center gap-1 text-gold">
+                            <span className="material-symbols-outlined text-sm">emoji_events</span>
+                            ${t.prizePool.toLocaleString()}
+                          </span>
                         </div>
                       </div>
-                    </td>
-                    <td className="py-5 px-6">
-                      <span className={`text-xs font-black uppercase tracking-wider ${getStatusColor(t.status)}`}>
-                        {t.status}
-                      </span>
-                    </td>
-                    <td className="py-5 px-6 text-sm font-bold text-white">${t.buyIn.toFixed(2)}</td>
-                    <td className="py-5 px-6">
-                      <div className="flex flex-col gap-1 w-24">
-                        <div className="flex justify-between text-[10px] text-slate-400 font-mono">
-                          <span>{t.players}</span>
-                          <span>{t.maxPlayers}</span>
-                        </div>
-                        <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${t.status === 'Running' ? 'bg-blue-500' : 'bg-poker-green'}`}
-                            style={{ width: `${(t.players / t.maxPlayers) * 100}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-5 px-6 text-sm font-mono text-gold font-bold">${t.prizePool.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                    <td className="py-5 px-6 text-right">
-                      <button
-                        onClick={() => navigate(`/tournament/${t.id}`)}
-                        disabled={t.status === 'Finished'}
-                        className={`w-full py-2 rounded-lg font-black text-xs transition-all shadow-lg hover:brightness-110 flex items-center justify-center gap-2 ${t.status === 'Registering' || t.status === 'Late Reg' ? 'bg-poker-green text-white shadow-poker-green/20' :
-                          t.status === 'Running' ? 'bg-blue-600 text-white shadow-blue-600/20' :
-                            'bg-slate-700 text-slate-400 cursor-not-allowed'
-                          }`}
-                      >
+
+                      <button className={`px-6 py-2 rounded-lg font-black text-xs transition-all shadow-lg hover:brightness-110 whitespace-nowrap ${t.status === 'Registering' || t.status === 'Late Reg'
+                          ? 'bg-poker-green text-white shadow-poker-green/20'
+                          : t.status === 'Running'
+                            ? 'bg-blue-600 text-white shadow-blue-600/20'
+                            : 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                        }`}>
                         {t.status === 'Running' || t.status === 'Final Table' ? 'OBSERVE' : t.status === 'Finished' ? 'ENDED' : 'REGISTER'}
                       </button>
-                    </td>
-                  </tr>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            ) : (
+              // Grid View
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {filteredTournaments.map(t => (
+                  <div
+                    key={t.id}
+                    className="bg-surface/30 rounded-xl border border-border-dark overflow-hidden hover:bg-surface/50 transition-all cursor-pointer group"
+                    onClick={() => navigate(`/tournament/${t.id}`)}
+                  >
+                    <div className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <span className={`size-2 rounded-full mt-1 ${t.status === 'Running' ? 'bg-blue-500' : 'bg-slate-600'}`}></span>
+                        <span className={`text-[9px] font-black uppercase tracking-wider ${getStatusColor(t.status)}`}>
+                          {t.status}
+                        </span>
+                      </div>
+
+                      <h3 className="text-sm font-bold text-white mb-3 line-clamp-2 min-h-[2.5rem]">{t.name}</h3>
+
+                      <div className="space-y-2 mb-4">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-slate-400">Buy-in</span>
+                          <span className="text-white font-bold">${t.buyIn.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-slate-400">Players</span>
+                          <span className="text-white font-mono">{t.players}/{t.maxPlayers}</span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-slate-400">Prize Pool</span>
+                          <span className="text-gold font-bold">${t.prizePool.toLocaleString()}</span>
+                        </div>
+                      </div>
+
+                      <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden mb-3">
+                        <div
+                          className={`h-full rounded-full ${t.status === 'Running' ? 'bg-blue-500' : 'bg-poker-green'}`}
+                          style={{ width: `${(t.players / t.maxPlayers) * 100}%` }}
+                        ></div>
+                      </div>
+
+                      <button className={`w-full py-2 rounded-lg font-black text-xs transition-all shadow-lg hover:brightness-110 ${t.status === 'Registering' || t.status === 'Late Reg'
+                          ? 'bg-poker-green text-white shadow-poker-green/20'
+                          : t.status === 'Running'
+                            ? 'bg-blue-600 text-white shadow-blue-600/20'
+                            : 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                        }`}>
+                        {t.status === 'Running' || t.status === 'Final Table' ? 'OBSERVE' : t.status === 'Finished' ? 'ENDED' : 'REGISTER'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          )}
+
+          {activeTab !== 'tournaments' && (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <span className="material-symbols-outlined text-6xl text-slate-700 mb-4">construction</span>
+              <h3 className="text-xl font-bold text-white mb-2">Coming Soon</h3>
+              <p className="text-slate-400 text-sm">This section is under development</p>
+            </div>
+          )}
         </div>
       </div>
 
-      <aside className="w-80 border-l border-border-dark p-6 space-y-8 hidden xl:block bg-surface/10 overflow-y-auto">
-        <div>
-          <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-4">Featured Event</h3>
-          <div className="rounded-xl overflow-hidden relative group cursor-pointer shadow-xl aspect-video border border-border-dark">
-            <img src="https://picsum.photos/seed/pokerpromo/400/225" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-            <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent opacity-80"></div>
-            <div className="absolute bottom-4 left-4">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="bg-red-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded">LIVE</span>
-                <p className="text-[10px] font-bold text-gold uppercase">Final Table</p>
+      {/* Sidebar - Hidden on mobile */}
+      <aside className="hidden xl:block w-80 border-l border-border-dark bg-surface/10 overflow-y-auto custom-scrollbar">
+        <div className="p-6 space-y-6">
+          {/* Featured Event */}
+          <div>
+            <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">Featured Event</h3>
+            <div className="rounded-xl overflow-hidden relative group cursor-pointer shadow-xl aspect-video border border-border-dark">
+              <img src="https://picsum.photos/seed/pokerpromo/400/225" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="Featured" />
+              <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent opacity-80"></div>
+              <div className="absolute bottom-4 left-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="bg-red-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded">LIVE</span>
+                  <p className="text-[10px] font-bold text-gold uppercase">Final Table</p>
+                </div>
+                <p className="text-sm font-bold text-white">Sunday Million</p>
               </div>
-              <p className="text-sm font-bold text-white">Sunday Million</p>
             </div>
           </div>
-        </div>
 
-        <div>
-          <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-4">Global Chat</h3>
-          <div className="bg-background/50 border border-border-dark rounded-xl p-3 h-64 overflow-y-auto custom-scrollbar space-y-3">
-            <p className="text-[11px] text-slate-400"><span className="text-primary font-bold">PokerKing99:</span> Who is playing the Turbo?</p>
-            <p className="text-[11px] text-slate-400"><span className="text-gold font-bold">Admin:</span> Server maintenance in 4 hours.</p>
-            <p className="text-[11px] text-slate-400"><span className="text-white font-bold">RiverRat:</span> This RNG is rigged!</p>
-            {activeTables > 850 && <p className="text-[10px] text-poker-green italic text-center my-2">-- High Traffic Alert --</p>}
-          </div>
-        </div>
-
-        <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="material-symbols-outlined text-gold">military_tech</span>
-            <p className="text-xs font-bold text-white uppercase tracking-wider">Daily Missions</p>
-          </div>
-          <div className="space-y-3">
-            <div>
-              <div className="flex justify-between text-[10px] mb-1">
-                <span className="text-slate-400">Play 5 Tournaments</span>
-                <span className="text-white font-mono">1/5</span>
+          {/* Quick Stats */}
+          <div>
+            <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">Live Stats</h3>
+            <div className="space-y-2">
+              <div className="bg-surface/50 rounded-lg p-3 border border-border-dark">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-slate-400">Active Tables</span>
+                  <span className="text-lg font-bold text-white">{activeTables.toLocaleString()}</span>
+                </div>
               </div>
-              <div className="w-full h-1.5 bg-background rounded-full overflow-hidden">
-                <div className="h-full bg-gold" style={{ width: '20%' }}></div>
+              <div className="bg-surface/50 rounded-lg p-3 border border-border-dark">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-slate-400">Tournaments Running</span>
+                  <span className="text-lg font-bold text-blue-400">
+                    {tournaments.filter(t => t.status === 'Running').length}
+                  </span>
+                </div>
+              </div>
+              <div className="bg-surface/50 rounded-lg p-3 border border-border-dark">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-slate-400">Total Prize Pool</span>
+                  <span className="text-lg font-bold text-gold">
+                    ${tournaments.reduce((sum, t) => sum + t.prizePool, 0).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Daily Missions */}
+          <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="material-symbols-outlined text-gold">military_tech</span>
+              <p className="text-xs font-bold text-white uppercase tracking-wider">Daily Missions</p>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <div className="flex justify-between text-[10px] mb-1">
+                  <span className="text-slate-400">Play 5 Tournaments</span>
+                  <span className="text-white font-mono">1/5</span>
+                </div>
+                <div className="w-full h-1.5 bg-background rounded-full overflow-hidden">
+                  <div className="h-full bg-gold" style={{ width: '20%' }}></div>
+                </div>
               </div>
             </div>
           </div>

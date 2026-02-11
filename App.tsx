@@ -9,6 +9,7 @@ import TournamentLobby from './pages/TournamentLobby';
 import Cashier from './pages/Cashier';
 import Rewards from './pages/Rewards';
 import Profile from './pages/Profile';
+import SimulationDashboard from './pages/SimulationDashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import LandingPage from './pages/LandingPage';
@@ -20,6 +21,8 @@ import { PublicLayout } from './layouts/PublicLayout';
 import { GameProvider, useGame } from './contexts/GameContext';
 import { LiveWorldProvider } from './contexts/LiveWorldContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ChatProvider } from './contexts/ChatContext';
+import { SimulationProvider } from './contexts/SimulationContext';
 
 // Scroll to top on route change
 const ScrollToTop = () => {
@@ -174,24 +177,28 @@ const ProtectedLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <GameProvider>
       <LiveWorldProvider>
-        <div className="flex h-screen bg-background text-slate-100 font-sans overflow-hidden">
-          <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+        <SimulationProvider>
+          <ChatProvider>
+            <div className="flex h-screen bg-background text-slate-100 font-sans overflow-hidden">
+              <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-          {/* Mobile Overlay */}
-          {isSidebarOpen && (
-            <div
-              className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm transition-opacity"
-              onClick={() => setIsSidebarOpen(false)}
-            ></div>
-          )}
+              {/* Mobile Overlay */}
+              {isSidebarOpen && (
+                <div
+                  className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm transition-opacity"
+                  onClick={() => setIsSidebarOpen(false)}
+                ></div>
+              )}
 
-          <div className="flex-1 flex flex-col min-w-0">
-            <Header onToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
-            <main className="flex-1 overflow-auto custom-scrollbar relative">
-              {children}
-            </main>
-          </div>
-        </div>
+              <div className="flex-1 flex flex-col min-w-0">
+                <Header onToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
+                <main className="flex-1 overflow-auto custom-scrollbar relative">
+                  {children}
+                </main>
+              </div>
+            </div>
+          </ChatProvider>
+        </SimulationProvider>
       </LiveWorldProvider>
     </GameProvider>
   );
@@ -239,6 +246,7 @@ const AppRoutes = () => {
           <Route path="/cashier" element={<ProtectedLayout><Cashier /></ProtectedLayout>} />
           <Route path="/rewards" element={<ProtectedLayout><Rewards /></ProtectedLayout>} />
           <Route path="/profile" element={<ProtectedLayout><Profile /></ProtectedLayout>} />
+          <Route path="/simulation" element={<ProtectedLayout><SimulationDashboard /></ProtectedLayout>} />
         </>
       ) : (
         // Redirect any other protected route access attempt to login

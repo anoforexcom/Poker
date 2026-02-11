@@ -1,8 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, createDeck, shuffleDeck, dealCards, evaluateHand, compareHands, HandRank } from '../utils/pokerLogic';
 import { generateBotName } from '../utils/nameGenerator';
+import { BlindLevel, BlindStructureType, TOURNAMENT_BLIND_STRUCTURES, getCurrentBlinds } from '../utils/blindStructure';
 
 export type GamePhase = 'pre-flop' | 'flop' | 'turn' | 'river' | 'showdown';
+
+export interface SidePot {
+    amount: number;
+    eligiblePlayers: string[]; // player IDs who can win this pot
+}
 
 export interface Player {
     id: string;
@@ -25,13 +31,22 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
     const [deck, setDeck] = useState<Card[]>([]);
     const [communityCards, setCommunityCards] = useState<Card[]>([]);
     const [pot, setPot] = useState(0);
+    const [sidePots, setSidePots] = useState<SidePot[]>([]);
     const [phase, setPhase] = useState<GamePhase>('pre-flop');
     const [currentTurn, setCurrentTurn] = useState(0);
     const [currentBet, setCurrentBet] = useState(BIG_BLIND); // Track current bet to match
     const [dealerPosition, setDealerPosition] = useState(3); // Dealer button position
     const [lastRaiser, setLastRaiser] = useState<number | null>(null); // Who raised last
+    const [lastRaiseAmount, setLastRaiseAmount] = useState(BIG_BLIND); // Track last raise amount for minimum raise
     const [winner, setWinner] = useState<Player | null>(null);
     const [winningHand, setWinningHand] = useState<HandRank | null>(null);
+
+    // Blind level system for tournaments
+    const [blindStructureType] = useState<BlindStructureType>('regular'); // Can be made configurable
+    const [blindLevel, setBlindLevel] = useState(1);
+    const [levelStartTime, setLevelStartTime] = useState(Date.now());
+    const [timeToNextLevel, setTimeToNextLevel] = useState(0);
+    const [isTournamentMode] = useState(false); // Set to true for tournaments
 
     // Initialize Players (1 Human + 4 Bots)
     const [players, setPlayers] = useState<Player[]>([
@@ -46,6 +61,50 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
     useEffect(() => {
         setPlayers(prev => prev.map(p => p.isHuman ? { ...p, balance: initialUserBalance } : p));
     }, [initialUserBalance]);
+
+    // Blind level timer (for tournament mode)
+    useEffect(() => {
+        if (!isTournamentMode) return;
+
+        const blindStructure = TOURNAMENT_BLIND_STRUCTURES[blindStructureType];
+        const currentLevel = blindStructure[blindLevel - 1];
+
+        if (!currentLevel) return;
+
+        const interval = setInterval(() => {
+            const elapsed = Date.now() - levelStartTime;
+            const levelDuration = currentLevel.duration * 60 * 1000; // Convert minutes to ms
+            const remaining = levelDuration - elapsed;
+
+            setTimeToNextLevel(Math.max(0, remaining));
+
+            // Auto-increment blind level when time expires
+            if (remaining <= 0 && blindLevel < blindStructure.length) {
+                setBlindLevel(prev => prev + 1);
+                setLevelStartTime(Date.now());
+            }
+        }, 1000); // Update every second
+
+        return () => clearInterval(interval);
+    }, [isTournamentMode, blindLevel, levelStartTime, blindStructureType]);
+
+    // Get current blinds (dynamic based on tournament level or fixed for cash games)
+    const getCurrentBlindValues = useCallback(() => {
+        if (isTournamentMode) {
+            const blindStructure = TOURNAMENT_BLIND_STRUCTURES[blindStructureType];
+            const level = getCurrentBlinds(blindStructure, blindLevel);
+            return {
+                smallBlind: level.smallBlind,
+                bigBlind: level.bigBlind,
+                ante: level.ante
+            };
+        }
+        return {
+            smallBlind: SMALL_BLIND,
+            bigBlind: BIG_BLIND,
+            ante: 0
+        };
+    }, [isTournamentMode, blindStructureType, blindLevel]);
 
     // Start a new hand
     const startNewHand = useCallback(() => {
@@ -127,7 +186,16 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
 
         setDeck(currentDeck);
         setPlayers(updatedPlayers);
+
+        // Explicit reset of all game state
+        setPot(0);
+        setSidePots([]);
         setCommunityCards([]);
+        setWinner(null);
+        setWinningHand(null);
+        setLastRaiseAmount(BIG_BLIND);
+
+        // Now set pot with blinds
         setPot(SMALL_BLIND + BIG_BLIND);
         setPhase('pre-flop');
         setCurrentBet(BIG_BLIND);
@@ -143,6 +211,42 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
         setCurrentTurn(firstToAct);
         setLastRaiser(actualBigBlindPos); // Big blind is initial "raiser"
     }, [dealerPosition, players, updateGlobalBalance]);
+
+    // Calculate side pots for all-in scenarios
+    const calculateSidePots = useCallback((playersInHand: Player[]): SidePot[] => {
+        const activePlayers = playersInHand.filter(p => !p.isFolded && p.currentBet > 0);
+
+        if (activePlayers.length === 0) return [];
+
+        const pots: SidePot[] = [];
+
+        // Sort players by their current bet (ascending)
+        const sorted = [...activePlayers].sort((a, b) => a.currentBet - b.currentBet);
+
+        let remainingPlayers = [...sorted];
+        let previousBet = 0;
+
+        while (remainingPlayers.length > 0) {
+            const lowestBet = remainingPlayers[0].currentBet;
+            const betDiff = lowestBet - previousBet;
+
+            if (betDiff > 0) {
+                // Calculate pot amount for this level
+                const potAmount = betDiff * remainingPlayers.length;
+
+                pots.push({
+                    amount: potAmount,
+                    eligiblePlayers: remainingPlayers.map(p => p.id)
+                });
+            }
+
+            previousBet = lowestBet;
+            // Remove players who are all-in at this level
+            remainingPlayers = remainingPlayers.filter(p => p.currentBet > lowestBet);
+        }
+
+        return pots;
+    }, []);
 
     // Check if betting round is complete
     const isBettingRoundComplete = () => {
@@ -231,6 +335,17 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
                 updateGlobalBalance(-actualCall);
             }
         } else if (action === 'raise') {
+            const callAmount = currentBet - currentPlayer.currentBet;
+            const raiseAmount = amount - currentBet;
+
+            // Validate minimum raise (must be at least the size of the last raise)
+            // Exception: all-in is always allowed
+            const isAllIn = amount >= currentPlayer.balance;
+            if (!isAllIn && raiseAmount < lastRaiseAmount) {
+                console.warn(`Minimum raise is ${currentBet + lastRaiseAmount}. Raise amount ${raiseAmount} is less than last raise ${lastRaiseAmount}`);
+                return; // Reject invalid raise
+            }
+
             const totalBet = Math.min(amount, currentPlayer.balance);
             const addAmount = totalBet - currentPlayer.currentBet;
 
@@ -246,9 +361,13 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
                 i === currentTurn ? p : { ...p, hasActed: false }
             );
 
+            addToPot = addAmount;
+
+            // Update last raise amount for minimum raise validation
+            const actualRaiseAmount = totalBet - currentBet;
+            setLastRaiseAmount(actualRaiseAmount);
             setCurrentBet(totalBet);
             setLastRaiser(currentTurn);
-            addToPot = addAmount;
 
             if (currentPlayer.isHuman) {
                 updateGlobalBalance(-addAmount);
@@ -276,21 +395,34 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
 
         setCurrentTurn(nextTurn);
 
-        // Check if betting round complete
-        setTimeout(() => {
-            const allActed = updatedPlayers.filter(p => !p.isFolded && p.isActive).every(p =>
-                p.hasActed && (p.currentBet === currentBet || p.balance === 0)
-            );
-
-            if (allActed) {
-                if (phase === 'river') {
-                    setPhase('showdown');
-                } else {
-                    nextPhase();
-                }
-            }
-        }, 100);
+        // Betting round completion is now handled by useEffect
     };
+
+    // Check betting round completion (replaces setTimeout to avoid race conditions)
+    useEffect(() => {
+        if (phase === 'showdown') return;
+
+        const activePlayers = players.filter(p => !p.isFolded && p.isActive);
+
+        if (activePlayers.length === 0) return;
+
+        // Check if all active players have acted and matched the current bet
+        const allActed = activePlayers.every(p =>
+            p.hasActed && (p.currentBet === currentBet || p.balance === 0)
+        );
+
+        if (allActed && activePlayers.length > 0) {
+            // Reset hasActed for next round
+            setPlayers(prev => prev.map(p => ({ ...p, hasActed: false, currentBet: 0 })));
+
+            // Move to next phase
+            if (phase === 'river') {
+                setPhase('showdown');
+            } else {
+                nextPhase();
+            }
+        }
+    }, [players, currentBet, phase]);
 
     // Bot Logic
     useEffect(() => {
@@ -334,13 +466,13 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
         return () => clearTimeout(timer);
     }, [currentTurn, phase, players, currentBet]);
 
-    // Showdown Logic
+    // Showdown Logic with Side Pots
     useEffect(() => {
         if (phase === 'showdown' && !winner) {
             const activePlayers = players.filter(p => !p.isFolded && p.isActive);
 
             if (activePlayers.length === 1) {
-                // Only one player left, they win
+                // Only one player left, they win entire pot
                 const theWinner = activePlayers[0];
                 setWinner(theWinner);
 
@@ -352,40 +484,82 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
                     ));
                 }
             } else {
-                // Evaluate hands
-                const evaluations = activePlayers.map(p => ({
-                    player: p,
-                    hand: evaluateHand(p.hand, communityCards)
-                }));
+                // Multiple players - calculate side pots
+                const pots = calculateSidePots(players);
 
-                let bestEval = evaluations[0];
-                for (let i = 1; i < evaluations.length; i++) {
-                    if (compareHands(evaluations[i].hand, bestEval.hand) > 0) {
-                        bestEval = evaluations[i];
+                // If no side pots calculated, use main pot
+                const potsToDistribute = pots.length > 0 ? pots : [{ amount: pot, eligiblePlayers: activePlayers.map(p => p.id) }];
+
+                // Distribute each pot separately
+                let totalWinnings = 0;
+                let mainWinner: Player | null = null;
+                let mainWinningHand: HandRank | null = null;
+
+                potsToDistribute.forEach(sidePot => {
+                    // Get eligible players for this pot
+                    const eligiblePlayers = activePlayers.filter(p =>
+                        sidePot.eligiblePlayers.includes(p.id)
+                    );
+
+                    if (eligiblePlayers.length === 0) return;
+
+                    // Evaluate hands of eligible players
+                    const evaluations = eligiblePlayers.map(p => ({
+                        player: p,
+                        hand: evaluateHand(p.hand, communityCards)
+                    }));
+
+                    // Find best hand among eligible players
+                    let bestEval = evaluations[0];
+                    for (let i = 1; i < evaluations.length; i++) {
+                        if (compareHands(evaluations[i].hand, bestEval.hand) > 0) {
+                            bestEval = evaluations[i];
+                        }
                     }
+
+                    // Award pot to winner
+                    if (bestEval.player.isHuman) {
+                        totalWinnings += sidePot.amount;
+                    } else {
+                        setPlayers(prev => prev.map(p =>
+                            p.id === bestEval.player.id ? { ...p, balance: p.balance + sidePot.amount } : p
+                        ));
+                    }
+
+                    // Track main winner (for display)
+                    if (!mainWinner) {
+                        mainWinner = bestEval.player;
+                        mainWinningHand = bestEval.hand;
+                    }
+                });
+
+                // Update human player balance if they won any pots
+                if (totalWinnings > 0) {
+                    updateGlobalBalance(totalWinnings);
                 }
 
-                setWinner(bestEval.player);
-                setWinningHand(bestEval.hand);
-
-                if (bestEval.player.isHuman) {
-                    updateGlobalBalance(pot);
-                } else {
-                    setPlayers(prev => prev.map(p =>
-                        p.id === bestEval.player.id ? { ...p, balance: p.balance + pot } : p
-                    ));
+                // Set winner for display
+                if (mainWinner) {
+                    setWinner(mainWinner);
+                    setWinningHand(mainWinningHand);
                 }
             }
         }
-    }, [phase, winner, players, communityCards, pot, updateGlobalBalance]);
+    }, [phase, winner, players, communityCards, pot, updateGlobalBalance, calculateSidePots]);
 
     return {
         players,
         communityCards,
         pot,
+        sidePots,
         phase,
         currentTurn,
         currentBet,
+        lastRaiseAmount,
+        blindLevel,
+        timeToNextLevel,
+        blindStructureType,
+        isTournamentMode,
         startNewHand: () => {
             setWinner(null);
             setWinningHand(null);
