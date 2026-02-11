@@ -7,7 +7,7 @@ type LobbyTab = 'tournaments' | 'cash' | 'sitgo' | 'spingo';
 type ViewMode = 'list' | 'grid';
 
 const Lobby: React.FC = () => {
-  const { onlinePlayers, activeTables } = useLiveWorld();
+  const { onlinePlayers, activeTables, tournaments: liveWorldTournaments } = useLiveWorld();
   const { tournaments: simulatedTournaments } = useSimulation();
   const [activeTab, setActiveTab] = useState<LobbyTab>('tournaments');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
@@ -16,10 +16,16 @@ const Lobby: React.FC = () => {
   const [speedFilter, setSpeedFilter] = useState<string[]>([]);
   const navigate = useNavigate();
 
-  // Use simulated tournaments
-  const tournaments = simulatedTournaments;
+  // Use simulated tournaments if available, otherwise use LiveWorld tournaments
+  const tournaments = simulatedTournaments.length > 0 ? simulatedTournaments : liveWorldTournaments;
 
-  const filteredTournaments = tournaments.filter(t => {
+  // Safety check: ensure tournaments is always an array
+  const safeTournaments = Array.isArray(tournaments) ? tournaments : [];
+
+  const filteredTournaments = safeTournaments.filter(t => {
+    // Safety check for tournament object
+    if (!t || !t.name || typeof t.buyIn !== 'number') return false;
+
     // Buy-in filter
     if (filter !== 'ALL') {
       if (filter === 'MICRO' && t.buyIn >= 5) return false;
@@ -48,11 +54,11 @@ const Lobby: React.FC = () => {
   });
 
   const getFilterCount = (f: string) => {
-    if (f === 'ALL') return tournaments.length;
-    if (f === 'MICRO') return tournaments.filter(t => t.buyIn < 5).length;
-    if (f === 'LOW') return tournaments.filter(t => t.buyIn >= 5 && t.buyIn < 20).length;
-    if (f === 'MID') return tournaments.filter(t => t.buyIn >= 20 && t.buyIn < 100).length;
-    if (f === 'HIGH') return tournaments.filter(t => t.buyIn >= 100).length;
+    if (f === 'ALL') return safeTournaments.length;
+    if (f === 'MICRO') return safeTournaments.filter(t => t && t.buyIn < 5).length;
+    if (f === 'LOW') return safeTournaments.filter(t => t && t.buyIn >= 5 && t.buyIn < 20).length;
+    if (f === 'MID') return safeTournaments.filter(t => t && t.buyIn >= 20 && t.buyIn < 100).length;
+    if (f === 'HIGH') return safeTournaments.filter(t => t && t.buyIn >= 100).length;
     return 0;
   };
 
@@ -87,7 +93,7 @@ const Lobby: React.FC = () => {
             <div className="flex flex-wrap gap-2">
               <div className="bg-poker-green/10 text-poker-green text-[10px] font-bold px-3 py-1.5 rounded border border-poker-green/20 flex items-center gap-2">
                 <span className="size-2 bg-poker-green rounded-full animate-pulse"></span>
-                {tournaments.length.toLocaleString()} <span className="hidden sm:inline">TOURNAMENTS</span>
+                {safeTournaments.length.toLocaleString()} <span className="hidden sm:inline">TOURNAMENTS</span>
               </div>
               <div className="bg-primary/10 text-primary text-[10px] font-bold px-3 py-1.5 rounded border border-primary/20 flex items-center gap-2">
                 <span className="size-2 bg-primary rounded-full animate-pulse"></span>
@@ -108,8 +114,8 @@ const Lobby: React.FC = () => {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as LobbyTab)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-bold text-sm whitespace-nowrap transition-all ${activeTab === tab.id
-                    ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                    : 'bg-surface/50 text-slate-400 hover:text-white hover:bg-surface'
+                  ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                  : 'bg-surface/50 text-slate-400 hover:text-white hover:bg-surface'
                   }`}
               >
                 <span className="material-symbols-outlined text-lg">{tab.icon}</span>
@@ -129,8 +135,8 @@ const Lobby: React.FC = () => {
                   key={f}
                   onClick={() => setFilter(f)}
                   className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap ${filter === f
-                      ? 'bg-primary text-white shadow-lg'
-                      : 'bg-surface text-slate-400 hover:text-white'
+                    ? 'bg-primary text-white shadow-lg'
+                    : 'bg-surface text-slate-400 hover:text-white'
                     }`}
                 >
                   {f} <span className="text-[10px] opacity-70">({getFilterCount(f)})</span>
@@ -145,8 +151,8 @@ const Lobby: React.FC = () => {
                   key={speed}
                   onClick={() => toggleSpeedFilter(speed)}
                   className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all capitalize whitespace-nowrap ${speedFilter.includes(speed)
-                      ? 'bg-gold text-background shadow-lg'
-                      : 'bg-surface text-slate-400 hover:text-white'
+                    ? 'bg-gold text-background shadow-lg'
+                    : 'bg-surface text-slate-400 hover:text-white'
                     }`}
                 >
                   {speed}
@@ -224,10 +230,10 @@ const Lobby: React.FC = () => {
                       </div>
 
                       <button className={`px-6 py-2 rounded-lg font-black text-xs transition-all shadow-lg hover:brightness-110 whitespace-nowrap ${t.status === 'Registering' || t.status === 'Late Reg'
-                          ? 'bg-poker-green text-white shadow-poker-green/20'
-                          : t.status === 'Running'
-                            ? 'bg-blue-600 text-white shadow-blue-600/20'
-                            : 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                        ? 'bg-poker-green text-white shadow-poker-green/20'
+                        : t.status === 'Running'
+                          ? 'bg-blue-600 text-white shadow-blue-600/20'
+                          : 'bg-slate-700 text-slate-400 cursor-not-allowed'
                         }`}>
                         {t.status === 'Running' || t.status === 'Final Table' ? 'OBSERVE' : t.status === 'Finished' ? 'ENDED' : 'REGISTER'}
                       </button>
@@ -277,10 +283,10 @@ const Lobby: React.FC = () => {
                       </div>
 
                       <button className={`w-full py-2 rounded-lg font-black text-xs transition-all shadow-lg hover:brightness-110 ${t.status === 'Registering' || t.status === 'Late Reg'
-                          ? 'bg-poker-green text-white shadow-poker-green/20'
-                          : t.status === 'Running'
-                            ? 'bg-blue-600 text-white shadow-blue-600/20'
-                            : 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                        ? 'bg-poker-green text-white shadow-poker-green/20'
+                        : t.status === 'Running'
+                          ? 'bg-blue-600 text-white shadow-blue-600/20'
+                          : 'bg-slate-700 text-slate-400 cursor-not-allowed'
                         }`}>
                         {t.status === 'Running' || t.status === 'Final Table' ? 'OBSERVE' : t.status === 'Finished' ? 'ENDED' : 'REGISTER'}
                       </button>
@@ -334,7 +340,7 @@ const Lobby: React.FC = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-slate-400">Tournaments Running</span>
                   <span className="text-lg font-bold text-blue-400">
-                    {tournaments.filter(t => t.status === 'Running').length}
+                    {safeTournaments.filter(t => t && t.status === 'Running').length}
                   </span>
                 </div>
               </div>
@@ -342,7 +348,7 @@ const Lobby: React.FC = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-slate-400">Total Prize Pool</span>
                   <span className="text-lg font-bold text-gold">
-                    ${tournaments.reduce((sum, t) => sum + t.prizePool, 0).toLocaleString()}
+                    ${safeTournaments.reduce((sum, t) => sum + (t?.prizePool || 0), 0).toLocaleString()}
                   </span>
                 </div>
               </div>
