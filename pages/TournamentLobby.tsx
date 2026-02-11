@@ -24,6 +24,7 @@ const TournamentLobby: React.FC = () => {
 
     const tournament = tournaments.find(t => t.id === id);
     const [activeTab, setActiveTab] = useState<'home' | 'players' | 'tables'>('home');
+    const [isNavigating, setIsNavigating] = useState(false);
 
     if (!tournament) {
         return (
@@ -57,6 +58,14 @@ const TournamentLobby: React.FC = () => {
         }
     };
 
+    const handleGoToTable = () => {
+        setIsNavigating(true);
+        // Small delay to show loading state
+        setTimeout(() => {
+            navigate(`/table/${tournament.id}`);
+        }, 300);
+    };
+
     // Mock Players List
     const [mockPlayers] = useState(() => Array.from({ length: 50 }).map(() => ({
         name: generateBotName(),
@@ -65,7 +74,7 @@ const TournamentLobby: React.FC = () => {
     })));
 
     return (
-        <div className="flex h-full">
+        <div className="flex flex-col md:flex-row h-full">
             {/* Main Content */}
             <div className="flex-1 flex flex-col min-w-0">
                 {/* Header */}
@@ -115,7 +124,7 @@ const TournamentLobby: React.FC = () => {
                 {/* Tab Content */}
                 <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-background">
                     {activeTab === 'home' && (
-                        <div className="grid grid-cols-2 gap-8 max-w-4xl">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl">
                             <div className="space-y-6">
                                 <section>
                                     <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
@@ -223,7 +232,7 @@ const TournamentLobby: React.FC = () => {
             </div>
 
             {/* Sidebar / Action Panel */}
-            <div className="w-80 border-l border-border-dark bg-surface/5 p-6 flex flex-col gap-6">
+            <div className="w-full md:w-80 border-t md:border-t-0 md:border-l border-border-dark bg-surface/5 p-4 md:p-6 flex flex-col gap-4 md:gap-6">
                 <div>
                     <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Your Status</h2>
                     <div className="bg-surface border border-border-dark rounded-xl p-4 text-center">
@@ -238,10 +247,20 @@ const TournamentLobby: React.FC = () => {
                             <div className="flex items-center gap-2"><span className="material-symbols-outlined">check_circle</span> REGISTERED</div>
                         </button>
                         <button
-                            onClick={() => navigate(`/table/${tournament.id}`)}
-                            className="w-full py-4 bg-primary hover:bg-blue-600 text-white font-black rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2 animate-pulse"
+                            onClick={handleGoToTable}
+                            disabled={isNavigating}
+                            className="w-full py-4 bg-primary hover:bg-blue-600 disabled:bg-primary/50 text-white font-black rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2 animate-pulse"
                         >
-                            GO TO TABLE <span className="material-symbols-outlined">login</span>
+                            {isNavigating ? (
+                                <>
+                                    <span className="size-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                                    LOADING...
+                                </>
+                            ) : (
+                                <>
+                                    GO TO TABLE <span className="material-symbols-outlined">login</span>
+                                </>
+                            )}
                         </button>
                     </div>
                 ) : isRegistering ? (

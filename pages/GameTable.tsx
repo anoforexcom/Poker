@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGame } from '../contexts/GameContext';
 import { usePokerGame } from '../hooks/usePokerGame';
@@ -35,6 +35,25 @@ const GameTable: React.FC = () => {
     { sender: 'System', text: `Welcome to Table #${id}!`, type: 'system' }
   ]);
   const [showSettings, setShowSettings] = useState(false);
+  const [showOrientationPrompt, setShowOrientationPrompt] = useState(false);
+
+  // Detect mobile and orientation
+  useEffect(() => {
+    const checkOrientation = () => {
+      const isMobile = window.innerWidth < 768;
+      const isPortrait = window.innerHeight > window.innerWidth;
+      setShowOrientationPrompt(isMobile && isPortrait);
+    };
+
+    checkOrientation();
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+
+    return () => {
+      window.removeEventListener('resize', checkOrientation);
+      window.removeEventListener('orientationchange', checkOrientation);
+    };
+  }, []);
 
   const handleSendMessage = () => {
     if (!chatMessage.trim()) return;
@@ -55,6 +74,22 @@ const GameTable: React.FC = () => {
 
   return (
     <div className="relative flex flex-col h-full bg-slate-900 overflow-hidden">
+      {/* Landscape Orientation Prompt for Mobile */}
+      {showOrientationPrompt && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm">
+          <div className="bg-slate-800 p-8 rounded-2xl border border-primary shadow-2xl max-w-sm mx-4 text-center">
+            <span className="material-symbols-outlined text-primary text-6xl mb-4 inline-block animate-bounce">screen_rotation</span>
+            <h3 className="text-white font-bold text-xl mb-2">Melhor Experiência</h3>
+            <p className="text-slate-400 text-sm mb-4">Para jogar, vire seu dispositivo para o modo paisagem (horizontal)</p>
+            <button
+              onClick={() => setShowOrientationPrompt(false)}
+              className="text-primary text-sm font-bold hover:underline"
+            >
+              Continuar mesmo assim
+            </button>
+          </div>
+        </div>
+      )}
       {/* Table Header Overlay */}
       <div className="absolute top-6 left-8 z-20 pointer-events-none">
         <div className="bg-background/60 backdrop-blur-md p-4 rounded-xl border border-white/5">
@@ -97,8 +132,8 @@ const GameTable: React.FC = () => {
       )}
 
       {/* The Poker Table Rendering */}
-      <div className="flex-1 flex items-center justify-center p-12">
-        <div className="poker-table relative w-full max-w-5xl aspect-[2/1] bg-emerald-900 border-[16px] border-[#3a2a1a] flex flex-col items-center justify-center shadow-2xl">
+      <div className="flex-1 flex items-center justify-center p-4 md:p-12">
+        <div className="poker-table relative w-full max-w-5xl aspect-[2/1] bg-emerald-900 border-8 md:border-[16px] border-[#3a2a1a] flex flex-col items-center justify-center shadow-2xl">
 
           {/* Table Center: Pot & Cards */}
           <div className="flex flex-col items-center gap-6">
@@ -107,12 +142,12 @@ const GameTable: React.FC = () => {
               <span className="text-2xl font-black text-white">${pot.toLocaleString()}</span>
             </div>
 
-            <div className="flex gap-3 h-28 items-center">
+            <div className="flex gap-2 md:gap-3 h-20 md:h-28 items-center">
               {communityCards.map((card, i) => (
                 <HeroCard key={i} suit={card.suit} value={card.rank} />
               ))}
               {Array.from({ length: 5 - communityCards.length }).map((_, i) => (
-                <div key={`empty-${i}`} className="w-20 h-28 bg-slate-100/10 border-2 border-dashed border-white/20 rounded-lg flex items-center justify-center">
+                <div key={`empty-${i}`} className="w-14 h-20 md:w-20 md:h-28 bg-slate-100/10 border-2 border-dashed border-white/20 rounded-lg flex items-center justify-center">
                   <span className="material-symbols-outlined text-white/20">help</span>
                 </div>
               ))}
@@ -165,8 +200,8 @@ const GameTable: React.FC = () => {
         </div>
       </div>
 
-      <footer className="p-8 grid grid-cols-12 items-end gap-8 bg-gradient-to-t from-background to-transparent">
-        <div className="col-span-3">
+      <footer className="p-4 md:p-8 grid grid-cols-1 md:grid-cols-12 items-end gap-4 md:gap-8 bg-gradient-to-t from-background to-transparent">
+        <div className="md:col-span-3">
           <div className="bg-background/80 backdrop-blur-lg border border-slate-700 rounded-xl overflow-hidden flex flex-col h-40 shadow-lg">
             <div className="p-3 border-b border-slate-700 flex justify-between cursor-pointer hover:bg-white/5 transition" onClick={() => setShowSettings(true)}>
               <span className="text-[10px] font-bold text-slate-400 uppercase">Chat da Mesa</span>
@@ -193,7 +228,7 @@ const GameTable: React.FC = () => {
           </div>
         </div>
 
-        <div className="col-span-6 flex flex-col items-center gap-4">
+        <div className="md:col-span-6 flex flex-col items-center gap-4">
           {/* Player Cards with Avatar */}
           <div className="flex items-center gap-6">
             {/* User Avatar */}
@@ -247,7 +282,7 @@ const GameTable: React.FC = () => {
           </div>
         </div>
 
-        <div className="col-span-3 space-y-4">
+        <div className="md:col-span-3 space-y-4">
           <div className="bg-background/80 backdrop-blur-md p-4 rounded-xl border border-slate-700 space-y-4">
             <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
               <span>MIN: $20</span>
@@ -393,10 +428,10 @@ const HeroCard = ({ suit, value, rotate }: any) => {
   }
 
   return (
-    <div className={`w-20 h-28 bg-white rounded-xl border-2 border-primary flex flex-col p-2 items-center justify-between shadow-2xl transform transition-transform hover:-translate-y-2 cursor-pointer ${rotate} ${getSuitColor(suit)}`}>
-      <span className="text-2xl font-black self-start leading-none tracking-tighter">{value}{getSuitSymbol(suit)}</span>
-      <span className="text-4xl">{getSuitSymbol(suit)}</span>
-      <span className="text-2xl font-black self-end leading-none tracking-tighter rotate-180">{value}{getSuitSymbol(suit)}</span>
+    <div className={`w-14 h-20 md:w-20 md:h-28 bg-white rounded-lg md:rounded-xl border-2 border-primary flex flex-col p-1 md:p-2 items-center justify-between shadow-2xl transform transition-transform hover:-translate-y-2 cursor-pointer ${rotate} ${getSuitColor(suit)}`}>
+      <span className="text-lg md:text-2xl font-black self-start leading-none tracking-tighter">{value}{getSuitSymbol(suit)}</span>
+      <span className="text-2xl md:text-4xl">{getSuitSymbol(suit)}</span>
+      <span className="text-lg md:text-2xl font-black self-end leading-none tracking-tighter rotate-180">{value}{getSuitSymbol(suit)}</span>
     </div>
   );
 };
