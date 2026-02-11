@@ -16,15 +16,25 @@ const TournamentLobby: React.FC = () => {
     // Use simulated tournaments if available, otherwise use LiveWorld tournaments
     const tournaments = simulatedTournaments.length > 0 ? simulatedTournaments : liveWorldTournaments;
 
+    // ALL HOOKS MUST BE CALLED BEFORE ANY EARLY RETURN!
     // Check persistence
     const [myRegistrations, setMyRegistrations] = useState<string[]>(() => {
         const saved = localStorage.getItem('poker_tournament_registrations');
         return saved ? JSON.parse(saved) : [];
     });
 
-    const tournament = tournaments.find(t => t.id === id);
     const [activeTab, setActiveTab] = useState<'home' | 'players' | 'tables'>('home');
     const [isNavigating, setIsNavigating] = useState(false);
+
+    // Mock Players List - MUST be before early return
+    const [mockPlayers] = useState(() => Array.from({ length: 50 }).map(() => ({
+        name: generateBotName(),
+        country: '🏳️',
+        chips: 1000000 // Will be set properly once we find tournament
+    })));
+
+    // NOW we can safely check and return early
+    const tournament = tournaments.find(t => t.id === id);
 
     if (!tournament) {
         return (
@@ -65,13 +75,6 @@ const TournamentLobby: React.FC = () => {
             navigate(`/table/${tournament.id}`);
         }, 300);
     };
-
-    // Mock Players List
-    const [mockPlayers] = useState(() => Array.from({ length: 50 }).map(() => ({
-        name: generateBotName(),
-        country: '🏳️',
-        chips: tournament.buyIn * 100 // Starting Stack logic needed eventually
-    })));
 
     return (
         <div className="flex flex-col md:flex-row h-full">
