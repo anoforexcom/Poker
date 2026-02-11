@@ -31,10 +31,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     useEffect(() => {
         // Check for existing session
         const storedUser = localStorage.getItem(CURRENT_USER_KEY);
+        console.log('[AUTH_CONTEXT] Initializing, storedUser:', storedUser);
         if (storedUser) {
-            setUser(JSON.parse(storedUser));
+            const parsed = JSON.parse(storedUser);
+            console.log('[AUTH_CONTEXT] Setting user from localStorage:', parsed);
+            setUser(parsed);
         }
         setIsLoading(false);
+        console.log('[AUTH_CONTEXT] Initialization complete');
     }, []);
 
     const login = async (email: string, password: string) => {

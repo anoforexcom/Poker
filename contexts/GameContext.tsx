@@ -26,11 +26,47 @@ const GameContext = createContext<GameContextType | undefined>(undefined);
 
 export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserState>(() => {
+    // Try to get user from localStorage (shared with AuthContext)
     const saved = localStorage.getItem('poker_user_profile');
-    return saved ? JSON.parse(saved) : defaultUser;
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse user profile:', e);
+        return defaultUser;
+      }
+    }
+    return defaultUser;
   });
 
-  // Persist user changes
+  // Sync with localStorage changes (when AuthContext updates)
+  React.useEffect(() => {
+    const handleStorageChange = () => {
+      const saved = localStorage.getItem('poker_user_profile');
+      if (saved) {
+        try {
+          setUser(JSON.parse(saved));
+        } catch (e) {
+          console.error('Failed to parse user profile:', e);
+        }
+      } else {
+        setUser(defaultUser);
+      }
+    };
+
+    // Listen for storage events (cross-tab sync)
+    window.addEventListener('storage', handleStorageChange);
+
+    // Also check periodically for same-tab updates
+    const interval = setInterval(handleStorageChange, 500);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Persist user changes to localStorage
   React.useEffect(() => {
     localStorage.setItem('poker_user_profile', JSON.stringify(user));
   }, [user]);

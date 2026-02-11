@@ -37,8 +37,16 @@ const ScrollToTop = () => {
 
 const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
   const location = useLocation();
-  const { user } = useGame();
+  const { user } = useAuth();
   const isActive = (path: string) => location.pathname === path;
+
+  console.log('[SIDEBAR] Rendering, user:', user);
+
+  // Safety check - don't render if user not loaded
+  if (!user) {
+    console.log('[SIDEBAR] No user, returning null');
+    return null;
+  }
 
   const navItems = [
     { name: 'Play', path: '/play', icon: 'casino' },
@@ -127,9 +135,17 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
 };
 
 const Header = ({ onToggle }: { onToggle: () => void }) => {
-  const { user } = useGame();
+  const { user } = useAuth();
   const { logout } = useAuth();
   const location = useLocation();
+
+  console.log('[HEADER] Rendering, user:', user);
+
+  // Safety check - don't render if user not loaded
+  if (!user) {
+    console.log('[HEADER] No user, returning null');
+    return null;
+  }
 
   // Don't show header on public pages if we are not in protected layout (though this component is only used in protected layout now)
   return (
@@ -174,12 +190,31 @@ const Header = ({ onToggle }: { onToggle: () => void }) => {
 
 const ProtectedLayout = ({ children }: { children: React.ReactNode }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { user, isLoading } = useAuth();
+
+  console.log('[PROTECTED_LAYOUT] Rendering, isLoading:', isLoading, 'user:', user);
+
+  // Show loading state while user is being initialized
+  if (isLoading || !user) {
+    console.log('[PROTECTED_LAYOUT] Showing loading state');
+    return (
+      <div className="h-screen w-full bg-[#0a0f1a] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <span className="size-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></span>
+          <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  console.log('[PROTECTED_LAYOUT] Rendering main layout');
+
   return (
     <GameProvider>
       <LiveWorldProvider>
         <SimulationProvider>
           <ChatProvider>
-            <div className="flex h-screen bg-background text-slate-100 font-sans overflow-hidden">
+            <div className="flex h-screen bg-[#0a0f1a] text-slate-100 font-sans overflow-hidden">
               <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
               {/* Mobile Overlay */}
@@ -207,9 +242,12 @@ const ProtectedLayout = ({ children }: { children: React.ReactNode }) => {
 const AppRoutes = () => {
   const { isAuthenticated, isLoading } = useAuth();
 
+  console.log('[APP_ROUTES] isAuthenticated:', isAuthenticated, 'isLoading:', isLoading);
+
   if (isLoading) {
+    console.log('[APP_ROUTES] Showing global loading state');
     return (
-      <div className="h-screen w-full bg-background flex items-center justify-center">
+      <div className="h-screen w-full bg-[#101922] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <span className="size-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></span>
           <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">Loading BestPoker.Cash...</p>
