@@ -533,16 +533,16 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
                     const winners: typeof evaluations = [];
                     let bestHand = evaluations[0].hand;
 
-                    evaluations.forEach(eval => {
-                        const comparison = compareHands(eval.hand, bestHand);
+                    evaluations.forEach(evaluation => {
+                        const comparison = compareHands(evaluation.hand, bestHand);
                         if (comparison > 0) {
                             // New best hand found - reset winners
                             winners.length = 0;
-                            winners.push(eval);
-                            bestHand = eval.hand;
+                            winners.push(evaluation);
+                            bestHand = evaluation.hand;
                         } else if (comparison === 0) {
                             // Tie - add to winners
-                            winners.push(eval);
+                            winners.push(evaluation);
                         }
                     });
 
