@@ -34,8 +34,8 @@ export class TournamentSimulator {
     private tournaments: Map<string, SimulatedTournament> = new Map();
     private tournamentCounter = 0;
     private botCounter = 0;
-    private simulationInterval?: NodeJS.Timeout;
-    private tournamentCreationInterval?: NodeJS.Timeout;
+    private simulationInterval?: number;
+    private tournamentCreationInterval?: number;
 
     constructor(
         private config = {
@@ -134,7 +134,11 @@ export class TournamentSimulator {
     private simulateTournament(tournament: SimulatedTournament) {
         if (tournament.status === 'registering' && new Date() >= tournament.startTime) {
             tournament.status = 'running';
-            console.log(`🎮 Torneio ${tournament.name} começou com ${tournament.players.length} jogadores!`);
+            try {
+                console.log(`🎮 Torneio ${tournament.name} começou com ${tournament.players.length} jogadores!`);
+            } catch (e) {
+                // Ignore console errors in production
+            }
         }
 
         if (tournament.status === 'running') {
@@ -171,7 +175,11 @@ export class TournamentSimulator {
                     tournament.winner.tournamentsWon++;
                 }
 
-                console.log(`🏆 Torneio ${tournament.name} terminou! Vencedor: ${tournament.winner?.name}`);
+                try {
+                    console.log(`🏆 Torneio ${tournament.name} terminou! Vencedor: ${tournament.winner?.name}`);
+                } catch (e) {
+                    // Ignore console errors in production
+                }
 
                 // Remover torneio após 5 minutos
                 setTimeout(() => {
@@ -183,8 +191,12 @@ export class TournamentSimulator {
 
     // Iniciar simulação
     start() {
-        console.log('🚀 Iniciando simulador de torneios...');
-        console.log(`📊 ${this.bots.size} bots inicializados`);
+        try {
+            console.log('🚀 Iniciando simulador de torneios...');
+            console.log(`📊 ${this.bots.size} bots inicializados`);
+        } catch (e) {
+            // Ignore console errors in production
+        }
 
         // Criar torneios periodicamente
         this.tournamentCreationInterval = setInterval(() => {
@@ -194,7 +206,11 @@ export class TournamentSimulator {
 
             if (activeTournaments < this.config.maxConcurrentTournaments) {
                 this.createTournament();
-                console.log(`✨ Novo torneio criado! Total ativo: ${activeTournaments + 1}`);
+                try {
+                    console.log(`✨ Novo torneio criado! Total ativo: ${activeTournaments + 1}`);
+                } catch (e) {
+                    // Ignore console errors in production
+                }
             }
 
             // Criar mais bots se necessário
@@ -204,14 +220,14 @@ export class TournamentSimulator {
                     this.createBot();
                 }
             }
-        }, this.config.tournamentInterval);
+        }, this.config.tournamentInterval) as unknown as number;
 
         // Simular torneios
         this.simulationInterval = setInterval(() => {
             this.tournaments.forEach(tournament => {
                 this.simulateTournament(tournament);
             });
-        }, this.config.simulationSpeed);
+        }, this.config.simulationSpeed) as unknown as number;
 
         // Criar alguns torneios iniciais
         for (let i = 0; i < 10; i++) {
@@ -223,7 +239,11 @@ export class TournamentSimulator {
     stop() {
         if (this.simulationInterval) clearInterval(this.simulationInterval);
         if (this.tournamentCreationInterval) clearInterval(this.tournamentCreationInterval);
-        console.log('⏹️ Simulador parado');
+        try {
+            console.log('⏹️ Simulador parado');
+        } catch (e) {
+            // Ignore console errors in production
+        }
     }
 
     // Obter estatísticas
