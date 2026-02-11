@@ -14,7 +14,30 @@ const TournamentLobby: React.FC = () => {
     const navigate = useNavigate();
 
     // Use simulated tournaments if available, otherwise use LiveWorld tournaments
-    const tournaments = simulatedTournaments.length > 0 ? simulatedTournaments : liveWorldTournaments;
+    const rawTournaments = simulatedTournaments.length > 0 ? simulatedTournaments : liveWorldTournaments;
+
+    // Transform SimulatedTournament to match Tournament interface (same as in Lobby.tsx)
+    const tournaments = Array.isArray(rawTournaments) ? rawTournaments.map(t => {
+        // If this is a SimulatedTournament (players is an array), transform it
+        if (Array.isArray((t as any).players)) {
+            const simTournament = t as any;
+            return {
+                id: simTournament.id,
+                name: simTournament.name,
+                gameType: simTournament.gameType || 'NL Hold\'em',
+                buyIn: simTournament.buyIn,
+                prizePool: simTournament.prizePool,
+                players: simTournament.players.length, // Convert array to count
+                maxPlayers: simTournament.maxPlayers,
+                status: simTournament.status === 'registering' ? 'Registering' :
+                    simTournament.status === 'running' ? 'Running' : 'Finished',
+                startTime: 'Now',
+                progress: simTournament.currentRound || 0,
+            };
+        }
+        // Otherwise it's already a Tournament from LiveWorld
+        return t;
+    }) : [];
 
     // ALL HOOKS MUST BE CALLED BEFORE ANY EARLY RETURN!
     // Check persistence
