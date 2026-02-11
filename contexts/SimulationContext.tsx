@@ -41,6 +41,19 @@ export const SimulationProvider: React.FC<{ children: ReactNode }> = ({ children
     const [topBots, setTopBots] = useState<SimulatedBot[]>([]);
     const [isRunning, setIsRunning] = useState(false);
 
+    // Define functions BEFORE useEffect
+    const startSimulation = () => {
+        simulator.start();
+        setIsRunning(true);
+        console.log('🎮 Simulação iniciada!');
+    };
+
+    const stopSimulation = () => {
+        simulator.stop();
+        setIsRunning(false);
+        console.log('⏹️ Simulação parada!');
+    };
+
     // Auto-start simulation on mount
     useEffect(() => {
         startSimulation();
@@ -59,18 +72,6 @@ export const SimulationProvider: React.FC<{ children: ReactNode }> = ({ children
 
         return () => clearInterval(interval);
     }, [simulator, isRunning]);
-
-    const startSimulation = () => {
-        simulator.start();
-        setIsRunning(true);
-        console.log('🎮 Simulação iniciada!');
-    };
-
-    const stopSimulation = () => {
-        simulator.stop();
-        setIsRunning(false);
-        console.log('⏹️ Simulação parada!');
-    };
 
     return (
         <SimulationContext.Provider value={{
