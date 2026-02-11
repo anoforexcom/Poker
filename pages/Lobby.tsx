@@ -79,6 +79,18 @@ const Lobby: React.FC = () => {
     );
   };
 
+  // Loading state while contexts initialize
+  if (!tournaments && !liveWorldTournaments) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="size-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-400">Loading lobby...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col lg:flex-row h-full overflow-hidden">
       {/* Main Content */}
