@@ -30,8 +30,8 @@ const Register: React.FC = () => {
 
         try {
             await register(name, email, password);
-            // Success -> Redirect
-            navigate('/');
+            // Redirect to lobby after successful registration
+            navigate('/play');
         } catch (err: any) {
             setError(err.message || 'Failed to register');
             setIsSubmitting(false);
@@ -124,8 +124,17 @@ const Register: React.FC = () => {
                         disabled={isSubmitting}
                         className="w-full bg-poker-green hover:bg-green-500 text-white font-black py-4 rounded-xl shadow-lg shadow-green-500/20 transition-all flex items-center justify-center gap-2 mt-4 disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                        {isSubmitting ? 'CREATING ACC...' : 'CREATE ACCOUNT'}
-                        {!isSubmitting && <span className="material-symbols-outlined">person_add</span>}
+                        {isSubmitting ? (
+                            <>
+                                <span className="size-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                                CREATING ACCOUNT...
+                            </>
+                        ) : (
+                            <>
+                                CREATE ACCOUNT
+                                <span className="material-symbols-outlined">person_add</span>
+                            </>
+                        )}
                     </button>
                 </form>
 

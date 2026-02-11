@@ -17,8 +17,8 @@ const Login: React.FC = () => {
 
         try {
             await login(email, password);
-            // Correct credentials -> Redirect handled by App router or manual
-            navigate('/');
+            // Redirect to lobby after successful login
+            navigate('/play');
         } catch (err: any) {
             setError(err.message || 'Failed to login');
             setIsSubmitting(false);
@@ -92,8 +92,17 @@ const Login: React.FC = () => {
                         disabled={isSubmitting}
                         className="w-full bg-primary hover:bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                        {isSubmitting ? 'LOGGING IN...' : 'LOGIN TO TABLE'}
-                        {!isSubmitting && <span className="material-symbols-outlined">login</span>}
+                        {isSubmitting ? (
+                            <>
+                                <span className="size-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                                LOGGING IN...
+                            </>
+                        ) : (
+                            <>
+                                LOGIN TO TABLE
+                                <span className="material-symbols-outlined">login</span>
+                            </>
+                        )}
                     </button>
 
                     {/* Demo Button */}

@@ -228,11 +228,11 @@ const AppRoutes = () => {
         <Route path="/testimonials" element={<TestimonialsPage />} />
         <Route path="/terms" element={<LegalPage />} />
         <Route path="/privacy" element={<LegalPage />} />
-      </Route>
 
-      {/* Auth Routes */}
-      <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/play" />} />
-      <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/play" />} />
+        {/* Auth Routes - Now inside PublicLayout */}
+        <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/play" />} />
+        <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/play" />} />
+      </Route>
 
       {/* Protected Routes */}
       {isAuthenticated ? (
