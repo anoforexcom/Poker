@@ -2,14 +2,19 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveWorld } from '../contexts/LiveWorldContext';
+import { useSimulation } from '../contexts/SimulationContext';
 import { generateBotName } from '../utils/nameGenerator';
 import { useGame } from '../contexts/GameContext';
 
 const TournamentLobby: React.FC = () => {
     const { id } = useParams<{ id: string }>();
-    const { tournaments, onlinePlayers, registerForTournament } = useLiveWorld();
+    const { tournaments: liveWorldTournaments, onlinePlayers, registerForTournament } = useLiveWorld();
+    const { tournaments: simulatedTournaments } = useSimulation();
     const { user, withdraw } = useGame();
     const navigate = useNavigate();
+
+    // Use simulated tournaments if available, otherwise use LiveWorld tournaments
+    const tournaments = simulatedTournaments.length > 0 ? simulatedTournaments : liveWorldTournaments;
 
     // Check persistence
     const [myRegistrations, setMyRegistrations] = useState<string[]>(() => {
@@ -24,7 +29,7 @@ const TournamentLobby: React.FC = () => {
         return (
             <div className="flex flex-col items-center justify-center h-full text-slate-400">
                 <p>Tournament not found or finished.</p>
-                <button onClick={() => navigate('/')} className="mt-4 text-primary hover:underline">Back to Lobby</button>
+                <button onClick={() => navigate('/play')} className="mt-4 text-primary hover:underline">Back to Lobby</button>
             </div>
         );
     }
