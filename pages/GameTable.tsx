@@ -70,6 +70,8 @@ const GameTable: React.FC = () => {
     { sender: 'System', text: `Welcome to Table #${id}!`, type: 'system' }
   ]);
   const [showSettings, setShowSettings] = useState(false);
+  const [showLobbyModal, setShowLobbyModal] = useState(false);
+  const [activeLobbyTab, setActiveLobbyTab] = useState<'info' | 'players' | 'payouts'>('info');
   const [showOrientationPrompt, setShowOrientationPrompt] = useState(false);
 
   // Detect mobile and orientation
@@ -142,13 +144,177 @@ const GameTable: React.FC = () => {
 
       <div className="absolute top-4 right-4 md:top-6 md:right-8 z-20 flex gap-2 md:gap-4">
         <button
-          onClick={handleLeaveTable}
-          className="bg-white/5 hover:bg-white/10 px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all border border-white/10 flex items-center gap-1.5 md:gap-2 text-white shadow-xl backdrop-blur-md"
+          onClick={() => setShowLobbyModal(true)}
+          className="bg-primary/20 hover:bg-primary/30 px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all border border-primary/30 flex items-center gap-1.5 md:gap-2 text-white shadow-xl backdrop-blur-md group"
         >
-          <span className="material-symbols-outlined text-sm md:text-base">logout</span>
+          <span className="material-symbols-outlined text-sm md:text-base group-hover:rotate-180 transition-transform duration-500">grid_view</span>
           <span className="hidden xs:inline">LOBBY</span>
         </button>
       </div>
+
+      {/* Tournament Lobby Modal */}
+      {showLobbyModal && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in" onClick={() => setShowLobbyModal(false)}>
+          <div className="bg-slate-900 border border-slate-700 w-full max-w-2xl h-[80vh] flex flex-col rounded-3xl overflow-hidden shadow-2xl animate-scale-in" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="p-6 bg-gradient-to-r from-slate-800 to-slate-900 border-b border-slate-700">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-xl md:text-2xl font-black text-white">{tournament?.name || 'Tournament Lobby'}</h2>
+                  <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">ID: {id?.substring(0, 8)} • {tournament?.gameType || 'NL Hold\'em'}</p>
+                </div>
+                <button onClick={() => setShowLobbyModal(false)} className="text-slate-500 hover:text-white transition p-2">
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+
+              {/* Tabs */}
+              <div className="flex gap-2 mt-6">
+                {[
+                  { id: 'info', label: 'Informações', icon: 'info' },
+                  { id: 'players', label: 'Jogadores', icon: 'group' },
+                  { id: 'payouts', label: 'Premiação', icon: 'payments' }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveLobbyTab(tab.id as any)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeLobbyTab === tab.id
+                      ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                      }`}
+                  >
+                    <span className="material-symbols-outlined text-sm">{tab.icon}</span>
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+              {activeLobbyTab === 'info' && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
+                      <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Buy-in</p>
+                      <p className="text-lg font-black text-white">${tournament?.buyIn.toLocaleString() || '0'}</p>
+                    </div>
+                    <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
+                      <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Prize Pool</p>
+                      <p className="text-lg font-black text-gold">${tournament?.prizePool.toLocaleString() || '0'}</p>
+                    </div>
+                    <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
+                      <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Jogadores</p>
+                      <p className="text-lg font-black text-white">{players.length}/{tournament?.maxPlayers || '9'}</p>
+                    </div>
+                    <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
+                      <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Status</p>
+                      <p className="text-lg font-black text-primary uppercase">{phase}</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-800/30 border border-slate-700/50 rounded-2xl p-6 space-y-4">
+                    <div className="flex justify-between items-center pb-4 border-b border-slate-700/50">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-slate-500 uppercase">Nível Atual</p>
+                        <p className="text-white font-bold">{isTournamentMode ? `Level ${blindLevel}` : 'Cash Game'}</p>
+                      </div>
+                      <div className="text-right space-y-1">
+                        <p className="text-[10px] font-bold text-slate-500 uppercase">Blinds</p>
+                        <p className="text-primary font-black">${gameConfig?.smallBlind}/${gameConfig?.bigBlind}</p>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-slate-500 uppercase">Próximo Nível</p>
+                        <p className="text-slate-400 font-bold">{isTournamentMode ? `Level ${blindLevel + 1}` : '-'}</p>
+                      </div>
+                      <div className="text-right space-y-1">
+                        <p className="text-[10px] font-bold text-slate-500 uppercase">Tempo Restante</p>
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-sm text-slate-500">schedule</span>
+                          <p className="text-white font-mono font-bold">04:32</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeLobbyTab === 'players' && (
+                <div className="space-y-2">
+                  <div className="flex justify-between px-4 py-2 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700/50 mb-2">
+                    <span>Jogador</span>
+                    <span>Chips</span>
+                  </div>
+                  {[...players].sort((a, b) => b.balance - a.balance).map((p, i) => (
+                    <div key={p.id} className={`flex justify-between items-center p-4 rounded-xl border ${p.isHuman ? 'bg-primary/10 border-primary/30' : 'bg-slate-800/30 border-slate-700/50'} hover:bg-slate-800/50 transition`}>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] font-mono text-slate-500 w-4">{i + 1}</span>
+                        <div className="size-8 rounded-full bg-slate-700 overflow-hidden">
+                          <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${p.name}`} alt="" />
+                        </div>
+                        <span className={`text-sm font-bold ${p.isHuman ? 'text-white' : 'text-slate-300'}`}>{p.name} {p.isHuman && '(Você)'}</span>
+                      </div>
+                      <span className="text-sm font-black text-white">${p.balance.toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {activeLobbyTab === 'payouts' && (
+                <div className="space-y-4">
+                  <div className="bg-gold/10 border border-gold/20 p-4 rounded-2xl flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <span className="material-symbols-outlined text-gold">emoji_events</span>
+                      <p className="text-sm font-bold text-white">Prêmio Total Garantido</p>
+                    </div>
+                    <p className="text-xl font-black text-gold">${tournament?.prizePool.toLocaleString() || '0'}</p>
+                  </div>
+                  <div className="space-y-2">
+                    {[
+                      { rank: 1, percent: 45 },
+                      { rank: 2, percent: 25 },
+                      { rank: 3, percent: 15 },
+                      { rank: 4, percent: 10 },
+                      { rank: 5, percent: 5 },
+                    ].map((payout) => (
+                      <div key={payout.rank} className="flex justify-between items-center p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
+                        <div className="flex items-center gap-3">
+                          <span className={`size-6 rounded-full flex items-center justify-center font-bold text-[10px] ${payout.rank === 1 ? 'bg-gold text-background' : 'bg-slate-700 text-slate-300'}`}>{payout.rank}º</span>
+                          <span className="text-sm text-slate-400">Posição</span>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-black text-white">${((tournament?.prizePool || 0) * (payout.percent / 100)).toLocaleString()}</p>
+                          <p className="text-[9px] font-bold text-slate-500 uppercase">{payout.percent}% do total</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Actions */}
+            <div className="p-6 bg-slate-900 border-t border-slate-700 flex gap-3">
+              <button
+                onClick={handleLeaveTable}
+                className="flex-1 bg-slate-800 hover:bg-red-600/20 hover:text-red-400 text-slate-400 font-bold py-3 rounded-2xl transition-all flex items-center justify-center gap-2 border border-slate-700 group"
+              >
+                <span className="material-symbols-outlined text-sm group-hover:animate-pulse">logout</span>
+                Sair da Mesa
+              </button>
+              <button
+                onClick={() => setShowLobbyModal(false)}
+                className="flex-1 bg-primary hover:brightness-110 text-white font-black py-3 rounded-2xl shadow-xl shadow-primary/20 transition-all flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-sm">play_arrow</span>
+                Voltar ao Jogo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Settings Modal (Simple) */}
       {showSettings && (
