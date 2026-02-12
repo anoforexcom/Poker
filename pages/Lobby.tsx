@@ -4,6 +4,7 @@ import { useLiveWorld } from '../contexts/LiveWorldContext';
 import { useSimulation } from '../contexts/SimulationContext';
 import { useGame } from '../contexts/GameContext';
 import { useSmoothedValue } from '../hooks/useSmoothedValue';
+import { useNotification } from '../contexts/NotificationContext';
 
 type LobbyTab = 'tournaments' | 'cash' | 'sitgo' | 'spingo';
 type ViewMode = 'list' | 'grid';
@@ -17,6 +18,7 @@ const Lobby: React.FC = () => {
   const [speedFilter, setSpeedFilter] = useState<string[]>([]);
   const navigate = useNavigate();
   const { user: gameUser, withdraw } = useGame();
+  const { showAlert } = useNotification();
 
   // Safety check: ensure tournaments is always an array
   const safeTournaments = Array.isArray(tournaments) ? tournaments : [];
@@ -66,10 +68,10 @@ const Lobby: React.FC = () => {
   });
 
   const handleJoinGame = async (t: any) => {
-    // If it's a finished tournament, we can only observe (already handled by button text but safety first)
+    // If it's a finished tournament, we can only observe
     if (t.status === 'Finished') return;
 
-    // For Running tournaments, we are observing (no cost usually)
+    // For Running tournaments, we are observing
     if (t.status === 'Running' || t.status === 'Final Table') {
       navigate(t.type === 'cash' || t.type === 'sitgo' || t.type === 'spingo' ? `/table/${t.id}` : `/tournament/${t.id}`);
       return;
@@ -77,19 +79,31 @@ const Lobby: React.FC = () => {
 
     // Check balance
     if (gameUser.balance < t.buyIn) {
-      alert(`Insufficient funds! You need $${t.buyIn.toFixed(2)} to join this game.`);
+      await showAlert(`Insufficient funds! You need $${t.buyIn.toFixed(2)} to join this game.`, 'error', { title: 'Balance Error' });
       return;
     }
 
-    // Deduct buy-in and register
-    if (window.confirm(`Join ${t.name} for $${t.buyIn.toFixed(2)}?`)) {
+    // Custom confirm modal
+    const confirmed = await showAlert(
+      `Join ${t.name} for $${t.buyIn.toFixed(2)}?`,
+      'info',
+      {
+        title: 'Confirm Registration',
+        confirmText: 'Join Table',
+        showCancel: true
+      }
+    );
+
+    if (confirmed) {
       try {
         await withdraw(t.buyIn);
         await registerForTournament(t.id, gameUser.id);
+
+        await showAlert(`Successfully registered for ${t.name}!`, 'success');
         navigate(t.type === 'cash' || t.type === 'sitgo' || t.type === 'spingo' ? `/table/${t.id}` : `/tournament/${t.id}`);
       } catch (err: any) {
         console.error('Registration failed:', err);
-        alert('Failed to register. Please try again.');
+        await showAlert('Failed to register. Please try again.', 'error');
       }
     }
   };

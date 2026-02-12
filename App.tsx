@@ -299,13 +299,17 @@ const AppRoutes = () => {
   );
 };
 
+import { NotificationProvider } from './contexts/NotificationContext';
+
 const App: React.FC = () => {
   return (
     <HashRouter>
       <ScrollToTop />
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
+      <NotificationProvider>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </NotificationProvider>
     </HashRouter>
   );
 };

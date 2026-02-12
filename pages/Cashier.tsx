@@ -1,25 +1,32 @@
-
 import React, { useState } from 'react';
 import { useGame } from '../contexts/GameContext';
+import { useNotification } from '../contexts/NotificationContext';
 
 const Cashier: React.FC = () => {
   const { user, deposit, withdraw } = useGame();
+  const { showAlert } = useNotification();
   const [amount, setAmount] = useState<string>('');
 
-  const handleDeposit = () => {
+  const handleDeposit = async () => {
     const val = parseFloat(amount);
     if (!isNaN(val) && val > 0) {
-      deposit(val);
+      await deposit(val);
       setAmount('');
-      alert(`Deposited $${val}!`);
+      await showAlert(`Deposited $${val.toLocaleString()} successfully!`, 'success', { title: 'Transaction Complete' });
     }
   };
 
-  const handleWithdraw = () => {
+  const handleWithdraw = async () => {
     const val = parseFloat(amount);
     if (!isNaN(val) && val > 0) {
-      withdraw(val);
-      setAmount('');
+      try {
+        await withdraw(val);
+        setAmount('');
+        await showAlert(`Withdrawn $${val.toLocaleString()} successfully!`, 'success', { title: 'Transaction Complete' });
+      } catch (err: any) {
+        // Erro de saldo insuficiente já gera um alert no Context, mas podemos tratar aqui se necessário
+        console.error('Withdrawal failed');
+      }
     }
   };
 

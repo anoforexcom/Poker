@@ -48,7 +48,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [authUser]);
 
   const updateProfileInDB = async (updates: any) => {
-    if (!authUser) return;
+    // Se for guest ou não estiver logado, apenas atualizamos o estado local
+    if (!authUser || user.id === 'demo-guest-id') return;
 
     const { error } = await supabase
       .from('profiles')
