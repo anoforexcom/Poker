@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveWorld } from '../contexts/LiveWorldContext';
 import { useSimulation } from '../contexts/SimulationContext';
+import { useSmoothedValue } from '../hooks/useSmoothedValue';
 
 type LobbyTab = 'tournaments' | 'cash' | 'sitgo' | 'spingo';
 type ViewMode = 'list' | 'grid';
@@ -40,8 +41,16 @@ const Lobby: React.FC = () => {
       };
     }
     // Otherwise it's already a Tournament from LiveWorld
-    return { ...t, type: (t as any).type || 'tournament' };
   }) : [];
+
+  // Calculate real stats based on displayed tournaments
+  const actualPlayersInGames = safeTournaments.reduce((sum, t) => sum + (t.players || 0), 0);
+  const activeTablesCount = safeTournaments.filter(t => t.status === 'Running' || t.status === 'Final Table').length;
+
+  // Display count: Players in games + a stable lobby population (approx 30% of bots)
+  const targetOnlinePlayers = Math.floor(actualPlayersInGames * 1.3) + 120;
+  const smoothedOnlinePlayers = useSmoothedValue(targetOnlinePlayers, 0.05);
+  const smoothedActiveTables = useSmoothedValue(activeTablesCount + 42, 0.1);
 
   const filteredTournaments = safeTournaments.filter(t => {
     // Type filter based on tab
@@ -148,7 +157,7 @@ const Lobby: React.FC = () => {
               </div>
               <div className="bg-primary/10 text-primary text-[10px] font-bold px-3 py-1.5 rounded border border-primary/20 flex items-center gap-2">
                 <span className="size-2 bg-primary rounded-full animate-pulse"></span>
-                {onlinePlayers.toLocaleString()} <span className="hidden sm:inline">PLAYERS</span>
+                {smoothedOnlinePlayers.toLocaleString()} <span className="hidden sm:inline">PLAYERS</span>
               </div>
             </div>
           </div>

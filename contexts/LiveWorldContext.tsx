@@ -91,9 +91,12 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
 
                 // Calculate Derived Global Stats
                 const tournamentPlayers = updatedTournaments.reduce((acc, t) => acc + t.players, 0);
-                const cashGamePlayers = Math.floor(Math.random() * 1000) + 500; // Mock cash game players
-                const totalOnline = tournamentPlayers + cashGamePlayers;
-                const totalTables = Math.ceil(cashGamePlayers / 6) + Math.ceil(tournamentPlayers / 9);
+
+                // Small organic fluctuation for cash games (+/- 1-3 players)
+                const cashGameBase = 840;
+                const cashGameFluctuation = Math.floor(Math.random() * 7) - 3;
+                const totalOnline = tournamentPlayers + cashGameBase + cashGameFluctuation;
+                const totalTables = Math.ceil((cashGameBase + cashGameFluctuation) / 6) + Math.ceil(tournamentPlayers / 9);
 
                 setOnlinePlayers(totalOnline);
                 setActiveTables(totalTables);
