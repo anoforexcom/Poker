@@ -16,6 +16,7 @@ interface AuthContextType {
     login: (email: string, password: string) => Promise<void>;
     register: (name: string, email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
+    continueAsGuest: () => void;
     isAuthenticated: boolean;
 }
 
@@ -116,6 +117,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUser(null);
     };
 
+    const continueAsGuest = () => {
+        const guestUser: User = {
+            id: 'demo-guest-id',
+            name: 'Demo Guest',
+            email: 'demo@guest.com',
+            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Guest',
+            balance: 50000,
+            rank: 'Platinum'
+        };
+        setUser(guestUser);
+        setIsLoading(false);
+    };
+
     return (
         <AuthContext.Provider value={{
             user,
@@ -123,6 +137,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             login,
             register,
             logout,
+            continueAsGuest,
             isAuthenticated: !!user
         }}>
             {children}

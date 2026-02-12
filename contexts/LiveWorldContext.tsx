@@ -117,6 +117,13 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
     const registerForTournament = async (tournamentId: string, userId: string) => {
         console.log('[LIVE_WORLD] Registering user:', userId, 'for tournament:', tournamentId);
 
+        // Se for um usuário Demo Guest, não tentamos inserir no Supabase (pois falharia por causa da FK)
+        // Apenas deixamos ele prosseguir para a visualização da mesa
+        if (userId === 'demo-guest-id') {
+            console.log('[LIVE_WORLD] Guest user detected, bypassing DB registration');
+            return;
+        }
+
         // 1. Join the tournament participants
         const { error: joinError } = await supabase
             .from('tournament_participants')
@@ -125,7 +132,6 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
         if (joinError) throw joinError;
 
         // 2. Increment player count in tournament table
-        // Note: In a real app, this should be a DB function/trigger or RPC to ensure atomicity
         const tournament = tournaments.find(t => t.id === tournamentId);
         if (tournament) {
             await supabase

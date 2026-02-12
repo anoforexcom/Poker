@@ -7,7 +7,7 @@ const Login: React.FC = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const { login } = useAuth();
+    const { login, continueAsGuest } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -105,34 +105,11 @@ const Login: React.FC = () => {
                         )}
                     </button>
 
-                    {/* Demo Button */}
                     <button
                         type="button"
-                        onClick={async () => {
-                            try {
-                                await login('demo@pokerpro.com', 'demo123');
-                                navigate('/play');
-                            } catch (err) {
-                                // If demo user doesn't exist, create it
-                                try {
-                                    const db = JSON.parse(localStorage.getItem('poker_users_db') || '[]');
-                                    const demoUser = {
-                                        id: 'demo@pokerpro.com',
-                                        name: 'Demo Player',
-                                        email: 'demo@pokerpro.com',
-                                        password: 'demo123',
-                                        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=demo',
-                                        balance: 50000,
-                                        rank: 'Gold'
-                                    };
-                                    db.push(demoUser);
-                                    localStorage.setItem('poker_users_db', JSON.stringify(db));
-                                    await login('demo@pokerpro.com', 'demo123');
-                                    navigate('/play');
-                                } catch (e) {
-                                    setError('Demo login failed');
-                                }
-                            }
+                        onClick={() => {
+                            continueAsGuest();
+                            navigate('/play');
                         }}
                         className="w-full bg-gold hover:bg-yellow-600 text-slate-900 font-black py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
                     >
