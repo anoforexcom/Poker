@@ -84,11 +84,20 @@ const Lobby: React.FC = () => {
   });
 
   const getFilterCount = (f: string) => {
-    if (f === 'ALL') return safeTournaments.length;
-    if (f === 'MICRO') return safeTournaments.filter(t => t && t.buyIn < 5).length;
-    if (f === 'LOW') return safeTournaments.filter(t => t && t.buyIn >= 5 && t.buyIn < 20).length;
-    if (f === 'MID') return safeTournaments.filter(t => t && t.buyIn >= 20 && t.buyIn < 100).length;
-    if (f === 'HIGH') return safeTournaments.filter(t => t && t.buyIn >= 100).length;
+    const tabToType: Record<string, string> = {
+      'tournaments': 'tournament',
+      'cash': 'cash',
+      'sitgo': 'sitgo',
+      'spingo': 'spingo'
+    };
+    const currentTabType = tabToType[activeTab];
+    const tournamentsInTab = safeTournaments.filter(t => t.type === currentTabType);
+
+    if (f === 'ALL') return tournamentsInTab.length;
+    if (f === 'MICRO') return tournamentsInTab.filter(t => t && t.buyIn < 5).length;
+    if (f === 'LOW') return tournamentsInTab.filter(t => t && t.buyIn >= 5 && t.buyIn < 20).length;
+    if (f === 'MID') return tournamentsInTab.filter(t => t && t.buyIn >= 20 && t.buyIn < 100).length;
+    if (f === 'HIGH') return tournamentsInTab.filter(t => t && t.buyIn >= 100).length;
     return 0;
   };
 

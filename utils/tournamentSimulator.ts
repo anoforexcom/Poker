@@ -57,6 +57,14 @@ export class TournamentSimulator {
         for (let i = 0; i < this.config.initialBots; i++) {
             this.createBot();
         }
+
+        // Criar torneios iniciais de cada tipo para popular o lobby
+        const types: GameType[] = ['tournament', 'cash', 'sitgo', 'spingo'];
+        types.forEach(type => {
+            for (let i = 0; i < 5; i++) {
+                this.createTournament(type);
+            }
+        });
     }
 
     // Criar um novo bot
@@ -82,7 +90,10 @@ export class TournamentSimulator {
         const types: GameType[] = ['tournament', 'cash', 'sitgo', 'spingo'];
         const type = forcedType || types[Math.floor(Math.random() * types.length)];
 
-        let buyIn = [10, 25, 50, 100, 250, 500, 1000][Math.floor(Math.random() * 7)];
+        // Variety in buy-ins (Micro <5, Low 5-20, Mid 20-100, High >100)
+        const buyInPools = [2, 4, 5, 10, 15, 25, 50, 75, 100, 250, 500, 1000];
+        let buyIn = buyInPools[Math.floor(Math.random() * buyInPools.length)];
+
         let maxPlayers = [9, 18, 27, 45, 90, 180][Math.floor(Math.random() * 6)];
         let name = this.generateTournamentName(type);
         let status: 'registering' | 'running' | 'finished' = 'registering';
@@ -236,6 +247,7 @@ export class TournamentSimulator {
     }
 
     // Iniciar simulação
+    // Iniciar simulação
     start() {
         try {
             console.log('🚀 Iniciando simulador de torneios...');
@@ -252,11 +264,6 @@ export class TournamentSimulator {
 
             if (activeTournaments < this.config.maxConcurrentTournaments) {
                 this.createTournament();
-                try {
-                    console.log(`✨ Novo torneio criado! Total ativo: ${activeTournaments + 1}`);
-                } catch (e) {
-                    // Ignore console errors in production
-                }
             }
 
             // Criar mais bots se necessário
@@ -266,6 +273,21 @@ export class TournamentSimulator {
                     this.createBot();
                 }
             }
+
+            // Ensure balanced population across all types
+            const types: GameType[] = ['tournament', 'cash', 'sitgo', 'spingo'];
+            const counts = types.reduce((acc, type) => {
+                acc[type] = Array.from(this.tournaments.values()).filter(
+                    t => t.type === type && t.status !== 'finished'
+                ).length;
+                return acc;
+            }, {} as Record<GameType, number>);
+
+            types.forEach(type => {
+                if (counts[type] < 8) {
+                    this.createTournament(type);
+                }
+            });
         }, this.config.tournamentInterval) as unknown as number;
 
         // Simular torneios
@@ -275,10 +297,7 @@ export class TournamentSimulator {
             });
         }, this.config.simulationSpeed) as unknown as number;
 
-        // Criar alguns torneios iniciais
-        for (let i = 0; i < 10; i++) {
-            this.createTournament();
-        }
+        // O inicializador já cria torneios de todos os tipos
     }
 
     // Parar simulação
