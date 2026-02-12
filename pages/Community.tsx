@@ -391,7 +391,7 @@ const Community: React.FC = () => {
       </main>
 
       {/* SIDE CHAT */}
-      <aside className="w-80 border-l border-border-dark bg-surface/5 flex flex-col shrink-0 h-full">
+      <aside className="hidden lg:flex w-80 border-l border-border-dark bg-surface/5 flex flex-col shrink-0 h-full">
         <div className="p-4 border-b border-border-dark flex items-center justify-between bg-surface/20">
           <div className="flex items-center gap-2">
             <div className="size-2.5 bg-poker-green rounded-full animate-pulse"></div>

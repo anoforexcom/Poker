@@ -191,6 +191,7 @@ const Header = ({ onToggle }: { onToggle: () => void }) => {
 const ProtectedLayout = ({ children }: { children: React.ReactNode }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, isLoading } = useAuth();
+  const location = useLocation();
 
   console.log('[PROTECTED_LAYOUT] Rendering, isLoading:', isLoading, 'user:', user);
 
@@ -207,7 +208,8 @@ const ProtectedLayout = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  console.log('[PROTECTED_LAYOUT] Rendering main layout');
+  const isTable = location.pathname.startsWith('/table/');
+  console.log('[PROTECTED_LAYOUT] Rendering main layout, isTable:', isTable);
 
   return (
     <GameProvider>
@@ -215,10 +217,10 @@ const ProtectedLayout = ({ children }: { children: React.ReactNode }) => {
         <SimulationProvider>
           <ChatProvider>
             <div className="flex h-screen bg-[#0a0f1a] text-slate-100 font-sans overflow-hidden">
-              <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+              {!isTable && <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />}
 
               {/* Mobile Overlay */}
-              {isSidebarOpen && (
+              {isSidebarOpen && !isTable && (
                 <div
                   className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm transition-opacity"
                   onClick={() => setIsSidebarOpen(false)}
@@ -226,8 +228,8 @@ const ProtectedLayout = ({ children }: { children: React.ReactNode }) => {
               )}
 
               <div className="flex-1 flex flex-col min-w-0">
-                <Header onToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
-                <main className="flex-1 overflow-auto custom-scrollbar relative">
+                {!isTable && <Header onToggle={() => setIsSidebarOpen(!isSidebarOpen)} />}
+                <main className={`flex-1 overflow-auto custom-scrollbar relative ${isTable ? 'h-full' : ''}`}>
                   {children}
                 </main>
               </div>

@@ -126,26 +126,27 @@ const GameTable: React.FC = () => {
         </div>
       )}
       {/* Table Header Overlay */}
-      <div className="absolute top-6 left-8 z-20 pointer-events-none">
-        <div className="bg-background/60 backdrop-blur-md p-4 rounded-xl border border-white/5">
-          <h3 className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">
+      <div className="absolute top-4 left-4 md:top-6 md:left-8 z-20 pointer-events-none">
+        <div className="bg-background/80 backdrop-blur-md p-2 md:p-4 rounded-xl border border-white/5 shadow-2xl">
+          <h3 className="text-slate-400 text-[8px] md:text-[10px] font-bold uppercase tracking-widest mb-0.5 md:mb-1">
             {tournament?.name || `Table #${id}`}
           </h3>
-          <p className="text-white text-lg font-bold">
-            NL Hold'em
-            <span className="text-primary text-sm ml-2">
-              {isTournamentMode ? `Level ${blindLevel}` : `$${gameConfig?.smallBlind}/$${gameConfig?.bigBlind}`}
+          <p className="text-white text-sm md:text-lg font-bold flex items-center gap-2">
+            <span className="hidden xs:inline">NL Hold'em</span>
+            <span className="text-primary text-xs md:text-sm">
+              {isTournamentMode ? `Lvl ${blindLevel}` : `$${gameConfig?.smallBlind}/$${gameConfig?.bigBlind}`}
             </span>
           </p>
         </div>
       </div>
 
-      <div className="absolute top-6 right-8 z-20 flex gap-4">
+      <div className="absolute top-4 right-4 md:top-6 md:right-8 z-20 flex gap-2 md:gap-4">
         <button
           onClick={handleLeaveTable}
-          className="bg-white/5 hover:bg-white/10 px-4 py-2 rounded-lg text-xs font-bold transition-all border border-white/10 flex items-center gap-2 text-white"
+          className="bg-white/5 hover:bg-white/10 px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all border border-white/10 flex items-center gap-1.5 md:gap-2 text-white shadow-xl backdrop-blur-md"
         >
-          <span className="material-symbols-outlined text-sm">logout</span> LOBBY
+          <span className="material-symbols-outlined text-sm md:text-base">logout</span>
+          <span className="hidden xs:inline">LOBBY</span>
         </button>
       </div>
 
@@ -250,122 +251,91 @@ const GameTable: React.FC = () => {
         </div>
       </div>
 
-      <footer className="p-4 md:p-8 grid grid-cols-1 md:grid-cols-12 items-end gap-4 md:gap-8 bg-gradient-to-t from-background to-transparent">
-        <div className="md:col-span-3">
-          <div className="bg-background/80 backdrop-blur-lg border border-slate-700 rounded-xl overflow-hidden flex flex-col h-40 shadow-lg">
-            <div className="p-3 border-b border-slate-700 flex justify-between cursor-pointer hover:bg-white/5 transition" onClick={() => setShowSettings(true)}>
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Chat da Mesa</span>
-              <span className="material-symbols-outlined text-slate-500 text-sm hover:text-white transition">settings</span>
+      <footer className="p-2 md:p-8 flex flex-col md:grid md:grid-cols-12 items-end gap-3 md:gap-8 bg-gradient-to-t from-background to-transparent z-20">
+        {/* Chat - Hidden on very small screens or made compact */}
+        <div className="hidden xs:block md:col-span-3 w-full">
+          <div className="bg-background/80 backdrop-blur-lg border border-slate-700 rounded-xl overflow-hidden flex flex-col h-28 md:h-40 shadow-lg">
+            <div className="p-2 border-b border-slate-700 flex justify-between cursor-pointer hover:bg-white/5 transition" onClick={() => setShowSettings(true)}>
+              <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase">Chat da Mesa</span>
+              <span className="material-symbols-outlined text-slate-500 text-xs hover:text-white transition">settings</span>
             </div>
-            <div className="flex-1 overflow-y-auto p-3 space-y-1 text-[11px] scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
-              <p className="text-slate-500 italic border-l-2 border-primary pl-2 mb-2">Phase: {phase}</p>
-              {chatHistory.map((msg, idx) => (
+            <div className="flex-1 overflow-y-auto p-2 space-y-1 text-[10px] md:text-[11px] scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+              {chatHistory.slice(-5).map((msg, idx) => (
                 <p key={idx} className={`${msg.type === 'system' ? 'text-yellow-500 italic' : msg.sender === 'You' ? 'text-primary font-bold' : 'text-slate-300'}`}>
-                  <span className="opacity-50 mr-1 text-[9px]">{msg.sender}:</span> {msg.text}
+                  <span className="opacity-50 mr-1 text-[8px]">{msg.sender}:</span> {msg.text}
                 </p>
               ))}
-              {activeUser?.isFolded && <p className="text-red-500 font-bold border-l-2 border-red-500 pl-2">You Folded.</p>}
-            </div>
-            <div className="p-2 bg-slate-900/50">
-              <input
-                className="w-full bg-slate-800 border-none rounded-lg text-xs py-2 px-3 focus:ring-1 focus:ring-primary text-white placeholder-slate-500"
-                placeholder="Type & Enter..."
-                value={chatMessage}
-                onChange={(e) => setChatMessage(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-              />
             </div>
           </div>
         </div>
 
-        <div className="md:col-span-6 flex flex-col items-center gap-4">
+        <div className="w-full md:col-span-6 flex flex-col items-center gap-2 md:gap-4">
           {/* Player Cards with Avatar */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 md:gap-6">
             {/* User Avatar */}
-            <div className="flex flex-col items-center gap-2">
-              <div className={`relative size-20 rounded-full border-4 ${currentTurn === 0 ? 'border-gold ring-4 ring-gold/30 animate-pulse' : 'border-primary'} bg-slate-700 overflow-hidden shadow-2xl transition-all duration-300`}>
+            <div className="flex flex-col items-center gap-1 md:gap-2">
+              <div className={`relative size-12 md:size-20 rounded-full border-2 md:border-4 ${currentTurn === 0 ? 'border-gold ring-2 md:ring-4 ring-gold/30 animate-pulse' : 'border-primary'} bg-slate-700 overflow-hidden shadow-2xl transition-all duration-300`}>
                 <img
                   className="w-full h-full object-cover"
                   src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name}`}
                   alt={user?.name || 'You'}
                 />
               </div>
-              <div className="bg-background/90 backdrop-blur-sm px-3 py-1 rounded-lg border-2 border-primary">
-                <p className="text-xs font-bold text-white">{user?.name || 'You'}</p>
+              <div className="bg-background/90 backdrop-blur-sm px-2 py-0.5 md:px-3 md:py-1 rounded-lg border border-primary">
+                <p className="text-[10px] md:text-xs font-bold text-white">{user?.name || 'You'}</p>
               </div>
             </div>
 
             {/* Player Cards */}
-            <div className="flex gap-4">
+            <div className="flex gap-2 md:gap-4">
               {activeUser?.hand.map((card, i) => (
                 <HeroCard key={i} suit={card.suit} value={card.rank} rotate={i === 0 ? '-rotate-6' : 'rotate-6'} />
               ))}
-              {(!activeUser?.hand.length) && <div className="text-slate-500 font-bold">Waiting...</div>}
+              {(!activeUser?.hand.length) && <div className="text-slate-500 font-bold text-xs">Waiting...</div>}
             </div>
           </div>
 
           {/* Player Balance and Turn Indicator */}
-          <div className={`relative bg-primary/10 border-2 ${currentTurn === 0 ? 'border-gold animate-pulse' : 'border-primary'} backdrop-blur-md px-10 py-3 rounded-xl flex flex-col items-center shadow-lg shadow-primary/20`}>
-            <span className="text-[10px] font-black uppercase tracking-widest text-primary">{currentTurn === 0 ? 'SUA VEZ' : `VEZ DE ${players[currentTurn]?.name}`}</span>
-
-            {/* Chip Stack Display */}
+          <div className={`relative bg-primary/10 border-2 ${currentTurn === 0 ? 'border-gold animate-pulse' : 'border-primary'} backdrop-blur-md px-6 md:px-10 py-2 md:py-3 rounded-xl flex flex-col items-center shadow-lg shadow-primary/20`}>
+            <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-primary">{currentTurn === 0 ? 'SUA VEZ' : `VEZ DE ${players[currentTurn]?.name}`}</span>
             <div className="flex items-center gap-2">
-              <div className="flex -space-x-1">
-                <div className="size-5 rounded-full bg-red-500 border-2 border-white shadow-sm"></div>
-                <div className="size-5 rounded-full bg-blue-500 border-2 border-white shadow-sm"></div>
-                <div className="size-5 rounded-full bg-black border-2 border-white shadow-sm"></div>
-              </div>
-              <span className="text-2xl font-black text-white">${activeUser?.balance.toLocaleString()}</span>
+              <span className="text-sm md:text-2xl font-black text-white">${activeUser?.balance.toLocaleString()}</span>
             </div>
-
-            {/* Human Player Current Bet Chips */}
-            {(activeUser?.currentBet || 0) > 0 && (
-              <div className="absolute -top-10 flex flex-col items-center animate-bounce-short">
-                <div className="flex -space-x-1">
-                  <div className="size-6 rounded-full bg-red-500 border-2 border-white shadow-sm"></div>
-                  <div className="size-6 rounded-full bg-blue-500 border-2 border-white shadow-sm"></div>
-                  <div className="size-6 rounded-full bg-black border-2 border-white shadow-sm"></div>
-                </div>
-                <span className="bg-black/80 text-white text-xs font-bold px-2 rounded mt-0.5 border border-white/10 shadow-lg">${activeUser?.currentBet}</span>
-              </div>
-            )}
           </div>
         </div>
 
-        <div className="md:col-span-3 space-y-4">
-          <div className="bg-background/80 backdrop-blur-md p-4 rounded-xl border border-slate-700 space-y-4">
-            <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
-              <span>MIN: $20</span>
-              <span className="text-primary text-sm font-mono">${betValue}</span>
-              <span>MAX: ${(activeUser?.balance || 0).toLocaleString()}</span>
+        <div className="w-full md:col-span-3 space-y-2 md:space-y-4">
+          <div className="bg-background/80 backdrop-blur-md p-3 md:p-4 rounded-xl border border-slate-700 space-y-2 md:space-y-4">
+            <div className="flex justify-between items-center text-[9px] md:text-[10px] font-bold text-slate-400">
+              <span className="hidden xs:inline">MIN: $20</span>
+              <span className="text-primary text-xs md:text-sm font-mono ml-auto mr-auto sm:ml-0 sm:mr-0">${betValue}</span>
+              <span className="hidden xs:inline">MAX: ${(activeUser?.balance || 0).toLocaleString()}</span>
             </div>
             <input
               type="range" min="20" max={activeUser?.balance || 100} value={betValue}
               onChange={(e) => setBetValue(Number(e.target.value))}
-              className="w-full h-1.5 bg-slate-700 rounded-full appearance-none accent-primary cursor-pointer"
+              className="w-full h-1 bg-slate-700 rounded-full appearance-none accent-primary cursor-pointer"
             />
-            <div className="grid grid-cols-4 gap-2">
-              <button onClick={() => setBetValue(Math.floor(pot / 2))} className="bg-slate-800 hover:bg-slate-700 text-[10px] font-bold py-1.5 rounded transition">1/2 POT</button>
-              <button onClick={() => setBetValue(Math.floor(pot * 0.75))} className="bg-slate-800 hover:bg-slate-700 text-[10px] font-bold py-1.5 rounded transition">3/4 POT</button>
-              <button onClick={() => setBetValue(pot)} className="bg-slate-800 hover:bg-slate-700 text-[10px] font-bold py-1.5 rounded transition">POT</button>
-              <button onClick={() => setBetValue(activeUser?.balance || 0)} className="bg-slate-800 hover:bg-slate-700 text-[10px] font-bold py-1.5 rounded transition">ALL-IN</button>
+            <div className="grid grid-cols-4 gap-1 md:gap-2">
+              <button onClick={() => setBetValue(Math.floor(pot / 2))} className="bg-slate-800 hover:bg-slate-700 text-[8px] md:text-[10px] font-bold py-1 md:py-1.5 rounded transition">1/2</button>
+              <button onClick={() => setBetValue(Math.floor(pot * 0.75))} className="bg-slate-800 hover:bg-slate-700 text-[8px] md:text-[10px] font-bold py-1 md:py-1.5 rounded transition">3/4</button>
+              <button onClick={() => setBetValue(pot)} className="bg-slate-800 hover:bg-slate-700 text-[8px] md:text-[10px] font-bold py-1 md:py-1.5 rounded transition">POT</button>
+              <button onClick={() => setBetValue(activeUser?.balance || 0)} className="bg-slate-800 hover:bg-slate-700 text-[8px] md:text-[10px] font-bold py-1 md:py-1.5 rounded transition">ALL-IN</button>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2 md:gap-3">
             <button
               disabled={currentTurn !== 0}
               onClick={() => handlePlayerAction('fold')}
-              className="disabled:opacity-50 disabled:cursor-not-allowed bg-slate-800 hover:bg-red-600 text-white font-black py-4 rounded-xl shadow-lg uppercase text-sm transition-colors"
+              className="disabled:opacity-50 disabled:cursor-not-allowed bg-slate-800 hover:bg-red-600 text-white font-black py-2 md:py-4 rounded-lg md:rounded-xl shadow-lg uppercase text-[10px] md:text-sm transition-colors"
             >
               Fold
             </button>
-
-            {/* Check or Call button */}
             {currentBet === 0 || (activeUser && activeUser.currentBet === currentBet) ? (
               <button
                 disabled={currentTurn !== 0}
                 onClick={() => handlePlayerAction('check')}
-                className="disabled:opacity-50 disabled:cursor-not-allowed bg-slate-800 hover:bg-green-600 text-white font-black py-4 rounded-xl shadow-lg uppercase text-sm border-b-4 border-slate-900 transition-colors"
+                className="disabled:opacity-50 disabled:cursor-not-allowed bg-slate-800 hover:bg-green-600 text-white font-black py-2 md:py-4 rounded-lg md:rounded-xl shadow-lg uppercase text-[10px] md:text-sm border-b-2 md:border-b-4 border-slate-900 transition-colors"
               >
                 Check
               </button>
@@ -373,19 +343,18 @@ const GameTable: React.FC = () => {
               <button
                 disabled={currentTurn !== 0}
                 onClick={() => handlePlayerAction('call')}
-                className="disabled:opacity-50 disabled:cursor-not-allowed bg-slate-800 hover:bg-green-600 text-white font-black py-4 rounded-xl shadow-lg text-sm border-b-4 border-slate-900 transition-colors"
+                className="disabled:opacity-50 disabled:cursor-not-allowed bg-slate-800 hover:bg-green-600 text-white font-black py-2 md:py-4 rounded-lg md:rounded-xl shadow-lg text-[10px] md:text-sm border-b-2 md:border-b-4 border-slate-900 transition-colors"
               >
                 <div className="flex flex-col items-center">
-                  <span className="uppercase">Call</span>
-                  <span className="text-xs">${activeUser ? currentBet - activeUser.currentBet : 0}</span>
+                  <span className="uppercase leading-none">Call</span>
+                  <span className="text-[8px] md:text-xs leading-none mt-0.5">${activeUser ? currentBet - activeUser.currentBet : 0}</span>
                 </div>
               </button>
             )}
-
             <button
               disabled={currentTurn !== 0}
               onClick={() => handlePlayerAction('raise', betValue)}
-              className="disabled:opacity-50 disabled:cursor-not-allowed bg-primary hover:bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg uppercase text-sm border-b-4 border-blue-800 transition-colors"
+              className="disabled:opacity-50 disabled:cursor-not-allowed bg-primary hover:bg-blue-600 text-white font-black py-2 md:py-4 rounded-lg md:rounded-xl shadow-lg uppercase text-[10px] md:text-sm border-b-2 md:border-b-4 border-blue-800 transition-colors"
             >
               Raise
             </button>

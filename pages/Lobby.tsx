@@ -165,20 +165,20 @@ const Lobby: React.FC = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="p-4 md:p-6 border-b border-border-dark bg-surface/20">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="p-3 md:p-6 border-b border-border-dark bg-surface/20">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight font-display">Lobby</h2>
-              <p className="text-slate-400 text-sm mt-1">Join thousands of players worldwide</p>
+              <h2 className="text-xl md:text-3xl font-bold text-white tracking-tight font-display">Lobby</h2>
+              <p className="text-slate-400 text-[10px] md:text-sm mt-0.5">Join thousands of players worldwide</p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <div className="bg-poker-green/10 text-poker-green text-[10px] font-bold px-3 py-1.5 rounded border border-poker-green/20 flex items-center gap-2">
-                <span className="size-2 bg-poker-green rounded-full animate-pulse"></span>
-                {safeTournaments.length.toLocaleString()} <span className="hidden sm:inline">TOURNAMENTS</span>
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
+              <div className="bg-poker-green/10 text-poker-green text-[9px] md:text-[10px] font-bold px-2 py-1 md:px-3 md:py-1.5 rounded border border-poker-green/20 flex items-center gap-1.5 md:gap-2">
+                <span className="size-1.5 md:size-2 bg-poker-green rounded-full animate-pulse"></span>
+                {safeTournaments.length.toLocaleString()} <span className="hidden xs:inline">TOURNAMENTS</span>
               </div>
-              <div className="bg-primary/10 text-primary text-[10px] font-bold px-3 py-1.5 rounded border border-primary/20 flex items-center gap-2">
-                <span className="size-2 bg-primary rounded-full animate-pulse"></span>
-                {headerOnlinePlayers.toLocaleString()} <span className="hidden sm:inline">PLAYERS</span>
+              <div className="bg-primary/10 text-primary text-[9px] md:text-[10px] font-bold px-2 py-1 md:px-3 md:py-1.5 rounded border border-primary/20 flex items-center gap-1.5 md:gap-2">
+                <span className="size-1.5 md:size-2 bg-primary rounded-full animate-pulse"></span>
+                {headerOnlinePlayers.toLocaleString()} <span className="hidden xs:inline">PLAYERS</span>
               </div>
             </div>
           </div>
