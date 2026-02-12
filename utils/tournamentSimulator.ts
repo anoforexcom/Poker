@@ -170,9 +170,18 @@ export class TournamentSimulator {
             if (shouldStart) {
                 tournament.status = 'running';
                 if (tournament.type === 'spingo') {
-                    // Random Multiplier for Spin & Go
-                    const rolls = [2, 2, 2, 4, 6, 10, 25, 100, 1000];
-                    const multiplier = rolls[Math.floor(Math.random() * rolls.length)];
+                    // Random Multiplier with Rake-Aware distribution (Avg: ~2.83x / Rake: ~5.6%)
+                    const roll = Math.random() * 100;
+                    let multiplier = 2;
+
+                    if (roll < 0.01) multiplier = 1000;      // 0.01%
+                    else if (roll < 0.1) multiplier = 100;    // 0.09%
+                    else if (roll < 0.5) multiplier = 50;     // 0.4%
+                    else if (roll < 2.0) multiplier = 10;     // 1.5%
+                    else if (roll < 7.0) multiplier = 5;      // 5%
+                    else if (roll < 25.0) multiplier = 3;     // 18%
+                    else multiplier = 2;                     // 75%
+
                     tournament.prizePool = tournament.buyIn * multiplier;
                 }
             }
