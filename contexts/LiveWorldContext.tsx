@@ -13,6 +13,7 @@ export interface Tournament {
     status: TournamentStatus;
     startTime: string; // Display string like "14:00" or "Now"
     progress: number; // 0-100 for running tournaments
+    type?: 'tournament' | 'cash' | 'sitgo' | 'spingo';
 }
 
 interface LiveWorldContextType {
@@ -146,6 +147,7 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
             status: status,
             startTime: 'Now',
             progress: progress,
+            type: ['tournament', 'cash', 'sitgo', 'spingo'][Math.floor(Math.random() * 4)] as any
         };
     };
 

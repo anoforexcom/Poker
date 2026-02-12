@@ -1,12 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGame } from '../contexts/GameContext';
-import { usePokerGame } from '../hooks/usePokerGame';
+import { usePokerGame, GameConfig } from '../hooks/usePokerGame';
+import { useSimulation } from '../contexts/SimulationContext';
+import { useLiveWorld } from '../contexts/LiveWorldContext';
+import { BlindStructureType } from '../utils/blindStructure';
 
 const GameTable: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, updateBalance } = useGame();
+  const { tournaments: simTournaments } = useSimulation();
+  const { tournaments: liveTournaments } = useLiveWorld();
+
+  // Find tournament config
+  const tournament = [...simTournaments, ...liveTournaments].find(t => t.id === id);
+
+  const gameConfig: GameConfig | undefined = tournament ? {
+    mode: (tournament as any).type || 'tournament',
+    smallBlind: (tournament as any).type === 'cash' ? tournament.buyIn : (tournament.buyIn / 10), // Rough estimate for tourn blinds
+    bigBlind: (tournament as any).type === 'cash' ? tournament.buyIn * 2 : (tournament.buyIn / 5),
+    ante: 0,
+    startingStack: (tournament as any).type === 'cash' ? Math.min(user.balance, 1000) : 1500,
+    maxPlayers: tournament.maxPlayers,
+    blindStructureType: 'regular' as BlindStructureType
+  } : undefined;
 
   const {
     players,
@@ -18,8 +36,10 @@ const GameTable: React.FC = () => {
     startNewHand,
     handlePlayerAction,
     winners,
-    winningHand
-  } = usePokerGame(user.balance, updateBalance);
+    winningHand,
+    blindLevel,
+    isTournamentMode
+  } = usePokerGame(user.balance, updateBalance, gameConfig);
 
   // Restored Game Logic
   const [betValue, setBetValue] = useState(20);
@@ -93,8 +113,15 @@ const GameTable: React.FC = () => {
       {/* Table Header Overlay */}
       <div className="absolute top-6 left-8 z-20 pointer-events-none">
         <div className="bg-background/60 backdrop-blur-md p-4 rounded-xl border border-white/5">
-          <h3 className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Table Diamond #{id}</h3>
-          <p className="text-white text-lg font-bold">NL Hold'em <span className="text-primary text-sm ml-2">$10/$20</span></p>
+          <h3 className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">
+            {tournament?.name || `Table #${id}`}
+          </h3>
+          <p className="text-white text-lg font-bold">
+            NL Hold'em
+            <span className="text-primary text-sm ml-2">
+              {isTournamentMode ? `Level ${blindLevel}` : `$${gameConfig?.smallBlind}/$${gameConfig?.bigBlind}`}
+            </span>
+          </p>
         </div>
       </div>
 

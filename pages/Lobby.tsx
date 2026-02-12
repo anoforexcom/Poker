@@ -27,6 +27,7 @@ const Lobby: React.FC = () => {
       return {
         id: simTournament.id,
         name: simTournament.name,
+        type: simTournament.type || 'tournament',
         gameType: simTournament.gameType || 'NL Hold\'em',
         buyIn: simTournament.buyIn,
         prizePool: simTournament.prizePool,
@@ -39,10 +40,19 @@ const Lobby: React.FC = () => {
       };
     }
     // Otherwise it's already a Tournament from LiveWorld
-    return t;
+    return { ...t, type: (t as any).type || 'tournament' };
   }) : [];
 
   const filteredTournaments = safeTournaments.filter(t => {
+    // Type filter based on tab
+    const tabToType: Record<string, string> = {
+      'tournaments': 'tournament',
+      'cash': 'cash',
+      'sitgo': 'sitgo',
+      'spingo': 'spingo'
+    };
+    if (t.type !== tabToType[activeTab]) return false;
+
     // Safety check for tournament object
     if (!t || !t.name || typeof t.buyIn !== 'number') return false;
 
@@ -224,116 +234,117 @@ const Lobby: React.FC = () => {
           </div>
         </div>
 
-        {/* Tournament List/Grid */}
+        {/* Lists for all tabs */}
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6">
-          {activeTab === 'tournaments' && (
-            viewMode === 'list' ? (
-              // List View
-              <div className="space-y-3">
-                {filteredTournaments.map(t => (
-                  <div
-                    key={t.id}
-                    className="bg-surface/30 rounded-xl border border-border-dark p-4 hover:bg-surface/50 transition-all cursor-pointer group"
-                    onClick={() => navigate(`/tournament/${t.id}`)}
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={`size-2 rounded-full ${t.status === 'Running' ? 'bg-blue-500' : 'bg-slate-600'}`}></span>
-                          <h3 className="text-sm font-bold text-white truncate">{t.name}</h3>
-                          <span className={`text-[10px] font-black uppercase tracking-wider ${getStatusColor(t.status)}`}>
-                            {t.status}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
-                          <span className="flex items-center gap-1">
-                            <span className="material-symbols-outlined text-sm">attach_money</span>
-                            ${t.buyIn.toFixed(2)}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <span className="material-symbols-outlined text-sm">group</span>
-                            {t.players}/{t.maxPlayers}
-                          </span>
+          {viewMode === 'list' ? (
+            // List View
+            <div className="space-y-3">
+              {filteredTournaments.length === 0 && (
+                <div className="text-center py-20 bg-surface/10 rounded-2xl border border-dashed border-border-dark">
+                  <span className="material-symbols-outlined text-5xl text-slate-700 mb-2">info</span>
+                  <p className="text-slate-500 italic">No games found in this category</p>
+                </div>
+              )}
+              {filteredTournaments.map(t => (
+                <div
+                  key={t.id}
+                  className="bg-surface/30 rounded-xl border border-border-dark p-4 hover:bg-surface/50 transition-all cursor-pointer group"
+                  onClick={() => navigate(t.type === 'cash' || t.type === 'sitgo' || t.type === 'spingo' ? `/table/${t.id}` : `/tournament/${t.id}`)}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`size-2 rounded-full ${t.status === 'Running' ? 'bg-blue-500' : 'bg-slate-600'}`}></span>
+                        <h3 className="text-sm font-bold text-white truncate">{t.name}</h3>
+                        <span className={`text-[10px] font-black uppercase tracking-wider ${getStatusColor(t.status)}`}>
+                          {t.status}
+                        </span>
+                        {t.type === 'spingo' && <span className="text-[10px] bg-gold/20 text-gold px-1.5 py-0.5 rounded font-black">SPIN</span>}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                        <span className="flex items-center gap-1">
+                          <span className="material-symbols-outlined text-sm">attach_money</span>
+                          {t.type === 'cash' ? `Blinds ${t.buyIn}/${t.buyIn * 2}` : `$${t.buyIn.toFixed(2)}`}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span className="material-symbols-outlined text-sm">group</span>
+                          {t.players}/{t.maxPlayers}
+                        </span>
+                        {t.type !== 'cash' && (
                           <span className="flex items-center gap-1 text-gold">
                             <span className="material-symbols-outlined text-sm">emoji_events</span>
                             ${t.prizePool.toLocaleString()}
                           </span>
-                        </div>
+                        )}
                       </div>
-
-                      <button className={`px-6 py-2 rounded-lg font-black text-xs transition-all shadow-lg hover:brightness-110 whitespace-nowrap ${t.status === 'Registering' || t.status === 'Late Reg'
-                        ? 'bg-poker-green text-white shadow-poker-green/20'
-                        : t.status === 'Running'
-                          ? 'bg-blue-600 text-white shadow-blue-600/20'
-                          : 'bg-slate-700 text-slate-400 cursor-not-allowed'
-                        }`}>
-                        {t.status === 'Running' || t.status === 'Final Table' ? 'OBSERVE' : t.status === 'Finished' ? 'ENDED' : 'REGISTER'}
-                      </button>
                     </div>
+
+                    <button className={`px-6 py-2 rounded-lg font-black text-xs transition-all shadow-lg hover:brightness-110 whitespace-nowrap ${t.status === 'Registering' || t.status === 'Late Reg'
+                      ? 'bg-poker-green text-white shadow-poker-green/20'
+                      : t.status === 'Running'
+                        ? 'bg-blue-600 text-white shadow-blue-600/20'
+                        : 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                      }`}>
+                      {t.type === 'cash' ? 'JOIN' : t.status === 'Running' || t.status === 'Final Table' ? 'OBSERVE' : t.status === 'Finished' ? 'ENDED' : 'REGISTER'}
+                    </button>
                   </div>
-                ))}
-              </div>
-            ) : (
-              // Grid View
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {filteredTournaments.map(t => (
-                  <div
-                    key={t.id}
-                    className="bg-surface/30 rounded-xl border border-border-dark overflow-hidden hover:bg-surface/50 transition-all cursor-pointer group"
-                    onClick={() => navigate(`/tournament/${t.id}`)}
-                  >
-                    <div className="p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <span className={`size-2 rounded-full mt-1 ${t.status === 'Running' ? 'bg-blue-500' : 'bg-slate-600'}`}></span>
-                        <span className={`text-[9px] font-black uppercase tracking-wider ${getStatusColor(t.status)}`}>
-                          {t.status}
-                        </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            // Grid View
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredTournaments.map(t => (
+                <div
+                  key={t.id}
+                  className="bg-surface/30 rounded-xl border border-border-dark overflow-hidden hover:bg-surface/50 transition-all cursor-pointer group"
+                  onClick={() => navigate(t.type === 'cash' || t.type === 'sitgo' || t.type === 'spingo' ? `/table/${t.id}` : `/tournament/${t.id}`)}
+                >
+                  <div className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <span className={`size-2 rounded-full mt-1 ${t.status === 'Running' ? 'bg-blue-500' : 'bg-slate-600'}`}></span>
+                      <span className={`text-[9px] font-black uppercase tracking-wider ${getStatusColor(t.status)}`}>
+                        {t.status}
+                      </span>
+                    </div>
+
+                    <h3 className="text-sm font-bold text-white mb-3 line-clamp-2 min-h-[2.5rem]">{t.name}</h3>
+
+                    <div className="space-y-2 mb-4">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-slate-400">{t.type === 'cash' ? 'Blinds' : 'Buy-in'}</span>
+                        <span className="text-white font-bold">{t.type === 'cash' ? `${t.buyIn}/${t.buyIn * 2}` : `$${t.buyIn.toFixed(2)}`}</span>
                       </div>
-
-                      <h3 className="text-sm font-bold text-white mb-3 line-clamp-2 min-h-[2.5rem]">{t.name}</h3>
-
-                      <div className="space-y-2 mb-4">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-slate-400">Buy-in</span>
-                          <span className="text-white font-bold">${t.buyIn.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-slate-400">Players</span>
-                          <span className="text-white font-mono">{t.players}/{t.maxPlayers}</span>
-                        </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-slate-400">Players</span>
+                        <span className="text-white font-mono">{t.players}/{t.maxPlayers}</span>
+                      </div>
+                      {t.type !== 'cash' && (
                         <div className="flex justify-between text-xs">
                           <span className="text-slate-400">Prize Pool</span>
                           <span className="text-gold font-bold">${t.prizePool.toLocaleString()}</span>
                         </div>
-                      </div>
-
-                      <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden mb-3">
-                        <div
-                          className={`h-full rounded-full ${t.status === 'Running' ? 'bg-blue-500' : 'bg-poker-green'}`}
-                          style={{ width: `${(t.players / t.maxPlayers) * 100}%` }}
-                        ></div>
-                      </div>
-
-                      <button className={`w-full py-2 rounded-lg font-black text-xs transition-all shadow-lg hover:brightness-110 ${t.status === 'Registering' || t.status === 'Late Reg'
-                        ? 'bg-poker-green text-white shadow-poker-green/20'
-                        : t.status === 'Running'
-                          ? 'bg-blue-600 text-white shadow-blue-600/20'
-                          : 'bg-slate-700 text-slate-400 cursor-not-allowed'
-                        }`}>
-                        {t.status === 'Running' || t.status === 'Final Table' ? 'OBSERVE' : t.status === 'Finished' ? 'ENDED' : 'REGISTER'}
-                      </button>
+                      )}
                     </div>
-                  </div>
-                ))}
-              </div>
-            )
-          )}
 
-          {activeTab !== 'tournaments' && (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <span className="material-symbols-outlined text-6xl text-slate-700 mb-4">construction</span>
-              <h3 className="text-xl font-bold text-white mb-2">Coming Soon</h3>
-              <p className="text-slate-400 text-sm">This section is under development</p>
+                    <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden mb-3">
+                      <div
+                        className={`h-full rounded-full ${t.status === 'Running' ? 'bg-blue-500' : 'bg-poker-green'}`}
+                        style={{ width: `${(t.players / t.maxPlayers) * 100}%` }}
+                      ></div>
+                    </div>
+
+                    <button className={`w-full py-2 rounded-lg font-black text-xs transition-all shadow-lg hover:brightness-110 ${t.status === 'Registering' || t.status === 'Late Reg'
+                      ? 'bg-poker-green text-white shadow-poker-green/20'
+                      : t.status === 'Running'
+                        ? 'bg-blue-600 text-white shadow-blue-600/20'
+                        : 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                      }`}>
+                      {t.type === 'cash' ? 'JOIN' : t.status === 'Running' || t.status === 'Final Table' ? 'OBSERVE' : t.status === 'Finished' ? 'ENDED' : 'REGISTER'}
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>

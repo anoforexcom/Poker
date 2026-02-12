@@ -14,9 +14,12 @@ export interface SimulatedBot {
     skill: number; // 0-100, afeta probabilidade de vitória
 }
 
+export type GameType = 'tournament' | 'cash' | 'sitgo' | 'spingo';
+
 export interface SimulatedTournament {
     id: string;
     name: string;
+    type: GameType;
     status: 'registering' | 'running' | 'finished';
     buyIn: number;
     prizePool: number;
@@ -74,21 +77,37 @@ export class TournamentSimulator {
     }
 
     // Criar um novo torneio
-    private createTournament(): SimulatedTournament {
+    private createTournament(forcedType?: GameType): SimulatedTournament {
         const id = `tournament_${this.tournamentCounter++}`;
-        const buyIns = [10, 25, 50, 100, 250, 500, 1000];
-        const buyIn = buyIns[Math.floor(Math.random() * buyIns.length)];
-        const maxPlayers = [9, 18, 27, 45, 90, 180][Math.floor(Math.random() * 6)];
+        const types: GameType[] = ['tournament', 'cash', 'sitgo', 'spingo'];
+        const type = forcedType || types[Math.floor(Math.random() * types.length)];
+
+        let buyIn = [10, 25, 50, 100, 250, 500, 1000][Math.floor(Math.random() * 7)];
+        let maxPlayers = [9, 18, 27, 45, 90, 180][Math.floor(Math.random() * 6)];
+        let name = this.generateTournamentName(type);
+        let status: 'registering' | 'running' | 'finished' = 'registering';
+
+        if (type === 'cash') {
+            maxPlayers = 6;
+            status = 'running';
+            buyIn = [1, 2, 5, 10, 25, 50][Math.floor(Math.random() * 6)]; // Blinds usually
+        } else if (type === 'spingo') {
+            maxPlayers = 3;
+            buyIn = [1, 5, 10, 25, 50, 100][Math.floor(Math.random() * 6)];
+        } else if (type === 'sitgo') {
+            maxPlayers = [2, 6, 9][Math.floor(Math.random() * 3)];
+        }
 
         const tournament: SimulatedTournament = {
             id,
-            name: this.generateTournamentName(),
-            status: 'registering',
+            name,
+            type,
+            status,
             buyIn,
             prizePool: 0,
             players: [],
             maxPlayers,
-            startTime: new Date(Date.now() + 2 * 60 * 1000), // Começa em 2 minutos
+            startTime: status === 'running' ? new Date() : new Date(Date.now() + 2 * 60 * 1000),
             currentRound: 0,
             blindLevel: 1,
         };
@@ -99,16 +118,24 @@ export class TournamentSimulator {
     }
 
     // Gerar nome de torneio
-    private generateTournamentName(): string {
+    private generateTournamentName(type: GameType): string {
+        if (type === 'cash') {
+            const places = ['Las Vegas', 'Macau', 'Monaco', 'London', 'Atlantic City', 'Tokyo'];
+            const stakes = ['Low Stakes', 'Mid Stakes', 'High Stakes', 'Nosebleed'];
+            return `${places[Math.floor(Math.random() * places.length)]} ${stakes[Math.floor(Math.random() * stakes.length)]}`;
+        }
+        if (type === 'spingo') return `Spin & Go $${Math.random() > 0.9 ? '1M' : 'Jackpot'}`;
+        if (type === 'sitgo') return `Sit & Go ${[2, 6, 9][Math.floor(Math.random() * 3)]} Players`;
+
         const prefixes = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         const types = ['Million', 'Showdown', 'Championship', 'Masters', 'Classic', 'Turbo', 'Bounty'];
         const times = ['Morning', 'Afternoon', 'Evening', 'Night', 'Late Night'];
 
         const day = prefixes[Math.floor(Math.random() * prefixes.length)];
-        const type = types[Math.floor(Math.random() * types.length)];
+        const genre = types[Math.floor(Math.random() * types.length)];
         const time = times[Math.floor(Math.random() * times.length)];
 
-        return `${day} ${time} ${type}`;
+        return `${day} ${time} ${genre}`;
     }
 
     // Registrar bots em um torneio
@@ -132,12 +159,22 @@ export class TournamentSimulator {
 
     // Simular um torneio
     private simulateTournament(tournament: SimulatedTournament) {
-        if (tournament.status === 'registering' && new Date() >= tournament.startTime) {
-            tournament.status = 'running';
-            try {
-                console.log(`🎮 Torneio ${tournament.name} começou com ${tournament.players.length} jogadores!`);
-            } catch (e) {
-                // Ignore console errors in production
+        // Start registering tournaments when time or full (for Sit&Go/SpinGo)
+        const isSitGo = tournament.type === 'sitgo' || tournament.type === 'spingo';
+
+        if (tournament.status === 'registering') {
+            const shouldStart = isSitGo
+                ? tournament.players.length === tournament.maxPlayers
+                : new Date() >= tournament.startTime;
+
+            if (shouldStart) {
+                tournament.status = 'running';
+                if (tournament.type === 'spingo') {
+                    // Random Multiplier for Spin & Go
+                    const rolls = [2, 2, 2, 4, 6, 10, 25, 100, 1000];
+                    const multiplier = rolls[Math.floor(Math.random() * rolls.length)];
+                    tournament.prizePool = tournament.buyIn * multiplier;
+                }
             }
         }
 

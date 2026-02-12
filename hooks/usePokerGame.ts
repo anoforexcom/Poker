@@ -24,38 +24,77 @@ export interface Player {
     hasActed?: boolean; // Track if player has acted this round
 }
 
-const SMALL_BLIND = 10;
-const BIG_BLIND = 20;
+export interface GameConfig {
+    mode: 'cash' | 'tournament' | 'sitgo' | 'spingo';
+    smallBlind: number;
+    bigBlind: number;
+    ante: number;
+    startingStack: number;
+    maxPlayers: number;
+    blindStructureType?: BlindStructureType;
+}
 
-export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (amount: number) => void) => {
+const DEFAULT_CONFIG: GameConfig = {
+    mode: 'cash',
+    smallBlind: 10,
+    bigBlind: 20,
+    ante: 0,
+    startingStack: 1000,
+    maxPlayers: 5,
+    blindStructureType: 'regular'
+};
+
+export const usePokerGame = (
+    initialUserBalance: number,
+    updateGlobalBalance: (amount: number) => void,
+    config: GameConfig = DEFAULT_CONFIG
+) => {
+    const { mode, smallBlind: initialSB, bigBlind: initialBB, ante: initialAnte, maxPlayers, blindStructureType: initialBlindStructure } = config;
+
     const [deck, setDeck] = useState<Card[]>([]);
     const [communityCards, setCommunityCards] = useState<Card[]>([]);
     const [pot, setPot] = useState(0);
     const [sidePots, setSidePots] = useState<SidePot[]>([]);
     const [phase, setPhase] = useState<GamePhase>('pre-flop');
     const [currentTurn, setCurrentTurn] = useState(0);
-    const [currentBet, setCurrentBet] = useState(BIG_BLIND); // Track current bet to match
-    const [dealerPosition, setDealerPosition] = useState(3); // Dealer button position
+    const [currentBet, setCurrentBet] = useState(initialBB); // Track current bet to match
+    const [dealerPosition, setDealerPosition] = useState(maxPlayers - 1); // Dealer button position
     const [lastRaiser, setLastRaiser] = useState<number | null>(null); // Who raised last
-    const [lastRaiseAmount, setLastRaiseAmount] = useState(BIG_BLIND); // Track last raise amount for minimum raise
+    const [lastRaiseAmount, setLastRaiseAmount] = useState(initialBB); // Track last raise amount for minimum raise
     const [winners, setWinners] = useState<Player[]>([]);
     const [winningHand, setWinningHand] = useState<HandRank | null>(null);
 
     // Blind level system for tournaments
-    const [blindStructureType] = useState<BlindStructureType>('regular'); // Can be made configurable
+    const [blindStructureType] = useState<BlindStructureType>(initialBlindStructure || 'regular');
     const [blindLevel, setBlindLevel] = useState(1);
     const [levelStartTime, setLevelStartTime] = useState(Date.now());
     const [timeToNextLevel, setTimeToNextLevel] = useState(0);
-    const [isTournamentMode] = useState(false); // Set to true for tournaments
+    const [isTournamentMode] = useState(mode !== 'cash'); // Set to true for tournaments
 
-    // Initialize Players (1 Human + 4 Bots)
-    const [players, setPlayers] = useState<Player[]>([
-        { id: 'user', name: 'You', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=hero', balance: initialUserBalance, hand: [], isFolded: false, currentBet: 0, isHuman: true, isActive: true, hasActed: false },
-        { id: 'bot1', name: generateBotName(), avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=bot1`, balance: 4230, hand: [], isFolded: false, currentBet: 0, isHuman: false, isActive: true, hasActed: false },
-        { id: 'bot2', name: generateBotName(), avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=bot2`, balance: 2800, hand: [], isFolded: false, currentBet: 0, isHuman: false, isActive: true, hasActed: false },
-        { id: 'bot3', name: generateBotName(), avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=bot3`, balance: 12450, hand: [], isFolded: false, currentBet: 0, isHuman: false, isActive: true, hasActed: false, isDealer: true },
-        { id: 'bot4', name: generateBotName(), avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=bot4`, balance: 5100, hand: [], isFolded: false, currentBet: 0, isHuman: false, isActive: true, hasActed: false },
-    ]);
+    // Initialize Players 
+    const [players, setPlayers] = useState<Player[]>(() => {
+        const initialPlayers: Player[] = [
+            { id: 'user', name: 'You', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=hero', balance: initialUserBalance, hand: [], isFolded: false, currentBet: 0, isHuman: true, isActive: true, hasActed: false }
+        ];
+
+        // Add Bots up to maxPlayers
+        for (let i = 1; i < maxPlayers; i++) {
+            initialPlayers.push({
+                id: `bot${i}`,
+                name: generateBotName(),
+                avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=bot${i}`,
+                balance: config.startingStack,
+                hand: [],
+                isFolded: false,
+                currentBet: 0,
+                isHuman: false,
+                isActive: true,
+                hasActed: false,
+                isDealer: i === maxPlayers - 1
+            });
+        }
+        return initialPlayers;
+    });
 
     // Sync external user balance
     useEffect(() => {
@@ -100,11 +139,11 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
             };
         }
         return {
-            smallBlind: SMALL_BLIND,
-            bigBlind: BIG_BLIND,
-            ante: 0
+            smallBlind: initialSB,
+            bigBlind: initialBB,
+            ante: initialAnte
         };
-    }, [isTournamentMode, blindStructureType, blindLevel]);
+    }, [isTournamentMode, blindStructureType, blindLevel, initialSB, initialBB, initialAnte]);
 
     // Start a new hand
     const startNewHand = useCallback(() => {
@@ -468,7 +507,7 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
                     handlePlayerAction('check');
                 } else {
                     // Small raise
-                    handlePlayerAction('raise', currentBet + BIG_BLIND);
+                    handlePlayerAction('raise', currentBet + initialBB);
                 }
             } else if (amountToCall > currentPlayer.balance * 0.5) {
                 // Too expensive, likely fold
