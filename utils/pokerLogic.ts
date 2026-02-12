@@ -220,16 +220,25 @@ export const compareHands = (hand1: HandRank, hand2: HandRank): number => {
     return 0; // Perfect tie
 };
 
-// Find winner among multiple players
-export const findWinner = (players: { hand: Card[], communityCards: Card[] }[]): number => {
+// Find winners among multiple players (supports ties)
+export const findWinners = (players: { hand: Card[], communityCards: Card[] }[]): number[] => {
+    if (players.length === 0) return [];
+
     const evaluations = players.map(p => evaluateHand(p.hand, p.communityCards));
 
-    let winnerIndex = 0;
+    let winnersIndices: number[] = [0];
+    let bestHand = evaluations[0];
+
     for (let i = 1; i < evaluations.length; i++) {
-        if (compareHands(evaluations[i], evaluations[winnerIndex]) > 0) {
-            winnerIndex = i;
+        const comparison = compareHands(evaluations[i], bestHand);
+        if (comparison > 0) {
+            winnersIndices = [i];
+            bestHand = evaluations[i];
+        } else if (comparison === 0) {
+            winnersIndices.push(i);
         }
     }
 
-    return winnerIndex;
+    return winnersIndices;
 };
+

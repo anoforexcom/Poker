@@ -38,7 +38,7 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
     const [dealerPosition, setDealerPosition] = useState(3); // Dealer button position
     const [lastRaiser, setLastRaiser] = useState<number | null>(null); // Who raised last
     const [lastRaiseAmount, setLastRaiseAmount] = useState(BIG_BLIND); // Track last raise amount for minimum raise
-    const [winner, setWinner] = useState<Player | null>(null);
+    const [winners, setWinners] = useState<Player[]>([]);
     const [winningHand, setWinningHand] = useState<HandRank | null>(null);
 
     // Blind level system for tournaments
@@ -208,7 +208,7 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
         setPot(0);
         setSidePots([]);
         setCommunityCards([]);
-        setWinner(null);
+        setWinners([]);
         setWinningHand(null);
         setLastRaiseAmount(bigBlind);
 
@@ -352,21 +352,19 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
                 updateGlobalBalance(-actualCall);
             }
         } else if (action === 'raise') {
-            const callAmount = currentBet - currentPlayer.currentBet;
-            const raiseAmount = amount - currentBet;
-            const minimumRaise = currentBet + lastRaiseAmount;
+            const totalBet = Math.min(amount, currentPlayer.balance + currentPlayer.currentBet);
+            const raiseAmountRequested = totalBet - currentBet;
 
             // Validate minimum raise (must be at least the size of the last raise)
             // Exception: all-in is always allowed
-            const totalBetWithBalance = Math.min(amount, currentPlayer.balance + currentPlayer.currentBet);
-            const isAllIn = totalBetWithBalance >= currentPlayer.balance + currentPlayer.currentBet;
+            const isAllIn = totalBet >= currentPlayer.balance + currentPlayer.currentBet;
+            const isFullRaise = raiseAmountRequested >= lastRaiseAmount;
 
-            if (!isAllIn && amount < minimumRaise) {
-                console.warn(`Minimum raise is ${minimumRaise}. You tried to raise to ${amount}.`);
+            if (!isAllIn && totalBet < currentBet + lastRaiseAmount) {
+                console.warn(`Minimum raise is ${currentBet + lastRaiseAmount}. You tried to raise to ${amount}.`);
                 return; // Reject invalid raise
             }
 
-            const totalBet = Math.min(amount, currentPlayer.balance + currentPlayer.currentBet);
             const addAmount = totalBet - currentPlayer.currentBet;
 
             updatedPlayers[currentTurn] = {
@@ -376,18 +374,24 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
                 hasActed: true
             };
 
-            // Reset hasActed for all other players (they need to respond to raise)
-            updatedPlayers = updatedPlayers.map((p, i) =>
-                i === currentTurn ? p : { ...p, hasActed: false }
-            );
+            // Re-open betting ONLY if it's a full raise
+            if (isFullRaise) {
+                updatedPlayers = updatedPlayers.map((p, i) =>
+                    i === currentTurn ? p : { ...p, hasActed: false }
+                );
+            }
 
             addToPot = addAmount;
 
             // Update last raise amount for minimum raise validation
-            const actualRaiseAmount = totalBet - currentBet;
-            setLastRaiseAmount(actualRaiseAmount);
-            setCurrentBet(totalBet);
-            setLastRaiser(currentTurn);
+            if (raiseAmountRequested > 0) {
+                // If it's an all-in for less than full raise, we don't increase the minimum raise for next player?
+                // Actually, if it's a sub-raise all-in, the 'lastRaiseAmount' for the purpose of the NEXT player's min raise
+                // usually stays the same or adds up depending on house rules, but typically it doesn't decrease.
+                setLastRaiseAmount(Math.max(lastRaiseAmount, raiseAmountRequested));
+                setCurrentBet(totalBet);
+                setLastRaiser(currentTurn);
+            }
 
             if (currentPlayer.isHuman) {
                 updateGlobalBalance(-addAmount);
@@ -486,15 +490,15 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
         return () => clearTimeout(timer);
     }, [currentTurn, phase, players, currentBet]);
 
-    // Showdown Logic with Side Pots
+    // Showdown Logic with Side Pots and Odd Chip rule
     useEffect(() => {
-        if (phase === 'showdown' && !winner) {
+        if (phase === 'showdown' && winners.length === 0) {
             const activePlayers = players.filter(p => !p.isFolded && p.isActive);
 
             if (activePlayers.length === 1) {
                 // Only one player left, they win entire pot
                 const theWinner = activePlayers[0];
-                setWinner(theWinner);
+                setWinners([theWinner]);
 
                 if (theWinner.isHuman) {
                     updateGlobalBalance(pot);
@@ -503,7 +507,7 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
                         p.id === theWinner.id ? { ...p, balance: p.balance + pot } : p
                     ));
                 }
-            } else {
+            } else if (activePlayers.length > 1) {
                 // Multiple players - calculate side pots
                 const pots = calculateSidePots(players);
 
@@ -511,74 +515,92 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
                 const potsToDistribute = pots.length > 0 ? pots : [{ amount: pot, eligiblePlayers: activePlayers.map(p => p.id) }];
 
                 // Distribute each pot separately
-                let totalWinnings = 0;
-                let mainWinner: Player | null = null;
+                let totalHumanWinnings = 0;
+                const finalWinners: Player[] = [];
                 let mainWinningHand: HandRank | null = null;
+
+                // Players to update in state
+                const playersBalances: Record<string, number> = {};
 
                 potsToDistribute.forEach(sidePot => {
                     // Get eligible players for this pot
-                    const eligiblePlayers = activePlayers.filter(p =>
+                    const eligibleForPot = activePlayers.filter(p =>
                         sidePot.eligiblePlayers.includes(p.id)
                     );
 
-                    if (eligiblePlayers.length === 0) return;
+                    if (eligibleForPot.length === 0) return;
 
                     // Evaluate hands of eligible players
-                    const evaluations = eligiblePlayers.map(p => ({
+                    const evaluations = eligibleForPot.map(p => ({
                         player: p,
                         hand: evaluateHand(p.hand, communityCards)
                     }));
 
                     // Find ALL winners (detect ties/split pots)
-                    const winners: typeof evaluations = [];
+                    let currentPotWinners: typeof evaluations = [];
                     let bestHand = evaluations[0].hand;
 
                     evaluations.forEach(evaluation => {
                         const comparison = compareHands(evaluation.hand, bestHand);
                         if (comparison > 0) {
-                            // New best hand found - reset winners
-                            winners.length = 0;
-                            winners.push(evaluation);
+                            currentPotWinners = [evaluation];
                             bestHand = evaluation.hand;
                         } else if (comparison === 0) {
-                            // Tie - add to winners
-                            winners.push(evaluation);
+                            currentPotWinners.push(evaluation);
                         }
                     });
 
-                    // Split pot equally among all winners
-                    const splitAmount = sidePot.amount / winners.length;
+                    // Split pot - Odd Chip Rule: handle remainders
+                    const amountPerWinner = Math.floor(sidePot.amount / currentPotWinners.length);
+                    let remainder = sidePot.amount % currentPotWinners.length;
 
-                    winners.forEach(winnerEval => {
-                        if (winnerEval.player.isHuman) {
-                            totalWinnings += splitAmount;
-                        } else {
-                            setPlayers(prev => prev.map(p =>
-                                p.id === winnerEval.player.id ? { ...p, balance: p.balance + splitAmount } : p
-                            ));
-                        }
+                    // Distribute odd chips to players starting from left of button
+                    // Sort winners by table position starting from (Dealer + 1)
+                    const sortedWinners = [...currentPotWinners].sort((a, b) => {
+                        const idxA = (players.findIndex(p => p.id === a.player.id) - dealerPosition + players.length) % players.length;
+                        const idxB = (players.findIndex(p => p.id === b.player.id) - dealerPosition + players.length) % players.length;
+                        return idxA - idxB;
                     });
 
-                    // Track main winner (for display - use first winner)
-                    if (!mainWinner && winners.length > 0) {
-                        mainWinner = winners[0].player;
-                        mainWinningHand = winners[0].hand;
-                    }
+                    sortedWinners.forEach((evalItem, i) => {
+                        let winAmount = amountPerWinner;
+                        if (remainder > 0) {
+                            winAmount += 1; // Distribute 1 remainder unit
+                            remainder--;
+                        }
+
+                        if (evalItem.player.isHuman) {
+                            totalHumanWinnings += winAmount;
+                        }
+
+                        playersBalances[evalItem.player.id] = (playersBalances[evalItem.player.id] || 0) + winAmount;
+
+                        // Track unique winners for display
+                        if (!finalWinners.find(w => w.id === evalItem.player.id)) {
+                            finalWinners.push(evalItem.player);
+                        }
+                        if (!mainWinningHand) mainWinningHand = evalItem.hand;
+                    });
                 });
 
                 // Update human player balance if they won any pots
-                if (totalWinnings > 0) {
-                    updateGlobalBalance(totalWinnings);
+                if (totalHumanWinnings > 0) {
+                    updateGlobalBalance(totalHumanWinnings);
                 }
 
-                // Set winner for display
-                if (mainWinner) {
-                    setWinner(mainWinner);
-                    setWinningHand(mainWinningHand);
-                }
+                // Batch update bot balances
+                setPlayers(prev => prev.map(p => {
+                    const bonus = playersBalances[p.id] || 0;
+                    // Note: Human player balance is synced separately, but update it here too for UI consistency
+                    return bonus > 0 ? { ...p, balance: p.balance + bonus } : p;
+                }));
+
+                // Set winners for display
+                setWinners(finalWinners);
+                setWinningHand(mainWinningHand);
             }
         }
-    }, [phase, winner, players, communityCards, pot, updateGlobalBalance, calculateSidePots]);
+    }, [phase, winners, players, communityCards, pot, dealerPosition, updateGlobalBalance, calculateSidePots]);
 
     return {
         players,
@@ -594,12 +616,12 @@ export const usePokerGame = (initialUserBalance: number, updateGlobalBalance: (a
         blindStructureType,
         isTournamentMode,
         startNewHand: () => {
-            setWinner(null);
+            setWinners([]);
             setWinningHand(null);
             startNewHand();
         },
         handlePlayerAction,
-        winner,
+        winners,
         winningHand
     };
 };

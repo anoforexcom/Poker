@@ -17,7 +17,7 @@ const GameTable: React.FC = () => {
     currentBet,
     startNewHand,
     handlePlayerAction,
-    winner,
+    winners,
     winningHand
   } = usePokerGame(user.balance, updateBalance);
 
@@ -153,20 +153,28 @@ const GameTable: React.FC = () => {
               ))}
             </div>
 
-            {winner && (
+            {winners.length > 0 && (
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/95 p-8 rounded-2xl z-50 text-center border-4 border-gold shadow-2xl animate-fade-in-up max-w-md">
-                <p className="text-gold font-bold text-2xl uppercase tracking-widest mb-3">🏆 Winner 🏆</p>
-                <p className="text-white text-4xl font-black mb-2">{winner.name}</p>
+                <p className="text-gold font-bold text-2xl uppercase tracking-widest mb-3">
+                  {winners.length > 1 ? '🤝 Split Pot 🤝' : '🏆 Winner 🏆'}
+                </p>
+                <div className="mb-2">
+                  {winners.map((w, idx) => (
+                    <p key={w.id} className="text-white text-3xl font-black">
+                      {w.name}{idx < winners.length - 1 ? ' &' : ''}
+                    </p>
+                  ))}
+                </div>
                 {winningHand && (
                   <p className="text-primary text-lg font-bold mb-4">{winningHand.name}</p>
                 )}
                 <div className="flex gap-2 justify-center mb-4">
-                  {winner.hand.map((card, i) => (
+                  {winners[0].hand.map((card, i) => (
                     <HeroCard key={i} suit={card.suit} value={card.rank} />
                   ))}
                 </div>
                 <div className="bg-gold/20 border border-gold/50 rounded-lg p-3 mb-6">
-                  <p className="text-slate-400 text-sm mb-1">Pot Won</p>
+                  <p className="text-slate-400 text-sm mb-1">{winners.length > 1 ? 'Total Pot Split' : 'Pot Won'}</p>
                   <p className="text-gold text-3xl font-black">${pot.toLocaleString()}</p>
                 </div>
                 <button onClick={startNewHand} className="bg-primary hover:bg-primary-light px-10 py-4 rounded-xl font-black text-white uppercase tracking-wider shadow-lg transform transition hover:scale-105">
