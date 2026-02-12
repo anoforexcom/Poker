@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useGame } from '../contexts/GameContext';
 import { usePokerGame, GameConfig } from '../hooks/usePokerGame';
 import { useSimulation } from '../contexts/SimulationContext';
@@ -10,6 +10,8 @@ import { BlindStructureType } from '../utils/blindStructure';
 const GameTable: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isObserver = searchParams.get('observe') === 'true';
   const { user, updateBalance } = useGame();
   const { tournaments } = useLiveWorld();
   const { showAlert } = useNotification();
@@ -24,7 +26,8 @@ const GameTable: React.FC = () => {
     ante: 0,
     startingStack: (tournament as any).type === 'cash' ? Math.min(user.balance, 1000) : 1500,
     maxPlayers: tournament.maxPlayers,
-    blindStructureType: 'regular' as BlindStructureType
+    blindStructureType: 'regular' as BlindStructureType,
+    isObserver
   } : undefined;
 
   const {
@@ -407,12 +410,13 @@ const GameTable: React.FC = () => {
           </div>
 
           {/* Players Seats */}
-          {/* Players Seats */}
           {players.map((player, index) => {
-            if (player.isHuman) return null; // Render user separately
-            const posMap = ['mid-right', 'top-right', 'top', 'top-left'];
-            // Map index 1->mid-right (0), 2->top-right (1)...
-            const pos = posMap[index - 1] || 'top';
+            if (player.isHuman) return null; // Render user separately (bottom center)
+
+            // Adjust position mapping for observers (who don't have a human player at index 0)
+            const seatIndex = isObserver ? index : index - 1;
+            const posMap = ['mid-right', 'top-right', 'top', 'top-left', 'mid-left', 'bottom-left', 'bottom-right'];
+            const pos = posMap[seatIndex] || 'top';
 
             return (
               <PlayerSeat
@@ -448,8 +452,8 @@ const GameTable: React.FC = () => {
           </div>
         </div>
 
-        <div className="w-full md:col-span-6 flex flex-col items-center gap-2 md:gap-4">
-          {/* Player Cards with Avatar */}
+        {/* Player Cards with Avatar - Hide if observing */}
+        {!isObserver && (
           <div className="flex items-center gap-4 md:gap-6">
             {/* User Avatar */}
             <div className="flex flex-col items-center gap-1 md:gap-2">
@@ -473,72 +477,77 @@ const GameTable: React.FC = () => {
               {(!activeUser?.hand.length) && <div className="text-slate-500 font-bold text-xs">Waiting...</div>}
             </div>
           </div>
+        )}
 
-          {/* Player Balance and Turn Indicator */}
+        {/* Player Balance and Turn Indicator - Hide if observing */}
+        {!isObserver && activeUser && (
           <div className={`relative bg-primary/10 border-2 ${currentTurn === 0 ? 'border-gold animate-pulse' : 'border-primary'} backdrop-blur-md px-6 md:px-10 py-2 md:py-3 rounded-xl flex flex-col items-center shadow-lg shadow-primary/20`}>
             <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-primary">{currentTurn === 0 ? 'SUA VEZ' : `VEZ DE ${players[currentTurn]?.name}`}</span>
             <div className="flex items-center gap-2">
               <span className="text-sm md:text-2xl font-black text-white">${activeUser?.balance.toLocaleString()}</span>
             </div>
           </div>
-        </div>
+        )}
 
-        <div className="w-full md:col-span-3 space-y-2 md:space-y-4">
-          <div className="bg-background/80 backdrop-blur-md p-3 md:p-4 rounded-xl border border-slate-700 space-y-2 md:space-y-4">
-            <div className="flex justify-between items-center text-[9px] md:text-[10px] font-bold text-slate-400">
-              <span className="hidden xs:inline">MIN: $20</span>
-              <span className="text-primary text-xs md:text-sm font-mono ml-auto mr-auto sm:ml-0 sm:mr-0">${betValue}</span>
-              <span className="hidden xs:inline">MAX: ${(activeUser?.balance || 0).toLocaleString()}</span>
+        {/* User Actions - Only show if not observing */}
+        {!isObserver && activeUser && (
+          <div className="w-full md:col-span-3 space-y-2 md:space-y-4">
+            <div className="bg-background/80 backdrop-blur-md p-3 md:p-4 rounded-xl border border-slate-700 space-y-2 md:space-y-4">
+              <div className="flex justify-between items-center text-[9px] md:text-[10px] font-bold text-slate-400">
+                <span className="hidden xs:inline">MIN: $20</span>
+                <span className="text-primary text-xs md:text-sm font-mono ml-auto mr-auto sm:ml-0 sm:mr-0">${betValue}</span>
+                <span className="hidden xs:inline">MAX: ${(activeUser?.balance || 0).toLocaleString()}</span>
+              </div>
+              <input
+                type="range" min="20" max={activeUser?.balance || 100} value={betValue}
+                onChange={(e) => setBetValue(Number(e.target.value))}
+                className="w-full h-1 bg-slate-700 rounded-full appearance-none accent-primary cursor-pointer"
+              />
+              <div className="grid grid-cols-4 gap-1 md:gap-2">
+                <button onClick={() => setBetValue(Math.floor(pot / 2))} className="bg-slate-800 hover:bg-slate-700 text-[8px] md:text-[10px] font-bold py-1 md:py-1.5 rounded transition">1/2</button>
+                <button onClick={() => setBetValue(Math.floor(pot * 0.75))} className="bg-slate-800 hover:bg-slate-700 text-[8px] md:text-[10px] font-bold py-1 md:py-1.5 rounded transition">3/4</button>
+                <button onClick={() => setBetValue(pot)} className="bg-slate-800 hover:bg-slate-700 text-[8px] md:text-[10px] font-bold py-1 md:py-1.5 rounded transition">POT</button>
+                <button onClick={() => setBetValue(activeUser?.balance || 0)} className="bg-slate-800 hover:bg-slate-700 text-[8px] md:text-[10px] font-bold py-1 md:py-1.5 rounded transition">ALL-IN</button>
+              </div>
             </div>
-            <input
-              type="range" min="20" max={activeUser?.balance || 100} value={betValue}
-              onChange={(e) => setBetValue(Number(e.target.value))}
-              className="w-full h-1 bg-slate-700 rounded-full appearance-none accent-primary cursor-pointer"
-            />
-            <div className="grid grid-cols-4 gap-1 md:gap-2">
-              <button onClick={() => setBetValue(Math.floor(pot / 2))} className="bg-slate-800 hover:bg-slate-700 text-[8px] md:text-[10px] font-bold py-1 md:py-1.5 rounded transition">1/2</button>
-              <button onClick={() => setBetValue(Math.floor(pot * 0.75))} className="bg-slate-800 hover:bg-slate-700 text-[8px] md:text-[10px] font-bold py-1 md:py-1.5 rounded transition">3/4</button>
-              <button onClick={() => setBetValue(pot)} className="bg-slate-800 hover:bg-slate-700 text-[8px] md:text-[10px] font-bold py-1 md:py-1.5 rounded transition">POT</button>
-              <button onClick={() => setBetValue(activeUser?.balance || 0)} className="bg-slate-800 hover:bg-slate-700 text-[8px] md:text-[10px] font-bold py-1 md:py-1.5 rounded transition">ALL-IN</button>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-2 md:gap-3">
-            <button
-              disabled={currentTurn !== 0}
-              onClick={() => handlePlayerAction('fold')}
-              className="disabled:opacity-50 disabled:cursor-not-allowed bg-slate-800 hover:bg-red-600 text-white font-black py-2 md:py-4 rounded-lg md:rounded-xl shadow-lg uppercase text-[10px] md:text-sm transition-colors"
-            >
-              Fold
-            </button>
-            {currentBet === 0 || (activeUser && activeUser.currentBet === currentBet) ? (
+            <div className="grid grid-cols-3 gap-2 md:gap-3">
               <button
                 disabled={currentTurn !== 0}
-                onClick={() => handlePlayerAction('check')}
-                className="disabled:opacity-50 disabled:cursor-not-allowed bg-slate-800 hover:bg-green-600 text-white font-black py-2 md:py-4 rounded-lg md:rounded-xl shadow-lg uppercase text-[10px] md:text-sm border-b-2 md:border-b-4 border-slate-900 transition-colors"
+                onClick={() => handlePlayerAction('fold')}
+                className="disabled:opacity-50 disabled:cursor-not-allowed bg-slate-800 hover:bg-red-600 text-white font-black py-2 md:py-4 rounded-lg md:rounded-xl shadow-lg uppercase text-[10px] md:text-sm transition-colors"
               >
-                Check
+                Fold
               </button>
-            ) : (
+              {currentBet === 0 || (activeUser && activeUser.currentBet === currentBet) ? (
+                <button
+                  disabled={currentTurn !== 0}
+                  onClick={() => handlePlayerAction('check')}
+                  className="disabled:opacity-50 disabled:cursor-not-allowed bg-slate-800 hover:bg-green-600 text-white font-black py-2 md:py-4 rounded-lg md:rounded-xl shadow-lg uppercase text-[10px] md:text-sm border-b-2 md:border-b-4 border-slate-900 transition-colors"
+                >
+                  Check
+                </button>
+              ) : (
+                <button
+                  disabled={currentTurn !== 0}
+                  onClick={() => handlePlayerAction('call')}
+                  className="disabled:opacity-50 disabled:cursor-not-allowed bg-slate-800 hover:bg-green-600 text-white font-black py-2 md:py-4 rounded-lg md:rounded-xl shadow-lg text-[10px] md:text-sm border-b-2 md:border-b-4 border-slate-900 transition-colors"
+                >
+                  <div className="flex flex-col items-center">
+                    <span className="uppercase leading-none">Call</span>
+                    <span className="text-[8px] md:text-xs leading-none mt-0.5">${activeUser ? currentBet - activeUser.currentBet : 0}</span>
+                  </div>
+                </button>
+              )}
               <button
                 disabled={currentTurn !== 0}
-                onClick={() => handlePlayerAction('call')}
-                className="disabled:opacity-50 disabled:cursor-not-allowed bg-slate-800 hover:bg-green-600 text-white font-black py-2 md:py-4 rounded-lg md:rounded-xl shadow-lg text-[10px] md:text-sm border-b-2 md:border-b-4 border-slate-900 transition-colors"
+                onClick={() => handlePlayerAction('raise', betValue)}
+                className="disabled:opacity-50 disabled:cursor-not-allowed bg-primary hover:bg-blue-600 text-white font-black py-2 md:py-4 rounded-lg md:rounded-xl shadow-lg uppercase text-[10px] md:text-sm border-b-2 md:border-b-4 border-blue-800 transition-colors"
               >
-                <div className="flex flex-col items-center">
-                  <span className="uppercase leading-none">Call</span>
-                  <span className="text-[8px] md:text-xs leading-none mt-0.5">${activeUser ? currentBet - activeUser.currentBet : 0}</span>
-                </div>
+                Raise
               </button>
-            )}
-            <button
-              disabled={currentTurn !== 0}
-              onClick={() => handlePlayerAction('raise', betValue)}
-              className="disabled:opacity-50 disabled:cursor-not-allowed bg-primary hover:bg-blue-600 text-white font-black py-2 md:py-4 rounded-lg md:rounded-xl shadow-lg uppercase text-[10px] md:text-sm border-b-2 md:border-b-4 border-blue-800 transition-colors"
-            >
-              Raise
-            </button>
+            </div>
           </div>
-        </div>
+        )}
       </footer>
     </div>
   );
@@ -551,6 +560,8 @@ const PlayerSeat = ({ position, name, balance, active, inactive, dealer, current
     'top-right': 'top-4 right-[15%]',
     'mid-left': 'top-1/2 -translate-y-1/2 -left-12',
     'mid-right': 'top-1/2 -translate-y-1/2 -right-12',
+    'bottom-left': 'bottom-12 left-[15%]',
+    'bottom-right': 'bottom-12 right-[15%]',
   };
 
   return (

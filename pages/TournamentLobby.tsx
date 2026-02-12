@@ -80,6 +80,13 @@ const TournamentLobby: React.FC = () => {
         }
     };
 
+    const handleObserve = () => {
+        setIsNavigating(true);
+        setTimeout(() => {
+            navigate(`/table/${tournament.id}?observe=true`);
+        }, 300);
+    };
+
     const handleGoToTable = () => {
         setIsNavigating(true);
         // Small delay to show loading state
@@ -238,9 +245,18 @@ const TournamentLobby: React.FC = () => {
                     )}
 
                     {activeTab === 'tables' && (
-                        <div className="text-center py-20 text-slate-500">
-                            <span className="material-symbols-outlined text-4xl mb-2 opacity-50">table_restaurant</span>
-                            <p>Table viewing is available for active players and observers.</p>
+                        <div className="flex flex-col items-center justify-center py-20 gap-4">
+                            <span className="material-symbols-outlined text-5xl text-blue-500 opacity-50">table_restaurant</span>
+                            <div className="text-center">
+                                <h4 className="text-white font-bold mb-1">Table #1</h4>
+                                <p className="text-sm text-slate-500 mb-4">View the action at the feature table.</p>
+                                <button
+                                    onClick={handleObserve}
+                                    className="px-6 py-2 bg-blue-600/20 border border-blue-500/30 text-blue-400 font-bold rounded-lg hover:bg-blue-600/30 transition-all uppercase tracking-widest text-xs"
+                                >
+                                    Observe Table
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -286,7 +302,10 @@ const TournamentLobby: React.FC = () => {
                         REGISTER NOW <span className="block text-xs font-normal opacity-80 mt-1">${tournament.buyIn} Buy-in</span>
                     </button>
                 ) : (
-                    <button className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl shadow-lg transition-all">
+                    <button
+                        onClick={handleObserve}
+                        className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl shadow-lg transition-all"
+                    >
                         OBSERVE TABLES
                     </button>
                 )}

@@ -32,6 +32,7 @@ export interface GameConfig {
     startingStack: number;
     maxPlayers: number;
     blindStructureType?: BlindStructureType;
+    isObserver?: boolean;
 }
 
 const DEFAULT_CONFIG: GameConfig = {
@@ -49,7 +50,7 @@ export const usePokerGame = (
     updateGlobalBalance: (amount: number) => void,
     config: GameConfig = DEFAULT_CONFIG
 ) => {
-    const { mode, smallBlind: initialSB, bigBlind: initialBB, ante: initialAnte, maxPlayers, blindStructureType: initialBlindStructure } = config;
+    const { mode, smallBlind: initialSB, bigBlind: initialBB, ante: initialAnte, maxPlayers, blindStructureType: initialBlindStructure, isObserver = false } = config;
 
     const [deck, setDeck] = useState<Card[]>([]);
     const [communityCards, setCommunityCards] = useState<Card[]>([]);
@@ -73,12 +74,15 @@ export const usePokerGame = (
 
     // Initialize Players 
     const [players, setPlayers] = useState<Player[]>(() => {
-        const initialPlayers: Player[] = [
-            { id: 'user', name: 'You', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=hero', balance: initialUserBalance, hand: [], isFolded: false, currentBet: 0, isHuman: true, isActive: true, hasActed: false }
-        ];
+        const initialPlayers: Player[] = [];
+
+        if (!isObserver) {
+            initialPlayers.push({ id: 'user', name: 'You', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=hero', balance: initialUserBalance, hand: [], isFolded: false, currentBet: 0, isHuman: true, isActive: true, hasActed: false });
+        }
 
         // Add Bots up to maxPlayers
-        for (let i = 1; i < maxPlayers; i++) {
+        const botCount = isObserver ? maxPlayers : maxPlayers - 1;
+        for (let i = 0; i < botCount; i++) {
             initialPlayers.push({
                 id: `bot${i}`,
                 name: generateBotName(),
@@ -183,7 +187,7 @@ export const usePokerGame = (
                 playerBalance -= anteAmount;
                 totalAntes += anteAmount;
 
-                if (p.isHuman) {
+                if (p.isHuman && !isObserver) {
                     updateGlobalBalance(-anteAmount);
                 }
             }
@@ -226,7 +230,7 @@ export const usePokerGame = (
             updatedPlayers[actualSmallBlindPos].currentBet = smallBlind;
             updatedPlayers[actualSmallBlindPos].balance -= smallBlind;
 
-            if (updatedPlayers[actualSmallBlindPos].isHuman) {
+            if (updatedPlayers[actualSmallBlindPos].isHuman && !isObserver) {
                 updateGlobalBalance(-smallBlind);
             }
         }
@@ -235,7 +239,7 @@ export const usePokerGame = (
             updatedPlayers[actualBigBlindPos].currentBet = bigBlind;
             updatedPlayers[actualBigBlindPos].balance -= bigBlind;
 
-            if (updatedPlayers[actualBigBlindPos].isHuman) {
+            if (updatedPlayers[actualBigBlindPos].isHuman && !isObserver) {
                 updateGlobalBalance(-bigBlind);
             }
         }
@@ -387,7 +391,7 @@ export const usePokerGame = (
 
             addToPot = actualCall;
 
-            if (currentPlayer.isHuman) {
+            if (currentPlayer.isHuman && !isObserver) {
                 updateGlobalBalance(-actualCall);
             }
         } else if (action === 'raise') {
@@ -532,7 +536,7 @@ export const usePokerGame = (
                 const theWinner = activePlayers[0];
                 setWinners([theWinner]);
 
-                if (theWinner.isHuman) {
+                if (theWinner.isHuman && !isObserver) {
                     updateGlobalBalance(pot);
                 } else {
                     setPlayers(prev => prev.map(p =>
@@ -601,7 +605,7 @@ export const usePokerGame = (
                             remainder--;
                         }
 
-                        if (evalItem.player.isHuman) {
+                        if (evalItem.player.isHuman && !isObserver) {
                             totalHumanWinnings += winAmount;
                         }
 
