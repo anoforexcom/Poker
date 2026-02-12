@@ -1,10 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '../utils/supabase';
 
 interface User {
-    id: string; // email for simplicity
+    id: string;
     name: string;
     email: string;
-    password?: string; // stored for mock auth
     avatar: string;
     balance: number;
     rank: string;
@@ -15,86 +15,104 @@ interface AuthContextType {
     isLoading: boolean;
     login: (email: string, password: string) => Promise<void>;
     register: (name: string, email: string, password: string) => Promise<void>;
-    logout: () => void;
+    logout: () => Promise<void>;
     isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const USERS_DB_KEY = 'poker_users_db';
-const CURRENT_USER_KEY = 'poker_user_profile'; // Shared with GameContext
-
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        // Check for existing session
-        const storedUser = localStorage.getItem(CURRENT_USER_KEY);
-        console.log('[AUTH_CONTEXT] Initializing, storedUser:', storedUser);
-        if (storedUser) {
-            const parsed = JSON.parse(storedUser);
-            console.log('[AUTH_CONTEXT] Setting user from localStorage:', parsed);
-            setUser(parsed);
+    const fetchProfile = async (userId: string, email: string) => {
+        console.log('[AUTH_CONTEXT] Fetching profile for:', userId);
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+
+        if (error) {
+            console.error('[AUTH_CONTEXT] Error fetching profile:', error);
+            return null;
         }
-        setIsLoading(false);
-        console.log('[AUTH_CONTEXT] Initialization complete');
+
+        if (data) {
+            const profile: User = {
+                id: data.id,
+                name: data.name,
+                email: email,
+                avatar: data.avatar_url,
+                balance: data.balance,
+                rank: data.rank
+            };
+            return profile;
+        }
+        return null;
+    };
+
+    useEffect(() => {
+        // Check active session on mount
+        const initAuth = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                const profile = await fetchProfile(session.user.id, session.user.email || '');
+                setUser(profile);
+            }
+            setIsLoading(false);
+        };
+
+        initAuth();
+
+        // Listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log('[AUTH_CONTEXT] Auth event:', event);
+            if (session?.user) {
+                const profile = await fetchProfile(session.user.id, session.user.email || '');
+                setUser(profile);
+            } else {
+                setUser(null);
+            }
+            setIsLoading(false);
+        });
+
+        return () => subscription.unsubscribe();
     }, []);
 
     const login = async (email: string, password: string) => {
         setIsLoading(true);
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 800));
+        const { error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
 
-        const db = JSON.parse(localStorage.getItem(USERS_DB_KEY) || '[]');
-        const foundUser = db.find((u: User) => u.email === email && u.password === password);
-
-        if (foundUser) {
-            const { password, ...safeUser } = foundUser;
-            localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(safeUser));
-            setUser(safeUser);
-        } else {
+        if (error) {
             setIsLoading(false);
-            throw new Error('Invalid email or password');
+            throw error;
         }
-        setIsLoading(false);
     };
 
     const register = async (name: string, email: string, password: string) => {
         setIsLoading(true);
-        await new Promise(resolve => setTimeout(resolve, 800));
-
-        const db = JSON.parse(localStorage.getItem(USERS_DB_KEY) || '[]');
-
-        // Check if email exists
-        if (db.some((u: User) => u.email === email)) {
-            setIsLoading(false);
-            throw new Error('Email already registered');
-        }
-
-        const newUser: User = {
-            id: email,
-            name,
+        const { error } = await supabase.auth.signUp({
             email,
             password,
-            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
-            balance: 10000, // Starting balance
-            rank: 'Bronze'
-        };
+            options: {
+                data: {
+                    name: name,
+                }
+            }
+        });
 
-        const updatedDb = [...db, newUser];
-        localStorage.setItem(USERS_DB_KEY, JSON.stringify(updatedDb));
-
-        // Auto-login after register
-        const { password: _, ...safeUser } = newUser;
-        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(safeUser));
-        setUser(safeUser);
-
-        setIsLoading(false);
+        if (error) {
+            setIsLoading(false);
+            throw error;
+        }
     };
 
-    const logout = () => {
-        localStorage.removeItem(CURRENT_USER_KEY);
+    const logout = async () => {
+        await supabase.auth.signOut();
         setUser(null);
     };
 

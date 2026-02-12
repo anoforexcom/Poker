@@ -9,8 +9,7 @@ type LobbyTab = 'tournaments' | 'cash' | 'sitgo' | 'spingo';
 type ViewMode = 'list' | 'grid';
 
 const Lobby: React.FC = () => {
-  const { onlinePlayers, activeTables, smoothedOnlinePlayers, tournaments: liveWorldTournaments } = useLiveWorld();
-  const { tournaments: simulatedTournaments } = useSimulation();
+  const { onlinePlayers, activeTables, smoothedOnlinePlayers, tournaments, registerForTournament } = useLiveWorld();
   const [activeTab, setActiveTab] = useState<LobbyTab>('tournaments');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [filter, setFilter] = useState('ALL');
@@ -19,32 +18,8 @@ const Lobby: React.FC = () => {
   const navigate = useNavigate();
   const { user: gameUser, withdraw } = useGame();
 
-  // Use simulated tournaments if available, otherwise use LiveWorld tournaments
-  const tournaments = simulatedTournaments.length > 0 ? simulatedTournaments : liveWorldTournaments;
-
-  // Safety check: ensure tournaments is always an array AND transform SimulatedTournament to match Tournament interface
-  const safeTournaments = Array.isArray(tournaments) ? tournaments.map(t => {
-    // If this is a SimulatedTournament (players is an array), transform it
-    if (Array.isArray((t as any).players)) {
-      const simTournament = t as any; // SimulatedTournament
-      return {
-        id: simTournament.id,
-        name: simTournament.name,
-        type: simTournament.type || 'tournament',
-        gameType: simTournament.gameType || 'NL Hold\'em',
-        buyIn: simTournament.buyIn,
-        prizePool: simTournament.prizePool,
-        players: simTournament.players.length, // Convert array to count
-        maxPlayers: simTournament.maxPlayers,
-        status: simTournament.status === 'registering' ? 'Registering' :
-          simTournament.status === 'running' ? 'Running' : 'Finished',
-        startTime: 'Now',
-        progress: simTournament.currentRound || 0,
-      };
-    }
-    // Otherwise it's already a Tournament from LiveWorld
-    return { ...t, type: (t as any).type || 'tournament' };
-  }) : [];
+  // Safety check: ensure tournaments is always an array
+  const safeTournaments = Array.isArray(tournaments) ? tournaments : [];
 
   // No local smoothing needed - using global context for perfect sync
   const headerOnlinePlayers = smoothedOnlinePlayers;
@@ -90,7 +65,7 @@ const Lobby: React.FC = () => {
     return true;
   });
 
-  const handleJoinGame = (t: any) => {
+  const handleJoinGame = async (t: any) => {
     // If it's a finished tournament, we can only observe (already handled by button text but safety first)
     if (t.status === 'Finished') return;
 
@@ -106,10 +81,16 @@ const Lobby: React.FC = () => {
       return;
     }
 
-    // Deduct buy-in
+    // Deduct buy-in and register
     if (window.confirm(`Join ${t.name} for $${t.buyIn.toFixed(2)}?`)) {
-      withdraw(t.buyIn);
-      navigate(t.type === 'cash' || t.type === 'sitgo' || t.type === 'spingo' ? `/table/${t.id}` : `/tournament/${t.id}`);
+      try {
+        await withdraw(t.buyIn);
+        await registerForTournament(t.id, gameUser.id);
+        navigate(t.type === 'cash' || t.type === 'sitgo' || t.type === 'spingo' ? `/table/${t.id}` : `/tournament/${t.id}`);
+      } catch (err: any) {
+        console.error('Registration failed:', err);
+        alert('Failed to register. Please try again.');
+      }
     }
   };
 
@@ -149,7 +130,7 @@ const Lobby: React.FC = () => {
   };
 
   // Loading state while contexts initialize
-  if (!tournaments && !liveWorldTournaments) {
+  if (tournaments === undefined) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">

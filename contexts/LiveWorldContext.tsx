@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '../utils/supabase';
 
 export type TournamentStatus = 'Registering' | 'Late Reg' | 'Running' | 'Final Table' | 'Finished';
 
@@ -21,165 +22,117 @@ interface LiveWorldContextType {
     smoothedOnlinePlayers: number;
     activeTables: number;
     tournaments: Tournament[];
-    registerForTournament: (id: string) => void;
+    registerForTournament: (id: string, userId: string) => Promise<void>;
+    refreshData: () => Promise<void>;
 }
 
 const LiveWorldContext = createContext<LiveWorldContextType | undefined>(undefined);
 
-const TOURNAMENT_TEMPLATES = [
-    { name: "Sunday Million", buyIn: 109, maxPlayers: 500, gameType: "NL Hold'em" },
-    { name: "Daily Bigs", buyIn: 55, maxPlayers: 200, gameType: "NL Hold'em" },
-    { name: "Omadness", buyIn: 22, maxPlayers: 100, gameType: "PLO" },
-    { name: "Hyper Turbo", buyIn: 11, maxPlayers: 150, gameType: "NL Hold'em" },
-    { name: "Bounty Builder", buyIn: 33, maxPlayers: 250, gameType: "KO" },
-    { name: "Micro Millions", buyIn: 2.20, maxPlayers: 400, gameType: "NL Hold'em" },
-];
-
 export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    // Initial Random State
-    const [onlinePlayers, setOnlinePlayers] = useState(542);
-    const [smoothedOnlinePlayers, setSmoothedOnlinePlayers] = useState(542);
-    const [activeTables, setActiveTables] = useState(128);
+    const [onlinePlayers, setOnlinePlayers] = useState(3452);
+    const [smoothedOnlinePlayers, setSmoothedOnlinePlayers] = useState(3452);
+    const [activeTables, setActiveTables] = useState(482);
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
+    const [cashPlayersBase, setCashPlayersBase] = useState(3210);
 
-    // Initialize Tournaments
+    const fetchTournaments = async () => {
+        console.log('[LIVE_WORLD] Fetching tournaments from Supabase...');
+        const { data, error } = await supabase
+            .from('tournaments')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('[LIVE_WORLD] Error fetching tournaments:', error);
+            return;
+        }
+
+        if (data) {
+            const mapped: Tournament[] = data.map(t => ({
+                id: t.id,
+                name: t.name,
+                gameType: t.type === 'cash' ? 'NL Hold\'em' : t.type.toUpperCase(),
+                buyIn: Number(t.buy_in),
+                prizePool: Number(t.prize_pool),
+                players: t.players_count,
+                maxPlayers: t.max_players,
+                status: t.status as TournamentStatus,
+                startTime: 'Now',
+                progress: t.status === 'running' ? 50 : 0,
+                type: t.type as any
+            }));
+            setTournaments(mapped);
+
+            const totalTournamentPlayers = mapped.reduce((acc, t) => acc + t.players, 0);
+
+            // Flutuação muito suave do base (não muda radicalmente em cada fetch)
+            const totalOnline = totalTournamentPlayers + cashPlayersBase;
+
+            setOnlinePlayers(totalOnline);
+            setActiveTables(Math.ceil(totalTournamentPlayers / 9) + Math.ceil(cashPlayersBase / 6));
+        }
+    };
+
+    // Pequena flutuação no base a cada 10 segundos
     useEffect(() => {
-        const initialTournaments: Tournament[] = Array.from({ length: 8 }).map((_, i) => createRandomTournament(i));
-        setTournaments(initialTournaments);
+        const interval = setInterval(() => {
+            setCashPlayersBase(prev => {
+                const shift = Math.random() > 0.5 ? 1 : -1;
+                return prev + (Math.floor(Math.random() * 5) * shift);
+            });
+        }, 10000);
+        return () => clearInterval(interval);
     }, []);
 
-    // Simulation Heartbeat
     useEffect(() => {
-        const mainTimer = setInterval(() => {
-            setTournaments(prev => {
-                const updatedTournaments = prev.map(t => {
-                    // Logic for Tournament Lifecycle
+        fetchTournaments();
 
-                    // REGISTERING -> Fills up
-                    if (t.status === 'Registering' || t.status === 'Late Reg') {
-                        const newPlayers = Math.min(t.maxPlayers, t.players + Math.floor(Math.random() * 5));
-                        let newStatus = t.status;
-
-                        // If full, start running
-                        if (newPlayers >= t.maxPlayers) {
-                            newStatus = 'Running';
-                        }
-                        // Increase prize pool as players join
-                        const newPrizePool = newPlayers * t.buyIn * 0.9;
-
-                        return { ...t, players: newPlayers, status: newStatus, prizePool: newPrizePool };
-                    }
-
-                    // RUNNING -> Players drop out, progress increases
-                    if (t.status === 'Running' || t.status === 'Final Table') {
-                        const newProgress = Math.min(100, t.progress + (Math.random() * 2));
-                        const playersDrop = Math.floor(Math.random() * 3); // 0-2 players bust
-                        const newPlayers = Math.max(2, t.players - playersDrop);
-
-                        let newStatus = t.status;
-                        if (newPlayers <= 9 && t.status === 'Running') newStatus = 'Final Table';
-                        if (newPlayers <= 1) newStatus = 'Finished';
-
-                        return { ...t, players: newPlayers, status: newStatus, progress: newProgress };
-                    }
-
-                    // FINISHED -> Remove eventually (logic handled in next step to replace)
-                    return t;
-                }).filter(t => {
-                    // Remove finished tournaments occasionally to make room for new ones
-                    if (t.status === 'Finished' && Math.random() > 0.95) return false;
-                    return true;
-                });
-
-                // Calculate Derived Global Stats
-                const tournamentPlayers = updatedTournaments.reduce((acc, t) => acc + t.players, 0);
-
-                // Small organic fluctuation for cash games (+/- 1-3 players)
-                const cashGameBase = 840;
-                const cashGameFluctuation = Math.floor(Math.random() * 7) - 3;
-                const totalOnline = tournamentPlayers + cashGameBase + cashGameFluctuation;
-                const totalTables = Math.ceil((cashGameBase + cashGameFluctuation) / 6) + Math.ceil(tournamentPlayers / 9);
-
-                setOnlinePlayers(totalOnline);
-                setActiveTables(totalTables);
-
-                return updatedTournaments;
-
-            });
-        }, 2000); // Update every 2 seconds
-
-        // Spawner: Add new tournaments if list gets small
-        const spawnerTimer = setInterval(() => {
-            setTournaments(prev => {
-                if (prev.length < 5) {
-                    return [...prev, createRandomTournament(Date.now())];
-                }
-                return prev;
+        const subscription = supabase
+            .channel('realtime:tournaments')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'tournaments' }, () => {
+                fetchTournaments();
             })
-        }, 5000);
+            .subscribe();
 
         return () => {
-            clearInterval(mainTimer);
-            clearInterval(spawnerTimer);
+            supabase.removeChannel(subscription);
         };
-    }, []);
+    }, [cashPlayersBase]);
 
-    // Smoothing Heartbeat: Perfectly synchronized across all consumers
+    // Smoothing Heartbeat (Suavização lenta e profissional)
     useEffect(() => {
         const interval = setInterval(() => {
             setSmoothedOnlinePlayers(prev => {
                 const diff = onlinePlayers - prev;
-                if (Math.abs(diff) < 1) return onlinePlayers;
-
-                // Very slow, realistic transition as requested (0.005 speed equivalent)
-                const step = diff * 0.005;
-                const naturalStep = Math.abs(step) < 0.1 ? (diff > 0 ? 0.1 : -0.1) : step;
-                return prev + naturalStep;
+                if (Math.abs(diff) < 0.1) return onlinePlayers;
+                // Suavização mais lenta (0.02) para evitar o "cresce muito rápido"
+                const step = diff * 0.02;
+                return prev + step;
             });
-        }, 100);
+        }, 80);
 
         return () => clearInterval(interval);
     }, [onlinePlayers]);
 
-    const createRandomTournament = (idSeed: number): Tournament => {
-        const template = TOURNAMENT_TEMPLATES[Math.floor(Math.random() * TOURNAMENT_TEMPLATES.length)];
-        const statusRoll = Math.random();
-        let status: TournamentStatus = 'Registering';
-        let progress = 0;
-        let players = Math.floor(Math.random() * 100);
+    const registerForTournament = async (tournamentId: string, userId: string) => {
+        console.log('[LIVE_WORLD] Registering user:', userId, 'for tournament:', tournamentId);
 
-        if (statusRoll > 0.7) {
-            status = 'Running';
-            progress = Math.floor(Math.random() * 80);
-            players = Math.floor(template.maxPlayers * 0.8);
-        } else if (statusRoll > 0.95) {
-            status = 'Finished';
-            progress = 100;
-            players = 1;
+        // 1. Join the tournament participants
+        const { error: joinError } = await supabase
+            .from('tournament_participants')
+            .insert({ tournament_id: tournamentId, user_id: userId });
+
+        if (joinError) throw joinError;
+
+        // 2. Increment player count in tournament table
+        // Note: In a real app, this should be a DB function/trigger or RPC to ensure atomicity
+        const tournament = tournaments.find(t => t.id === tournamentId);
+        if (tournament) {
+            await supabase
+                .from('tournaments')
+                .update({ players_count: tournament.players + 1 })
+                .eq('id', tournamentId);
         }
-
-        return {
-            id: `tourn-${idSeed}-${Math.random()}`,
-            name: template.name,
-            gameType: template.gameType,
-            buyIn: template.buyIn,
-            prizePool: players * template.buyIn * 0.9,
-            players: players,
-            maxPlayers: template.maxPlayers,
-            status: status,
-            startTime: 'Now',
-            progress: progress,
-            type: ['tournament', 'cash', 'sitgo', 'spingo'][Math.floor(Math.random() * 4)] as any
-        };
-    };
-
-    const registerForTournament = (tournamentId: string) => {
-        setTournaments(prev => prev.map(t => {
-            if (t.id === tournamentId) {
-                return { ...t, players: t.players + 1 };
-            }
-            return t;
-        }));
     };
 
     return (
@@ -188,7 +141,8 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
             smoothedOnlinePlayers: Math.round(smoothedOnlinePlayers),
             activeTables,
             tournaments,
-            registerForTournament
+            registerForTournament,
+            refreshData: fetchTournaments
         }}>
             {children}
         </LiveWorldContext.Provider>
