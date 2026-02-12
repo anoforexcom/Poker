@@ -43,6 +43,7 @@ const Lobby: React.FC = () => {
       };
     }
     // Otherwise it's already a Tournament from LiveWorld
+    return { ...t, type: (t as any).type || 'tournament' };
   }) : [];
 
   // Calculate real stats based on displayed tournaments
