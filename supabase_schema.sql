@@ -107,3 +107,24 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+-- 7. TABELA DE TRANSAÇÕES (Histórico financeiro)
+CREATE TABLE IF NOT EXISTS public.transactions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL, -- 'deposit', 'withdrawal'
+  amount DECIMAL NOT NULL,
+  method TEXT NOT NULL,
+  status TEXT DEFAULT 'completed', -- 'pending', 'completed', 'failed'
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view their own transactions" ON public.transactions;
+CREATE POLICY "Users can view their own transactions" ON public.transactions
+  FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can insert their own transactions" ON public.transactions;
+CREATE POLICY "Users can insert their own transactions" ON public.transactions
+  FOR INSERT WITH CHECK (auth.uid() = user_id);

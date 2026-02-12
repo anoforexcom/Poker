@@ -122,7 +122,9 @@ const TournamentLobby: React.FC = () => {
 
                         <div className="text-right">
                             <div className="text-3xl font-black text-gold font-mono">${tournament.prizePool.toLocaleString()}</div>
-                            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Prize Pool</div>
+                            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                {tournament.type === 'sitgo' || tournament.type === 'spingo' ? 'Top Prizes' : 'Prize Pool'}
+                            </div>
                         </div>
                     </div>
                 </div>

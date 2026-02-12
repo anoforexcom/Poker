@@ -3,16 +3,19 @@ import { useGame } from '../contexts/GameContext';
 import { useNotification } from '../contexts/NotificationContext';
 
 const Cashier: React.FC = () => {
-  const { user, deposit, withdraw } = useGame();
+  const { user, transactions, deposit, withdraw } = useGame();
   const { showAlert } = useNotification();
   const [amount, setAmount] = useState<string>('');
+  const [method, setMethod] = useState<string>('Visa');
+
+  const presets = [10, 50, 100, 500, 1000];
 
   const handleDeposit = async () => {
     const val = parseFloat(amount);
     if (!isNaN(val) && val > 0) {
-      await deposit(val);
+      await deposit(val, method);
       setAmount('');
-      await showAlert(`Deposited $${val.toLocaleString()} successfully!`, 'success', { title: 'Transaction Complete' });
+      await showAlert(`Deposited $${val.toLocaleString()} via ${method} successfully!`, 'success', { title: 'Transaction Complete' });
     }
   };
 
@@ -20,12 +23,11 @@ const Cashier: React.FC = () => {
     const val = parseFloat(amount);
     if (!isNaN(val) && val > 0) {
       try {
-        await withdraw(val);
+        await withdraw(val, method);
         setAmount('');
-        await showAlert(`Withdrawn $${val.toLocaleString()} successfully!`, 'success', { title: 'Transaction Complete' });
+        await showAlert(`Withdrawn $${val.toLocaleString()} to ${method} successfully!`, 'success', { title: 'Transaction Complete' });
       } catch (err: any) {
-        // Erro de saldo insuficiente já gera um alert no Context, mas podemos tratar aqui se necessário
-        console.error('Withdrawal failed');
+        await showAlert('Insufficient funds for this withdrawal.', 'error', { title: 'Transaction Failed' });
       }
     }
   };
@@ -42,31 +44,37 @@ const Cashier: React.FC = () => {
           <div className="bg-surface p-8 rounded-2xl border border-border-dark shadow-xl">
             <div className="flex items-center justify-between mb-6">
               <span className="text-slate-500 text-sm font-medium uppercase tracking-widest">Total Balance</span>
-              <span className="material-symbols-outlined text-primary">lock</span>
+              <span className="material-symbols-outlined text-primary">account_balance_wallet</span>
             </div>
             <div className="mb-8">
               <p className="text-white text-5xl font-black tracking-tight font-display">${user.balance.toLocaleString()}</p>
-              <p className="text-poker-green text-sm font-bold mt-2">+5.2% this month</p>
-            </div>
-            <div className="space-y-4 pt-6 border-t border-border-dark">
-              <div className="flex justify-between">
-                <span className="text-slate-400 text-sm">Available</span>
-                <span className="text-white font-bold">${(user.balance * 0.8).toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400 text-sm">In-Play</span>
-                <span className="text-white font-bold">${(user.balance * 0.2).toLocaleString()}</span>
+              <div className="flex items-center gap-2 mt-2">
+                <span className="size-2 rounded-full bg-poker-green animate-pulse"></span>
+                <p className="text-poker-green text-sm font-bold uppercase tracking-wider">Verified Secure</p>
               </div>
             </div>
 
-            <div className="mt-8 space-y-3">
+            <div className="space-y-4 pt-6 border-t border-border-dark">
+              <div className="flex flex-wrap gap-2 mb-4">
+                {presets.map(p => (
+                  <button
+                    key={p}
+                    onClick={() => setAmount(p.toString())}
+                    className="px-3 py-1.5 rounded-lg bg-background border border-border-dark text-white text-xs font-bold hover:border-primary transition-colors"
+                  >
+                    +${p}
+                  </button>
+                ))}
+              </div>
+
               <input
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="Enter amount..."
-                className="w-full bg-background border border-border-dark rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary"
+                className="w-full bg-background border border-border-dark rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-all appearance-none"
               />
+
               <div className="grid grid-cols-2 gap-4">
                 <button
                   onClick={handleDeposit}
@@ -85,42 +93,54 @@ const Cashier: React.FC = () => {
 
             {/* Payment Methods */}
             <div className="mt-6 pt-6 border-t border-border-dark">
-              <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-3">Payment Methods</p>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="bg-white px-2 py-1.5 rounded flex items-center justify-center">
-                  <span className="text-blue-600 font-black text-xs">VISA</span>
-                </div>
-                <div className="bg-gradient-to-r from-red-600 to-orange-500 px-2 py-1.5 rounded flex items-center justify-center">
-                  <span className="text-white font-black text-xs">MC</span>
-                </div>
-                <div className="bg-orange-500 px-2 py-1.5 rounded flex items-center justify-center gap-1">
-                  <span className="text-white font-black text-xs">₿ BTC</span>
-                </div>
-                <div className="bg-gradient-to-r from-purple-600 to-blue-600 px-2 py-1.5 rounded flex items-center justify-center gap-1">
-                  <span className="text-white font-black text-xs">◆ ETH</span>
-                </div>
-                <div className="bg-green-600 px-2 py-1.5 rounded flex items-center justify-center gap-1">
-                  <span className="text-white font-black text-xs">₮ USDT</span>
-                </div>
-                <div className="bg-blue-600 px-2 py-1.5 rounded flex items-center justify-center">
-                  <span className="text-white font-black text-xs">PayPal</span>
-                </div>
+              <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-3">Select Method</p>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: 'Visa', label: 'VISA', color: 'bg-white text-blue-600' },
+                  { id: 'Mastercard', label: 'MC', color: 'bg-gradient-to-r from-red-600 to-orange-500 text-white' },
+                  { id: 'Bitcoin', label: '₿ BTC', color: 'bg-orange-500 text-white' },
+                  { id: 'Ethereum', label: '◆ ETH', color: 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' },
+                  { id: 'USDT', label: '₮ USDT', color: 'bg-green-600 text-white' },
+                  { id: 'PayPal', label: 'PP', color: 'bg-blue-600 text-white' }
+                ].map(m => (
+                  <button
+                    key={m.id}
+                    onClick={() => setMethod(m.id)}
+                    className={`px-2 py-2 rounded flex items-center justify-center text-[10px] font-black transition-all ${method === m.id ? 'ring-2 ring-primary scale-105' : 'opacity-60 grayscale hover:grayscale-0 hover:opacity-100'} ${m.color}`}
+                  >
+                    {m.label}
+                  </button>
+                ))}
               </div>
             </div>
 
           </div>
         </div>
 
-        <div className="col-span-12 lg:col-span-8 bg-surface p-8 rounded-2xl border border-border-dark shadow-xl">
+        <div className="col-span-12 lg:col-span-8 bg-surface p-8 rounded-2xl border border-border-dark shadow-xl flex flex-col">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-xl font-bold text-white font-display">Recent Activity</h3>
-            <button className="text-primary text-xs font-bold hover:underline uppercase tracking-widest">View All</button>
+            <span className="text-slate-500 text-[10px] font-bold uppercase tracking-widest bg-background px-3 py-1 rounded-full border border-border-dark">Real-Time Sync</span>
           </div>
-          <div className="space-y-4">
-            <TransactionItem type="withdraw" method="Pix" amount="-$450.00" date="Today, 14:20" status="pending" />
-            <TransactionItem type="deposit" method="USDT" amount="+$1,200.00" date="Yesterday, 10:15" status="completed" />
-            <TransactionItem type="deposit" method="Visa" amount="+$2,000.00" date="Oct 12, 19:45" status="completed" />
-            <TransactionItem type="withdraw" method="Neteller" amount="-$150.00" date="Oct 10, 08:30" status="completed" />
+          <div className="space-y-4 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
+            {transactions.length > 0 ? (
+              transactions.map(t => (
+                <TransactionItem
+                  key={t.id}
+                  type={t.type}
+                  method={t.method}
+                  amount={`${t.type === 'deposit' ? '+' : '-'}$${t.amount.toLocaleString()}`}
+                  date={new Date(t.created_at).toLocaleString([], { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                  status={t.status}
+                />
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 text-slate-500 border-2 border-dashed border-border-dark rounded-2xl">
+                <span className="material-symbols-outlined text-4xl mb-3">history</span>
+                <p className="font-bold">No transactions found</p>
+                <p className="text-xs">Your financial activity will appear here.</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

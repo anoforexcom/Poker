@@ -72,6 +72,10 @@ export const usePokerGame = (
     const [timeToNextLevel, setTimeToNextLevel] = useState(0);
     const [isTournamentMode] = useState(mode !== 'cash'); // Set to true for tournaments
 
+    // Turn Timer system
+    const [turnTimeLeft, setTurnTimeLeft] = useState(30);
+    const [totalTurnTime] = useState(30);
+
     // Initialize Players 
     const [players, setPlayers] = useState<Player[]>(() => {
         const initialPlayers: Player[] = [];
@@ -130,6 +134,7 @@ export const usePokerGame = (
 
         return () => clearInterval(interval);
     }, [isTournamentMode, blindLevel, levelStartTime, blindStructureType]);
+
 
     // Get current blinds (dynamic based on tournament level or fixed for cash games)
     const getCurrentBlindValues = useCallback(() => {
@@ -633,6 +638,38 @@ export const usePokerGame = (
         }
     }, [phase, winners, players, communityCards, pot, dealerPosition, updateGlobalBalance, calculateSidePots]);
 
+    // Turn Timer countdown
+    useEffect(() => {
+        if (phase === 'showdown' || winners.length > 0) return;
+
+        const interval = setInterval(() => {
+            setTurnTimeLeft(prev => {
+                if (prev <= 1) {
+                    // Time's up! Auto-action
+                    const activePlayer = players[currentTurn];
+                    if (activePlayer && activePlayer.isActive && !activePlayer.isFolded) {
+                        // If human or bot, trigger fallback action
+                        const amountToCall = currentBet - activePlayer.currentBet;
+                        if (amountToCall === 0) {
+                            handlePlayerAction('check');
+                        } else {
+                            handlePlayerAction('fold');
+                        }
+                    }
+                    return totalTurnTime;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [currentTurn, phase, players, currentBet, handlePlayerAction, totalTurnTime, winners]);
+
+    // Reset turn timer when turn changes
+    useEffect(() => {
+        setTurnTimeLeft(totalTurnTime);
+    }, [currentTurn, phase, totalTurnTime]);
+
     return {
         players,
         communityCards,
@@ -653,6 +690,8 @@ export const usePokerGame = (
         },
         handlePlayerAction,
         winners,
-        winningHand
+        winningHand,
+        turnTimeLeft,
+        totalTurnTime
     };
 };

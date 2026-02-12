@@ -10,10 +10,20 @@ interface UserState {
   rank: string;
 }
 
+interface Transaction {
+  id: string;
+  type: 'deposit' | 'withdrawal';
+  amount: number;
+  method: string;
+  status: string;
+  created_at: string;
+}
+
 interface GameContextType {
   user: UserState;
-  deposit: (amount: number) => Promise<void>;
-  withdraw: (amount: number) => Promise<void>;
+  transactions: Transaction[];
+  deposit: (amount: number, method?: string) => Promise<void>;
+  withdraw: (amount: number, method?: string) => Promise<void>;
   updateBalance: (amount: number) => Promise<void>;
   updateUser: (updates: Partial<UserState>) => Promise<void>;
 }
@@ -31,8 +41,19 @@ const GameContext = createContext<GameContextType | undefined>(undefined);
 export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user: authUser } = useAuth();
   const [user, setUser] = useState<UserState>(defaultUser);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
-  // Sync with AuthContext user
+  // Fetch transactions
+  const fetchTransactions = async () => {
+    if (!authUser || authUser.id === 'demo-guest-id') return;
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (data) setTransactions(data);
+  };
+
   useEffect(() => {
     if (authUser) {
       setUser({
@@ -42,39 +63,55 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         balance: authUser.balance,
         rank: authUser.rank,
       });
+      fetchTransactions();
     } else {
       setUser(defaultUser);
+      setTransactions([]);
     }
   }, [authUser]);
 
   const updateProfileInDB = async (updates: any) => {
-    // Se for guest ou não estiver logado, apenas atualizamos o estado local
     if (!authUser || user.id === 'demo-guest-id') return;
-
-    const { error } = await supabase
-      .from('profiles')
-      .update(updates)
-      .eq('id', authUser.id);
-
-    if (error) {
-      console.error('[GAME_CONTEXT] Error updating profile:', error);
-      throw error;
-    }
+    const { error } = await supabase.from('profiles').update(updates).eq('id', authUser.id);
+    if (error) throw error;
   };
 
-  const deposit = async (amount: number) => {
+  const deposit = async (amount: number, method: string = 'Visa') => {
     const newBalance = user.balance + amount;
     await updateProfileInDB({ balance: newBalance });
+
+    if (authUser && authUser.id !== 'demo-guest-id') {
+      await supabase.from('transactions').insert({
+        user_id: authUser.id,
+        type: 'deposit',
+        amount: amount,
+        method: method,
+        status: 'completed'
+      });
+      fetchTransactions();
+    }
+
     setUser(prev => ({ ...prev, balance: newBalance }));
   };
 
-  const withdraw = async (amount: number) => {
+  const withdraw = async (amount: number, method: string = 'Visa') => {
     if (user.balance >= amount) {
       const newBalance = user.balance - amount;
       await updateProfileInDB({ balance: newBalance });
+
+      if (authUser && authUser.id !== 'demo-guest-id') {
+        await supabase.from('transactions').insert({
+          user_id: authUser.id,
+          type: 'withdrawal',
+          amount: amount,
+          method: method,
+          status: 'completed'
+        });
+        fetchTransactions();
+      }
+
       setUser(prev => ({ ...prev, balance: newBalance }));
     } else {
-      alert("Insufficient funds!");
       throw new Error('Insufficient funds');
     }
   };
@@ -83,21 +120,15 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const newBalance = user.balance + amount;
     await updateProfileInDB({ balance: newBalance });
     setUser(prev => ({ ...prev, balance: newBalance }));
-  }
+  };
 
   const updateUser = async (updates: Partial<UserState>) => {
-    const dbUpdates: any = {};
-    if (updates.name) dbUpdates.name = updates.name;
-    if (updates.avatar) dbUpdates.avatar_url = updates.avatar;
-    if (updates.rank) dbUpdates.rank = updates.rank;
-    if (updates.balance !== undefined) dbUpdates.balance = updates.balance;
-
-    await updateProfileInDB(dbUpdates);
+    await updateProfileInDB(updates);
     setUser(prev => ({ ...prev, ...updates }));
   };
 
   return (
-    <GameContext.Provider value={{ user, deposit, withdraw, updateBalance, updateUser }}>
+    <GameContext.Provider value={{ user, transactions, deposit, withdraw, updateBalance, updateUser }}>
       {children}
     </GameContext.Provider>
   );

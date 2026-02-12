@@ -355,7 +355,9 @@ const Lobby: React.FC = () => {
                       </div>
                       {t.type !== 'cash' && (
                         <div className="flex justify-between text-xs">
-                          <span className="text-slate-400">Prize Pool</span>
+                          <span className="text-slate-400">
+                            {t.type === 'sitgo' || t.type === 'spingo' ? 'Top Prizes' : 'Prize Pool'}
+                          </span>
                           <span className="text-gold font-bold">${t.prizePool.toLocaleString()}</span>
                         </div>
                       )}

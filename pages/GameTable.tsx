@@ -34,6 +34,7 @@ const GameTable: React.FC = () => {
     players,
     communityCards,
     pot,
+    sidePots,
     phase,
     currentTurn,
     currentBet,
@@ -42,7 +43,10 @@ const GameTable: React.FC = () => {
     winners,
     winningHand,
     blindLevel,
-    isTournamentMode
+    timeToNextLevel,
+    isTournamentMode,
+    turnTimeLeft,
+    totalTurnTime
   } = usePokerGame(gameConfig?.startingStack || 0, updateBalance, gameConfig);
 
   const activeUser = players.find(p => p.isHuman);
@@ -95,6 +99,37 @@ const GameTable: React.FC = () => {
       window.removeEventListener('orientationchange', checkOrientation);
     };
   }, []);
+
+  // Autonomous Bot Chat
+  useEffect(() => {
+    if (players.length <= 1) return;
+
+    const botMessages = [
+      "Nice hand!",
+      "I think you're bluffing...",
+      "Too expensive for me.",
+      "Lucky river!",
+      "I have a good feeling about this one.",
+      "Tough choice...",
+      "Let's see those cards.",
+      "Wow, big bet!",
+      "Folded. Next one will be mine.",
+      "Good game everyone."
+    ];
+
+    const interval = setInterval(() => {
+      if (Math.random() > 0.7) { // 30% chance every 10 seconds
+        const bots = players.filter(p => !p.isHuman && !p.isFolded);
+        if (bots.length > 0) {
+          const randomBot = bots[Math.floor(Math.random() * bots.length)];
+          const randomMsg = botMessages[Math.floor(Math.random() * botMessages.length)];
+          setChatHistory(prev => [...prev.slice(-49), { sender: randomBot.name, text: randomMsg }]);
+        }
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [players]);
 
   const handleSendMessage = () => {
     if (!chatMessage.trim()) return;
@@ -247,9 +282,13 @@ const GameTable: React.FC = () => {
                       </div>
                       <div className="text-right space-y-1">
                         <p className="text-[10px] font-bold text-slate-500 uppercase">Tempo Restante</p>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 justify-end">
                           <span className="material-symbols-outlined text-sm text-slate-500">schedule</span>
-                          <p className="text-white font-mono font-bold">04:32</p>
+                          <p className="text-white font-mono font-bold">
+                            {isTournamentMode ? (
+                              `${Math.floor(timeToNextLevel / 60000).toString().padStart(2, '0')}:${Math.floor((timeToNextLevel % 60000) / 1000).toString().padStart(2, '0')}`
+                            ) : '--:--'}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -362,9 +401,23 @@ const GameTable: React.FC = () => {
 
           {/* Table Center: Pot & Cards */}
           <div className="flex flex-col items-center gap-6">
-            <div className="bg-black/40 backdrop-blur-md px-6 py-2 rounded-full border border-white/10 flex flex-col items-center">
-              <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Pote Total</span>
-              <span className="text-2xl font-black text-white">${pot.toLocaleString()}</span>
+            <div className="flex flex-col items-center gap-2">
+              <div className="bg-black/40 backdrop-blur-md px-6 py-2 rounded-full border border-white/10 flex flex-col items-center">
+                <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Pote Total</span>
+                <span className="text-2xl font-black text-white">${pot.toLocaleString()}</span>
+              </div>
+
+              {/* Side Pots */}
+              {sidePots.length > 0 && (
+                <div className="flex gap-2">
+                  {sidePots.map((sp, i) => (
+                    <div key={i} className="bg-black/20 backdrop-blur-sm px-3 py-1 rounded-full border border-white/5 flex items-center gap-2">
+                      <span className="text-[8px] font-bold text-slate-500 uppercase">Side {i + 1}</span>
+                      <span className="text-xs font-black text-slate-300">${sp.amount.toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="flex gap-2 md:gap-3 h-20 md:h-28 items-center">
@@ -425,9 +478,11 @@ const GameTable: React.FC = () => {
                 name={player.name}
                 balance={`$${player.balance}`}
                 active={index === currentTurn}
-                inactive={player.isFolded}
+                inactive={player.isFolded || !player.isActive}
                 dealer={player.isDealer}
                 currentBet={player.currentBet}
+                timeLeft={index === currentTurn ? turnTimeLeft : 0}
+                totalTime={totalTurnTime}
               />
             );
           })}
@@ -457,7 +512,20 @@ const GameTable: React.FC = () => {
           <div className="flex items-center gap-4 md:gap-6">
             {/* User Avatar */}
             <div className="flex flex-col items-center gap-1 md:gap-2">
-              <div className={`relative size-12 md:size-20 rounded-full border-2 md:border-4 ${currentTurn === 0 ? 'border-gold ring-2 md:ring-4 ring-gold/30 animate-pulse' : 'border-primary'} bg-slate-700 overflow-hidden shadow-2xl transition-all duration-300`}>
+              <div className={`relative size-12 md:size-20 rounded-full border-2 md:border-4 ${currentTurn === 0 ? 'border-gold ring-2 md:ring-4 ring-gold/30' : 'border-primary'} bg-slate-700 overflow-hidden shadow-2xl transition-all duration-300`}>
+                {currentTurn === 0 && (
+                  <svg className="absolute inset-0 size-full -rotate-90 pointer-events-none" viewBox="0 0 100 100">
+                    <circle
+                      cx="50" cy="50" r="46"
+                      fill="none"
+                      stroke="#fbbf24"
+                      strokeWidth="6"
+                      strokeDasharray="289"
+                      strokeDashoffset={289 - (289 * turnTimeLeft) / totalTurnTime}
+                      className="transition-all duration-1000 linear"
+                    />
+                  </svg>
+                )}
                 <img
                   className="w-full h-full object-cover"
                   src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name}`}
@@ -553,7 +621,52 @@ const GameTable: React.FC = () => {
   );
 };
 
-const PlayerSeat = ({ position, name, balance, active, inactive, dealer, currentBet }: any) => {
+const ChipStack = ({ amount, size = 'md' }: { amount: number, size?: 'sm' | 'md' }) => {
+  const getChips = (val: number) => {
+    const chips = [];
+    let remaining = val;
+
+    // Denominations: 1000, 500, 100, 25, 5, 1
+    const denoms = [
+      { v: 1000, c: 'bg-purple-600' },
+      { v: 500, c: 'bg-orange-500' },
+      { v: 100, c: 'bg-slate-900' },
+      { v: 25, c: 'bg-green-600' },
+      { v: 5, c: 'bg-red-600' },
+      { v: 1, c: 'bg-white text-slate-900' }
+    ];
+
+    for (const d of denoms) {
+      const count = Math.floor(remaining / d.v);
+      for (let i = 0; i < Math.min(count, 5); i++) { // Max 5 visual chips per denom
+        chips.push(d.c);
+      }
+      remaining %= d.v;
+      if (chips.length >= 8) break; // Max 8 total visual chips
+    }
+    return chips.reverse();
+  };
+
+  const chips = getChips(amount);
+  const chipSize = size === 'sm' ? 'size-3' : 'size-4';
+  const overlap = size === 'sm' ? '-space-x-1' : '-space-x-1.5';
+
+  return (
+    <div className={`flex ${overlap} items-center justify-center`}>
+      {chips.map((color, i) => (
+        <div
+          key={i}
+          className={`${chipSize} rounded-full ${color} border border-white/40 shadow-sm flex items-center justify-center`}
+          style={{ transform: `translateY(${-i * 1.5}px)`, zIndex: i }}
+        >
+          <div className="size-full rounded-full border border-black/10"></div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const PlayerSeat = ({ position, name, balance, active, inactive, dealer, currentBet, timeLeft, totalTime }: any) => {
   const positions: any = {
     'top': '-top-12 left-1/2 -translate-x-1/2',
     'top-left': 'top-4 left-[15%]',
@@ -567,6 +680,19 @@ const PlayerSeat = ({ position, name, balance, active, inactive, dealer, current
   return (
     <div className={`absolute ${positions[position]} flex flex-col items-center gap-2 z-10 transition-all duration-500`}>
       <div className={`relative size-20 rounded-full border-4 ${active ? 'border-primary ring-4 ring-primary/20 scale-110' : 'border-slate-800'} bg-slate-700 overflow-hidden ${inactive ? 'grayscale opacity-50' : ''} transition-all duration-300 shadow-xl`}>
+        {active && timeLeft > 0 && (
+          <svg className="absolute inset-0 size-full -rotate-90 pointer-events-none" viewBox="0 0 100 100">
+            <circle
+              cx="50" cy="50" r="46"
+              fill="none"
+              stroke="#fbbf24" // Amber-400 / Gold
+              strokeWidth="6"
+              strokeDasharray="289"
+              strokeDashoffset={289 - (289 * timeLeft) / totalTime}
+              className="transition-all duration-1000 linear"
+            />
+          </svg>
+        )}
         <img className="w-full h-full object-cover" src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`} alt={name} />
       </div>
 
@@ -575,30 +701,24 @@ const PlayerSeat = ({ position, name, balance, active, inactive, dealer, current
         <p className={`text-xs font-bold ${inactive ? 'text-slate-600' : 'text-white'} truncate mb-1`}>{name}</p>
 
         {/* Chip Stack Display */}
-        <div className="flex items-center justify-center gap-1.5 mb-1">
-          <div className="flex -space-x-1">
-            <div className="size-4 rounded-full bg-red-500 border-2 border-white shadow-sm"></div>
-            <div className="size-4 rounded-full bg-blue-500 border-2 border-white shadow-sm"></div>
-            <div className="size-4 rounded-full bg-black border-2 border-white shadow-sm"></div>
-          </div>
+        <div className="flex items-center justify-center gap-2 mb-1">
+          <ChipStack amount={balance} size="sm" />
           <p className={`text-sm font-black ${inactive ? 'text-slate-600' : 'text-gold'}`}>{balance}</p>
         </div>
       </div>
 
       {/* Dealer Button */}
       {dealer && (
-        <div className="absolute -right-6 top-0 bg-white text-black font-black size-6 rounded-full flex items-center justify-center text-xs border-2 border-gold shadow-lg">D</div>
+        <div className="absolute -right-6 top-0 bg-white text-black font-black size-6 rounded-full flex items-center justify-center text-xs border-2 border-gold shadow-lg transition-all animate-in fade-in zoom-in">D</div>
       )}
 
       {/* Current Bet Chips */}
       {currentBet > 0 && (
-        <div className="absolute -bottom-12 flex flex-col items-center animate-bounce-short">
-          <div className="flex -space-x-1.5">
-            <div className="size-5 rounded-full bg-red-500 border-2 border-white shadow-md"></div>
-            <div className="size-5 rounded-full bg-blue-500 border-2 border-white shadow-md"></div>
-            <div className="size-5 rounded-full bg-black border-2 border-white shadow-md"></div>
-          </div>
-          <span className="bg-black/90 text-white text-xs font-bold px-2 py-0.5 rounded mt-1 border border-gold/50 shadow-lg">${currentBet}</span>
+        <div className="absolute -bottom-16 flex flex-col items-center animate-bounce-short z-20">
+          <ChipStack amount={currentBet} />
+          <span className="bg-black/90 text-white text-[10px] font-black px-2 py-0.5 rounded mt-2 border border-gold/50 shadow-2xl backdrop-blur-md">
+            ${currentBet.toLocaleString()}
+          </span>
         </div>
       )}
     </div>
@@ -608,10 +728,10 @@ const PlayerSeat = ({ position, name, balance, active, inactive, dealer, current
 const HeroCard = ({ suit, value, rotate }: any) => {
   const getSuitColor = (s: string) => {
     switch (s) {
-      case 'hearts': return 'text-red-600';
-      case 'diamonds': return 'text-blue-600'; // Blue for Diamonds
-      case 'clubs': return 'text-green-600'; // Green for Clubs
-      case 'spades': return 'text-slate-900'; // Black for Spades
+      case 'hearts': return 'text-red-500';
+      case 'diamonds': return 'text-blue-500';
+      case 'clubs': return 'text-green-500';
+      case 'spades': return 'text-slate-900';
       default: return 'text-slate-900';
     }
   };
