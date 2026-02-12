@@ -47,7 +47,7 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
             return;
         }
 
-        if (data) {
+        if (data && data.length > 0) {
             const mapped: Tournament[] = data.map(t => ({
                 id: t.id,
                 name: t.name,
@@ -70,6 +70,18 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
 
             setOnlinePlayers(totalOnline);
             setActiveTables(Math.ceil(totalTournamentPlayers / 9) + Math.ceil(cashPlayersBase / 6));
+        } else {
+            // Fallback for Demo/New environments when Supabase is empty
+            const fallbackTournaments: Tournament[] = [
+                { id: 'sim-1', name: 'Sunday Million [DEMO]', gameType: 'NL HOLD\'EM', buyIn: 215, prizePool: 1000000, players: 4520, maxPlayers: 10000, status: 'Registering', startTime: '18:00', type: 'tournament', progress: 0 },
+                { id: 'sim-2', name: 'Micro Stakes Zoom', gameType: 'NL Hold\'em', buyIn: 2, prizePool: 0, players: 120, maxPlayers: 500, status: 'Running', startTime: 'Now', type: 'cash', progress: 45 },
+                { id: 'sim-3', name: 'High Roller Turbo', gameType: 'NL HOLD\'EM', buyIn: 530, prizePool: 50000, players: 82, maxPlayers: 180, status: 'Late Reg', startTime: 'Now', type: 'tournament', progress: 10 },
+                { id: 'sim-4', name: 'Daily Marathon', gameType: 'NL HOLD\'EM', buyIn: 22, prizePool: 15000, players: 240, maxPlayers: 1000, status: 'Running', startTime: 'Now', type: 'tournament', progress: 60 },
+                { id: 'sim-5', name: 'Headhunter Progressive KO', gameType: 'NL HOLD\'EM', buyIn: 109, prizePool: 25000, players: 156, maxPlayers: 500, status: 'Registering', startTime: '19:30', type: 'tournament', progress: 0 }
+            ];
+            setTournaments(fallbackTournaments);
+            setOnlinePlayers(cashPlayersBase + 5000); // Fixed boost for empty DB
+            setActiveTables(Math.ceil(5000 / 9) + Math.ceil(cashPlayersBase / 6));
         }
     };
 

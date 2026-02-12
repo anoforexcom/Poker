@@ -132,10 +132,35 @@ const HeroSection = () => {
                     transition={{ duration: 1, delay: 0.2 }}
                     className="relative hidden lg:block"
                 >
-                    {/* Abstract poker cards/chips composition */}
-                    <div className="relative z-10">
-                        <img src="https://placehold.co/600x400/1a242d/137fec?text=Poker+Interface+Mockup" alt="App Interface" className="rounded-2xl shadow-2xl border border-white/10 rotate-3 hover:rotate-0 transition-transform duration-500" />
+                    {/* Premium Table Composition */}
+                    <div className="relative z-10 group">
+                        <div className="absolute -inset-1 bg-gradient-to-r from-primary to-blue-600 rounded-3xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                        <img
+                            src="/hero_poker.png"
+                            alt="Professional Poker Table"
+                            className="relative rounded-2xl shadow-2xl border border-white/10 rotate-3 group-hover:rotate-0 transition-all duration-700 object-cover w-full h-[500px]"
+                        />
+
+                        {/* Overlay Gradient */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent rounded-2xl pointer-events-none" />
                     </div>
+
+                    {/* Floating Premium Cards */}
+                    <motion.div
+                        animate={{ y: [0, -15, 0], rotate: [15, 12, 15] }}
+                        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                        className="absolute -top-12 -left-12 size-36 bg-white rounded-xl shadow-2xl flex items-center justify-center p-2 border-2 border-primary z-20"
+                    >
+                        <div className="text-primary font-black text-4xl">A♠</div>
+                    </motion.div>
+
+                    <motion.div
+                        animate={{ y: [0, 15, 0], rotate: [-10, -13, -10] }}
+                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                        className="absolute -bottom-8 -right-8 size-32 bg-white rounded-xl shadow-2xl flex items-center justify-center p-2 border-2 border-red-500 z-20"
+                    >
+                        <div className="text-red-500 font-black text-4xl">K♥</div>
+                    </motion.div>
                     {/* Floating Elements */}
                     <motion.div
                         animate={{ y: [0, -20, 0] }}
