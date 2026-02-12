@@ -3,41 +3,19 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveWorld } from '../contexts/LiveWorldContext';
 import { useSimulation } from '../contexts/SimulationContext';
+import { useNotification } from '../contexts/NotificationContext';
 import { generateBotName } from '../utils/nameGenerator';
 import { useGame } from '../contexts/GameContext';
 
 const TournamentLobby: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const { tournaments: liveWorldTournaments, onlinePlayers, registerForTournament } = useLiveWorld();
-    const { tournaments: simulatedTournaments } = useSimulation();
     const { user, withdraw } = useGame();
+    const { showAlert } = useNotification();
     const navigate = useNavigate();
 
-    // Use simulated tournaments if available, otherwise use LiveWorld tournaments
-    const rawTournaments = simulatedTournaments.length > 0 ? simulatedTournaments : liveWorldTournaments;
-
-    // Transform SimulatedTournament to match Tournament interface (same as in Lobby.tsx)
-    const tournaments = Array.isArray(rawTournaments) ? rawTournaments.map(t => {
-        // If this is a SimulatedTournament (players is an array), transform it
-        if (Array.isArray((t as any).players)) {
-            const simTournament = t as any;
-            return {
-                id: simTournament.id,
-                name: simTournament.name,
-                gameType: simTournament.gameType || 'NL Hold\'em',
-                buyIn: simTournament.buyIn,
-                prizePool: simTournament.prizePool,
-                players: simTournament.players.length, // Convert array to count
-                maxPlayers: simTournament.maxPlayers,
-                status: simTournament.status === 'registering' ? 'Registering' :
-                    simTournament.status === 'running' ? 'Running' : 'Finished',
-                startTime: 'Now',
-                progress: simTournament.currentRound || 0,
-            };
-        }
-        // Otherwise it's already a Tournament from LiveWorld
-        return t;
-    }) : [];
+    // Simplified: tournaments already come from LiveWorld (which are rows in the DB)
+    const tournaments = liveWorldTournaments || [];
 
     // ALL HOOKS MUST BE CALLED BEFORE ANY EARLY RETURN!
     // Check persistence
@@ -72,22 +50,33 @@ const TournamentLobby: React.FC = () => {
     const isRunning = tournament.status === 'Running' || tournament.status === 'Final Table';
     const isRegistered = myRegistrations.includes(tournament.id);
 
-    const handleRegister = () => {
+    const handleRegister = async () => {
         if (!tournament) return;
         if (user.balance < tournament.buyIn) {
-            alert("Insufficient funds to register!");
+            await showAlert("Insufficient funds to register!", "error", { title: "Registration Failed" });
             return;
         }
 
-        if (window.confirm(`Register for ${tournament.name} for $${tournament.buyIn}?`)) {
-            withdraw(tournament.buyIn);
-            registerForTournament(tournament.id);
+        const confirmed = await showAlert(`Register for ${tournament.name} for $${tournament.buyIn}?`, "info", {
+            showCancel: true,
+            confirmText: "Register",
+            title: "Confirm Registration"
+        });
 
-            // Persist
-            const newRegs = [...myRegistrations, tournament.id];
-            setMyRegistrations(newRegs);
-            localStorage.setItem('poker_tournament_registrations', JSON.stringify(newRegs));
-            alert("Successfully registered! Good luck!");
+        if (confirmed) {
+            try {
+                await withdraw(tournament.buyIn);
+                await registerForTournament(tournament.id, user.id);
+
+                // Persist
+                const newRegs = [...myRegistrations, tournament.id];
+                setMyRegistrations(newRegs);
+                localStorage.setItem('poker_tournament_registrations', JSON.stringify(newRegs));
+                await showAlert("Successfully registered! Good luck!", "success", { title: "Registration Complete" });
+            } catch (err: any) {
+                console.error('Registration error:', err);
+                await showAlert("Failed to register. Please try again.", "error", { title: "Error" });
+            }
         }
     };
 

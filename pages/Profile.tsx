@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useGame } from '../contexts/GameContext';
+import { useNotification } from '../contexts/NotificationContext';
 
 const AVATAR_PRESETS = [
     'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
@@ -14,6 +15,7 @@ const AVATAR_PRESETS = [
 
 const Profile: React.FC = () => {
     const { user, updateUser } = useGame();
+    const { showAlert } = useNotification();
     const [name, setName] = useState(user.name);
     const [isEditing, setIsEditing] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -29,12 +31,12 @@ const Profile: React.FC = () => {
         updateUser({ avatar: url });
     };
 
-    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
 
         if (file.size > 2 * 1024 * 1024) {
-            alert("File is too large! Please choose an image under 2MB.");
+            await showAlert("File is too large! Please choose an image under 2MB.", "error", { title: "Upload Failed" });
             return;
         }
 

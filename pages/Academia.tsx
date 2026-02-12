@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { getModules, Module, Question } from '../utils/academiaData';
+import { useNotification } from '../contexts/NotificationContext';
 
 const Academia: React.FC = () => {
   const modules = getModules();
+  const { showAlert } = useNotification();
 
   // Persistence State
   const [userProgress, setUserProgress] = useState<Record<string, { bestScore: number; completed: boolean }>>(() => {
@@ -33,11 +35,11 @@ const Academia: React.FC = () => {
 
   // --- Actions ---
 
-  const handleStartModule = (module: Module) => {
+  const handleStartModule = async (module: Module) => {
     // Check Lock Status
     const isLocked = !isPro && (module.id === 'mtt' || module.id === 'mental'); // Lock last 2 modules
     if (isLocked) {
-      alert("This module is for PRO members only. Upgrade to unlock!");
+      await showAlert("This module is for PRO members only. Upgrade to unlock!", "info", { title: "Exclusive Content" });
       return;
     }
 
@@ -48,13 +50,18 @@ const Academia: React.FC = () => {
     resetQuestionState();
   };
 
-  const handleUpgrade = () => {
+  const handleUpgrade = async () => {
     // Simulate Payment
-    const confirm = window.confirm("Upgrade to PRO for $9.99/mo?\n\n- Unlock All Modules\n- Ad-free Experience\n- Elite Badge");
-    if (confirm) {
+    const confirmed = await showAlert("Upgrade to PRO for $9.99/mo?", "info", {
+      showCancel: true,
+      confirmText: "Upgrade Now",
+      title: "Go Pro"
+    });
+
+    if (confirmed) {
       setIsPro(true);
       localStorage.setItem('poker_academy_pro_status', 'true');
-      alert("Welcome to the Elite! You are now a PRO member.");
+      await showAlert("Welcome to the Elite! You are now a PRO member.", "success", { title: "Success" });
     }
   };
 

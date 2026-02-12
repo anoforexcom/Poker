@@ -4,17 +4,18 @@ import { useGame } from '../contexts/GameContext';
 import { usePokerGame, GameConfig } from '../hooks/usePokerGame';
 import { useSimulation } from '../contexts/SimulationContext';
 import { useLiveWorld } from '../contexts/LiveWorldContext';
+import { useNotification } from '../contexts/NotificationContext';
 import { BlindStructureType } from '../utils/blindStructure';
 
 const GameTable: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, updateBalance } = useGame();
-  const { tournaments: simTournaments } = useSimulation();
-  const { tournaments: liveTournaments } = useLiveWorld();
+  const { tournaments } = useLiveWorld();
+  const { showAlert } = useNotification();
 
   // Find tournament config
-  const tournament = [...simTournaments, ...liveTournaments].find(t => t.id === id);
+  const tournament = tournaments.find(t => t.id === id);
 
   const gameConfig: GameConfig | undefined = tournament ? {
     mode: (tournament as any).type || 'tournament',
@@ -43,14 +44,14 @@ const GameTable: React.FC = () => {
 
   const activeUser = players.find(p => p.isHuman);
 
-  const handleLeaveTable = () => {
+  const handleLeaveTable = async () => {
     if (activeUser) {
       if (tournament?.type === 'cash') {
         updateBalance(activeUser.balance);
       } else if (isTournamentMode && winners.length > 0) {
         if (winners[0].isHuman && winners.length === 1) {
           updateBalance(tournament.prizePool);
-          alert(`Congratulations! You won the tournament and earned $${tournament.prizePool.toLocaleString()}`);
+          await showAlert(`Congratulations! You won the tournament and earned $${tournament.prizePool.toLocaleString()}`, 'success', { title: 'Tournament Victory' });
         }
       }
     }
@@ -62,8 +63,8 @@ const GameTable: React.FC = () => {
 
   // Start game loop
   React.useEffect(() => {
-    if (players.every(p => p.hand.length === 0)) startNewHand();
-  }, []);
+    if (players.length > 0 && players.every(p => p.hand.length === 0)) startNewHand();
+  }, [players]);
 
   const [chatMessage, setChatMessage] = useState('');
   const [chatHistory, setChatHistory] = useState<{ sender: string, text: string, type?: 'system' | 'user' }[]>([
@@ -101,6 +102,7 @@ const GameTable: React.FC = () => {
     if (Math.random() > 0.7) {
       setTimeout(() => {
         const botNames = players.filter(p => !p.isHuman).map(p => p.name);
+        if (botNames.length === 0) return;
         const randomBot = botNames[Math.floor(Math.random() * botNames.length)];
         const responses = ['Nice move!', 'I fold.', 'Thinking...', 'Unlucky!', 'Next time.'];
         const randomResponse = responses[Math.floor(Math.random() * responses.length)];
@@ -108,6 +110,17 @@ const GameTable: React.FC = () => {
       }, 1000 + Math.random() * 2000);
     }
   };
+
+  if (!tournament) {
+    return (
+      <div className="h-screen w-full bg-[#0a0f1a] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <span className="size-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></span>
+          <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">Entering Table...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex flex-col h-full bg-slate-900 overflow-hidden">
