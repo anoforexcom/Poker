@@ -424,16 +424,9 @@ export const usePokerGame = (
 
             // Update last raise amount for minimum raise validation
             if (raiseAmountRequested > 0) {
-                // If it's an all-in for less than full raise, we don't increase the minimum raise for next player?
-                // Actually, if it's a sub-raise all-in, the 'lastRaiseAmount' for the purpose of the NEXT player's min raise
-                // usually stays the same or adds up depending on house rules, but typically it doesn't decrease.
                 setLastRaiseAmount(Math.max(lastRaiseAmount, raiseAmountRequested));
                 setCurrentBet(totalBet);
                 setLastRaiser(currentTurn);
-            }
-
-            if (currentPlayer.isHuman) {
-                updateGlobalBalance(-addAmount);
             }
         }
 
@@ -622,12 +615,7 @@ export const usePokerGame = (
                     });
                 });
 
-                // Update human player balance if they won any pots
-                if (totalHumanWinnings > 0) {
-                    updateGlobalBalance(totalHumanWinnings);
-                }
-
-                // Batch update bot balances
+                // Batch update bot balances (including human UI stack)
                 setPlayers(prev => prev.map(p => {
                     const bonus = playersBalances[p.id] || 0;
                     // Note: Human player balance is synced separately, but update it here too for UI consistency

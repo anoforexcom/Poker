@@ -39,11 +39,26 @@ const GameTable: React.FC = () => {
     winningHand,
     blindLevel,
     isTournamentMode
-  } = usePokerGame(user.balance, updateBalance, gameConfig);
+  } = usePokerGame(gameConfig?.startingStack || 0, updateBalance, gameConfig);
+
+  const activeUser = players.find(p => p.isHuman);
+
+  const handleLeaveTable = () => {
+    if (activeUser) {
+      if (tournament?.type === 'cash') {
+        updateBalance(activeUser.balance);
+      } else if (isTournamentMode && winners.length > 0) {
+        if (winners[0].isHuman && winners.length === 1) {
+          updateBalance(tournament.prizePool);
+          alert(`Congratulations! You won the tournament and earned $${tournament.prizePool.toLocaleString()}`);
+        }
+      }
+    }
+    navigate('/');
+  };
 
   // Restored Game Logic
   const [betValue, setBetValue] = useState(20);
-  const activeUser = players.find(p => p.isHuman);
 
   // Start game loop
   React.useEffect(() => {
@@ -127,7 +142,7 @@ const GameTable: React.FC = () => {
 
       <div className="absolute top-6 right-8 z-20 flex gap-4">
         <button
-          onClick={() => navigate('/')}
+          onClick={handleLeaveTable}
           className="bg-white/5 hover:bg-white/10 px-4 py-2 rounded-lg text-xs font-bold transition-all border border-white/10 flex items-center gap-2 text-white"
         >
           <span className="material-symbols-outlined text-sm">logout</span> LOBBY

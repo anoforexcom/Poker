@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveWorld } from '../contexts/LiveWorldContext';
 import { useSimulation } from '../contexts/SimulationContext';
+import { useGame } from '../contexts/GameContext';
 import { useSmoothedValue } from '../hooks/useSmoothedValue';
 
 type LobbyTab = 'tournaments' | 'cash' | 'sitgo' | 'spingo';
@@ -16,6 +17,7 @@ const Lobby: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [speedFilter, setSpeedFilter] = useState<string[]>([]);
   const navigate = useNavigate();
+  const { user: gameUser, withdraw } = useGame();
 
   // Use simulated tournaments if available, otherwise use LiveWorld tournaments
   const tournaments = simulatedTournaments.length > 0 ? simulatedTournaments : liveWorldTournaments;
@@ -91,6 +93,29 @@ const Lobby: React.FC = () => {
 
     return true;
   });
+
+  const handleJoinGame = (t: any) => {
+    // If it's a finished tournament, we can only observe (already handled by button text but safety first)
+    if (t.status === 'Finished') return;
+
+    // For Running tournaments, we are observing (no cost usually)
+    if (t.status === 'Running' || t.status === 'Final Table') {
+      navigate(t.type === 'cash' || t.type === 'sitgo' || t.type === 'spingo' ? `/table/${t.id}` : `/tournament/${t.id}`);
+      return;
+    }
+
+    // Check balance
+    if (gameUser.balance < t.buyIn) {
+      alert(`Insufficient funds! You need $${t.buyIn.toFixed(2)} to join this game.`);
+      return;
+    }
+
+    // Deduct buy-in
+    if (window.confirm(`Join ${t.name} for $${t.buyIn.toFixed(2)}?`)) {
+      withdraw(t.buyIn);
+      navigate(t.type === 'cash' || t.type === 'sitgo' || t.type === 'spingo' ? `/table/${t.id}` : `/tournament/${t.id}`);
+    }
+  };
 
   const getFilterCount = (f: string) => {
     const tabToType: Record<string, string> = {
@@ -267,7 +292,7 @@ const Lobby: React.FC = () => {
                 <div
                   key={t.id}
                   className="bg-surface/30 rounded-xl border border-border-dark p-4 hover:bg-surface/50 transition-all cursor-pointer group"
-                  onClick={() => navigate(t.type === 'cash' || t.type === 'sitgo' || t.type === 'spingo' ? `/table/${t.id}` : `/tournament/${t.id}`)}
+                  onClick={() => handleJoinGame(t)}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex-1 min-w-0">
@@ -316,7 +341,7 @@ const Lobby: React.FC = () => {
                 <div
                   key={t.id}
                   className="bg-surface/30 rounded-xl border border-border-dark overflow-hidden hover:bg-surface/50 transition-all cursor-pointer group"
-                  onClick={() => navigate(t.type === 'cash' || t.type === 'sitgo' || t.type === 'spingo' ? `/table/${t.id}` : `/tournament/${t.id}`)}
+                  onClick={() => handleJoinGame(t)}
                 >
                   <div className="p-4">
                     <div className="flex items-start justify-between mb-3">
