@@ -52,8 +52,8 @@ const Lobby: React.FC = () => {
 
   // Display count: Players in games + a stable lobby population (approx 30% of bots)
   const targetOnlinePlayers = Math.floor(actualPlayersInGames * 1.3) + 120;
-  const smoothedOnlinePlayers = useSmoothedValue(targetOnlinePlayers, 0.05);
-  const smoothedActiveTables = useSmoothedValue(activeTablesCount + 42, 0.1);
+  const smoothedOnlinePlayers = useSmoothedValue(targetOnlinePlayers, 0.005);
+  const smoothedActiveTables = useSmoothedValue(activeTablesCount + 42, 0.01);
 
   const filteredTournaments = safeTournaments.filter(t => {
     // Type filter based on tab

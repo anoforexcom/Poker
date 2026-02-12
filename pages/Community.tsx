@@ -5,35 +5,125 @@ import { generateBotName } from '../utils/nameGenerator';
 const Community: React.FC = () => {
   const { user } = useGame();
 
-  // --- STATE ---
-  const [view, setView] = useState<'list' | 'detail'>('list');
-  const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
-  const [showNewTopicModal, setShowNewTopicModal] = useState(false);
-
-  // Forum Data
-  const [topics, setTopics] = useState([
+  // --- MOCK DATA GENERATION ---
+  const INITIAL_TOPICS = [
     {
       id: 1, pinned: true, author: "Admin_Renan", title: "Analysis: 3-Bet Pot OOP in Dynamic Boards",
-      votes: 242, comments: 84, time: "3h ago", tag: "Pinned",
-      body: "Here is a deep dive into how to construct your checking ranges when out of position...",
+      votes: 242, comments: 4, time: "3h ago", tag: "Pinned",
+      body: "Here is a deep dive into how to construct your checking ranges when out of position on boards like T-9-7 rainbow or J-8-6 with a flush draw. The key is to protect your checking range with some strong hands while realizing that your overall equity is lower...",
       thread: [
-        { id: 101, author: generateBotName(), text: "Great analysis! Helped my game a lot.", time: "2h ago" },
-        { id: 102, author: generateBotName(), text: "I disagree with the river bluff frequency.", time: "1h ago" }
+        { id: 101, author: generateBotName(), text: "Great analysis! Helped my game a lot. I always struggled with deciding which overpairs to check.", time: "2h ago" },
+        { id: 102, author: generateBotName(), text: "I disagree with the river bluff frequency here. Against a typical reg, this is over-bluffing.", time: "1h ago" },
+        { id: 103, author: generateBotName(), text: "Can you explain why we don't lead the turn on a blank?", time: "45m ago" },
+        { id: 104, author: "Admin_Renan", text: "Because leading creates a capped range for our check, making us easy to exploit on the river.", time: "10m ago" }
       ]
     },
     {
       id: 2, pinned: false, author: generateBotName(), title: "How to deal with aggressive limpers in Micro Stakes?",
-      votes: 56, comments: 12, time: "1h ago", tag: "Question",
-      body: "I'm struggling against players who limp-raise every hand. Any tips?",
-      thread: []
+      votes: 56, comments: 2, time: "1h ago", tag: "Question",
+      body: "I'm struggling against players who limp-raise every hand in NL5. It feels like they always have it or they're just clicking buttons. Any tips?",
+      thread: [
+        { id: 201, author: generateBotName(), text: "In micro stakes, limp-raise is usually AA/KK. Just fold unless you have a set mine opportunity.", time: "30m ago" },
+        { id: 202, author: generateBotName(), text: "Actually, some whales do it with air. Check their VPIP.", time: "5m ago" }
+      ]
     },
     {
       id: 3, pinned: false, author: generateBotName(), title: "My journey from NL2 to NL25 in 3 months",
-      votes: 128, comments: 54, time: "5h ago", tag: "Success",
-      body: "It wasn't easy, but strict bankroll management was key...",
-      thread: []
-    },
-  ]);
+      votes: 128, comments: 3, time: "5h ago", tag: "Success",
+      body: "It wasn't easy, but strict bankroll management (50 buy-ins) was key to surviving the variance. I also used the Academia section here daily!",
+      thread: [
+        { id: 301, author: generateBotName(), text: "Congrats! That's a huge step. NL25 is where the real game starts.", time: "4h ago" },
+        { id: 302, author: generateBotName(), text: "What was your winrate at NL10?", time: "2h ago" },
+        { id: 303, author: generateBotName(), text: "Nice work. Are you planning to move to NL50 soon?", time: "1h ago" }
+      ]
+    }
+  ];
+
+  // Generate 47 more posts to reach 50
+  const tags = ["Strategy", "Hand Analysis", "General", "Question", "Success", "Tilt", "Bad Beat"];
+  const titles = [
+    "Folded KK pre-flop. Did I overthink it?",
+    "Best hours to play on BestPoker.Cash?",
+    "Is it worth it to buy a HUD in 2026?",
+    "Tournament bubble strategy: Tight or Aggressive?",
+    "Dealing with 4-bets from the blinds",
+    "Finally hit my first Royal Flush!",
+    "Bankroll management for MTTs vs Cash",
+    "How to spot a bot in 2026?",
+    "Psychology of a Downswing",
+    "GTO vs Exploit: Which is better for Micro?",
+    "Bounty tournaments: How to value a head?",
+    "PLO is the future of poker. Change my mind.",
+    "Streamers, why do you show your hole cards?",
+    "Poker in Brazil: The community is growing!",
+    "Best snacks for a 12-hour session?",
+    "How to read live tells on a digital table?",
+    "Small blind vs Big blind: The ultimate war.",
+    "The math of calling a shove on the flop.",
+    "Winning a tournament on mobile: Possible?",
+    "Short Deck strategy for beginners",
+    "My setup: 4 monitors for maximum grinding",
+    "Is coffee better than tea for focus?",
+    "Reading the board: Avoiding the obvious flush",
+    "Check-raising the dry flop",
+    "Donk betting: Is it ever correct?",
+    "Stacking off with top pair: Good or Bad?",
+    "Variance in Spin & Go is insane.",
+    "Looking for a study group (Gold rank only)",
+    "The importance of sleep for high stakes",
+    "Hero call of the century! Check the video.",
+    "Why I quit poker and why I'm back.",
+    "Bluffing the river when the flush hits.",
+    "Pocket Aces: My 10th loss in a row.",
+    "Spin and Go strategy for multipliers.",
+    "The 2-7 Triple Draw challenge.",
+    "Mental game coaching: Is it worth $500?",
+    "Streaming my climb to NL100 tonight.",
+    "Poker software recommendations?",
+    "Adapting to the new blind structure.",
+    "The state of the community in 2026.",
+    "Funny hand: We both had the same flush.",
+    "Double or Nothing: The safest grind?",
+    "Improving post-flop play with 40BB.",
+    "Satellite strategy for the Sunday Million.",
+    "What's your biggest win ever?",
+    "Poker and Fitness: Stay healthy, play better.",
+    "Reviewing my stats after 100k hands."
+  ];
+
+  for (let i = 0; i < titles.length; i++) {
+    const commentCount = Math.floor(Math.random() * 8);
+    const mockThread = Array.from({ length: commentCount }).map((_, j) => ({
+      id: (i + 4) * 100 + j,
+      author: generateBotName(),
+      text: [
+        "I agree with this.", "Nice post!", "Interesting perspective.",
+        "I need to try this.", "How do you handle the variance?",
+        "GTO says we should fold here.", "LOL what a whale.",
+        "Nice win man!", "This helped me a lot.", "What was the pot size?"
+      ][Math.floor(Math.random() * 10)],
+      time: `${Math.floor(Math.random() * 20) + 1}h ago`
+    }));
+
+    INITIAL_TOPICS.push({
+      id: i + 4,
+      pinned: false,
+      author: generateBotName(),
+      title: titles[i],
+      votes: Math.floor(Math.random() * 150),
+      comments: commentCount,
+      time: `${Math.floor(Math.random() * 24)}h ago`,
+      tag: tags[Math.floor(Math.random() * tags.length)],
+      body: `This is a long and detailed post about ${titles[i]}. I have been playing poker for years and I think that the most important thing is...`,
+      thread: mockThread
+    });
+  }
+
+  // --- STATE ---
+  const [view, setView] = useState<'list' | 'detail'>('list');
+  const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
+  const [showNewTopicModal, setShowNewTopicModal] = useState(false);
+  const [topics, setTopics] = useState(INITIAL_TOPICS);
 
   // Side Chat Data
   const [chatMessage, setChatMessage] = useState('');
@@ -48,7 +138,7 @@ const Community: React.FC = () => {
   const [newBody, setNewBody] = useState('');
 
   // ID Counter
-  const [nextId, setNextId] = useState(4);
+  const [nextId, setNextId] = useState(54);
 
   // --- ACTIONS ---
 
@@ -132,7 +222,7 @@ const Community: React.FC = () => {
           {view === 'list' && (
             <>
               <div className="flex gap-4 border-b border-border-dark">
-                <button className="pb-4 text-sm font-bold border-b-2 border-primary text-primary px-2">Recents</button>
+                <button className="pb-4 text-sm font-bold border-b-2 border-primary text-primary px-2">Recents (50+)</button>
                 <button className="pb-4 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-white px-2">Trending</button>
                 <button className="pb-4 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-white px-2">Hands Analysis</button>
               </div>
@@ -157,7 +247,7 @@ const Community: React.FC = () => {
                         <div className="flex items-center gap-6">
                           <div className="flex items-center gap-2 text-slate-500">
                             <span className="material-symbols-outlined text-lg">chat_bubble</span>
-                            <span className="text-xs font-bold">{topic.comments} Comments</span>
+                            <span className="text-xs font-bold">{topic.thread.length} Comments</span>
                           </div>
                         </div>
                       </div>
@@ -173,34 +263,57 @@ const Community: React.FC = () => {
             <div className="space-y-6">
               <div className="bg-surface border border-border-dark p-8 rounded-2xl">
                 <div className="flex items-center gap-3 mb-6">
-                  <img src={`https://picsum.photos/seed/${activeTopic.author}/50/50`} className="size-10 rounded-full" />
+                  <div className="relative">
+                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${activeTopic.author}`} className="size-12 rounded-full border-2 border-primary/20 p-0.5" />
+                    <div className="absolute bottom-0 right-0 size-3.5 bg-poker-green rounded-full border-2 border-surface"></div>
+                  </div>
                   <div>
                     <h2 className="text-2xl font-bold text-white leading-tight">{activeTopic.title}</h2>
-                    <p className="text-sm text-slate-400">Posted by <span className="text-white font-bold">{activeTopic.author}</span> • {activeTopic.time}</p>
+                    <p className="text-sm text-slate-400">Posted by <span className="text-primary font-bold">{activeTopic.author}</span> • {activeTopic.time}</p>
                   </div>
                 </div>
-                <div className="prose prose-invert max-w-none text-slate-300 leading-relaxed">
+                <div className="prose prose-invert max-w-none text-slate-300 leading-relaxed mb-8">
                   <p>{activeTopic.body}</p>
                 </div>
-                <div className="mt-8 pt-6 border-t border-border-dark flex gap-4">
-                  <button className="flex items-center gap-2 text-slate-400 hover:text-white transition"><span className="material-symbols-outlined">thumb_up</span> Like</button>
-                  <button className="flex items-center gap-2 text-slate-400 hover:text-white transition"><span className="material-symbols-outlined">reply</span> Reply</button>
+                <div className="pt-6 border-t border-border-dark flex items-center justify-between">
+                  <div className="flex gap-6">
+                    <button className="flex items-center gap-2 text-slate-400 hover:text-white transition group">
+                      <span className="material-symbols-outlined group-hover:text-primary">thumb_up</span>
+                      <span className="text-xs font-bold">Helpful</span>
+                    </button>
+                    <button className="flex items-center gap-2 text-slate-400 hover:text-white transition group">
+                      <span className="material-symbols-outlined group-hover:text-primary">share</span>
+                      <span className="text-xs font-bold">Share</span>
+                    </button>
+                  </div>
+                  <div className="bg-background px-4 py-1.5 rounded-full border border-border-dark">
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Discussion ({activeTopic.thread.length})</span>
+                  </div>
                 </div>
               </div>
 
               {/* Comments Section */}
               <div className="space-y-4">
-                <h3 className="text-lg font-bold text-white">Comments ({activeTopic.thread.length})</h3>
                 {activeTopic.thread.length === 0 ? <p className="text-slate-500 italic">No comments yet. Be the first!</p> : (
                   activeTopic.thread.map(comment => (
-                    <div key={comment.id} className="bg-background/50 border border-border-dark p-4 rounded-xl flex gap-4">
-                      <div className="size-8 rounded-full bg-slate-700 shrink-0"></div>
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-bold text-sm text-white">{comment.author}</span>
-                          <span className="text-xs text-slate-500">{comment.time}</span>
+                    <div key={comment.id} className="bg-background/80 border border-white/5 p-6 rounded-2xl flex gap-5 transition-all hover:border-white/10">
+                      <div className="shrink-0">
+                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.author}`} className="size-10 rounded-full border border-border-dark bg-surface p-0.5" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-white group-hover:text-primary transition-colors cursor-pointer">{comment.author}</span>
+                            <span className="size-1 bg-slate-600 rounded-full"></span>
+                            <span className="text-xs text-slate-500">{comment.time}</span>
+                          </div>
+                          <button className="text-slate-600 hover:text-white transition"><span className="material-symbols-outlined text-base">more_horiz</span></button>
                         </div>
-                        <p className="text-sm text-slate-300">{comment.text}</p>
+                        <p className="text-sm text-slate-300 leading-relaxed">{comment.text}</p>
+                        <div className="mt-4 flex gap-4">
+                          <button className="text-[10px] font-black text-slate-500 hover:text-primary uppercase tracking-widest flex items-center gap-1"><span className="material-symbols-outlined text-sm">reply</span> Reply</button>
+                          <button className="text-[10px] font-black text-slate-500 hover:text-primary uppercase tracking-widest flex items-center gap-1"><span className="material-symbols-outlined text-sm">thumb_up_off</span> Upvote</button>
+                        </div>
                       </div>
                     </div>
                   ))

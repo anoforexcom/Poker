@@ -26,18 +26,18 @@ interface LiveWorldContextType {
 const LiveWorldContext = createContext<LiveWorldContextType | undefined>(undefined);
 
 const TOURNAMENT_TEMPLATES = [
-    { name: "Sunday Million", buyIn: 109, maxPlayers: 10000, gameType: "NL Hold'em" },
-    { name: "Daily Bigs", buyIn: 55, maxPlayers: 2000, gameType: "NL Hold'em" },
-    { name: "Omadness", buyIn: 22, maxPlayers: 500, gameType: "PLO" },
-    { name: "Hyper Turbo", buyIn: 11, maxPlayers: 1000, gameType: "NL Hold'em" },
-    { name: "Bounty Builder", buyIn: 33, maxPlayers: 1500, gameType: "KO" },
-    { name: "Micro Millions", buyIn: 2.20, maxPlayers: 5000, gameType: "NL Hold'em" },
+    { name: "Sunday Million", buyIn: 109, maxPlayers: 500, gameType: "NL Hold'em" },
+    { name: "Daily Bigs", buyIn: 55, maxPlayers: 200, gameType: "NL Hold'em" },
+    { name: "Omadness", buyIn: 22, maxPlayers: 100, gameType: "PLO" },
+    { name: "Hyper Turbo", buyIn: 11, maxPlayers: 150, gameType: "NL Hold'em" },
+    { name: "Bounty Builder", buyIn: 33, maxPlayers: 250, gameType: "KO" },
+    { name: "Micro Millions", buyIn: 2.20, maxPlayers: 400, gameType: "NL Hold'em" },
 ];
 
 export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     // Initial Random State
-    const [onlinePlayers, setOnlinePlayers] = useState(4120);
-    const [activeTables, setActiveTables] = useState(842);
+    const [onlinePlayers, setOnlinePlayers] = useState(542);
+    const [activeTables, setActiveTables] = useState(128);
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
 
     // Initialize Tournaments
