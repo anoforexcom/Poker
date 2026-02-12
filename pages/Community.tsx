@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useGame } from '../contexts/GameContext';
+import { useLiveWorld } from '../contexts/LiveWorldContext';
 import { generateBotName } from '../utils/nameGenerator';
 
 const Community: React.FC = () => {
   const { user } = useGame();
+  const { smoothedOnlinePlayers } = useLiveWorld();
 
   // --- MOCK DATA GENERATION ---
   const INITIAL_TOPICS = [
@@ -331,7 +333,7 @@ const Community: React.FC = () => {
             <div className="size-2.5 bg-poker-green rounded-full animate-pulse"></div>
             <h3 className="font-bold text-sm text-white">Global Chat</h3>
           </div>
-          <span className="text-[10px] font-bold text-slate-500 uppercase">1,248 Online</span>
+          <span className="text-[10px] font-bold text-slate-500 uppercase">{smoothedOnlinePlayers.toLocaleString()} Online</span>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">

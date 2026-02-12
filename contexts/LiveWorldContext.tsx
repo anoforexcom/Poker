@@ -18,6 +18,7 @@ export interface Tournament {
 
 interface LiveWorldContextType {
     onlinePlayers: number;
+    smoothedOnlinePlayers: number;
     activeTables: number;
     tournaments: Tournament[];
     registerForTournament: (id: string) => void;
@@ -37,6 +38,7 @@ const TOURNAMENT_TEMPLATES = [
 export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     // Initial Random State
     const [onlinePlayers, setOnlinePlayers] = useState(542);
+    const [smoothedOnlinePlayers, setSmoothedOnlinePlayers] = useState(542);
     const [activeTables, setActiveTables] = useState(128);
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
 
@@ -122,6 +124,23 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
         };
     }, []);
 
+    // Smoothing Heartbeat: Perfectly synchronized across all consumers
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setSmoothedOnlinePlayers(prev => {
+                const diff = onlinePlayers - prev;
+                if (Math.abs(diff) < 1) return onlinePlayers;
+
+                // Very slow, realistic transition as requested (0.005 speed equivalent)
+                const step = diff * 0.005;
+                const naturalStep = Math.abs(step) < 0.1 ? (diff > 0 ? 0.1 : -0.1) : step;
+                return prev + naturalStep;
+            });
+        }, 100);
+
+        return () => clearInterval(interval);
+    }, [onlinePlayers]);
+
     const createRandomTournament = (idSeed: number): Tournament => {
         const template = TOURNAMENT_TEMPLATES[Math.floor(Math.random() * TOURNAMENT_TEMPLATES.length)];
         const statusRoll = Math.random();
@@ -164,7 +183,13 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
     };
 
     return (
-        <LiveWorldContext.Provider value={{ onlinePlayers, activeTables, tournaments, registerForTournament }}>
+        <LiveWorldContext.Provider value={{
+            onlinePlayers,
+            smoothedOnlinePlayers: Math.round(smoothedOnlinePlayers),
+            activeTables,
+            tournaments,
+            registerForTournament
+        }}>
             {children}
         </LiveWorldContext.Provider>
     );
