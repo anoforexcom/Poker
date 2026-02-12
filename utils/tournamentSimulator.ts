@@ -155,11 +155,47 @@ export class TournamentSimulator {
                 }
             }
 
-            // 2. Spawn new tournaments if low
-            if (activeTournaments.length < 8) {
-                const types: GameType[] = ['tournament', 'cash', 'sitgo', 'spingo'];
-                const newT = this.generateTournamentData(types[Math.floor(Math.random() * types.length)]);
+            // 2. Spawn new tournaments if low or gaps found
+            const types: GameType[] = ['tournament', 'cash', 'sitgo', 'spingo'];
+            const buyInRanges = [2, 10, 50, 100]; // Micro, Low, Mid, High representative buyins
+
+            // Ensure a healthy minimum total (increased for scale)
+            if (activeTournaments.length < 40) {
+                const typeToFill = types[Math.floor(Math.random() * types.length)];
+                const buyInToFill = buyInRanges[Math.floor(Math.random() * buyInRanges.length)];
+
+                const newT = this.generateTournamentData(typeToFill);
+                newT.buy_in = buyInToFill; // Hard set to ensure variety
                 await supabase.from('tournaments').insert([newT]);
+                console.log(`[SIMULATOR] Spawning ${typeToFill} ($${buyInToFill}) to maintain density.`);
+            }
+
+            // Specific "Gap" check - ensures no filter is EVER empty
+            for (const type of types) {
+                const typeGames = activeTournaments.filter(t => t.type === type);
+
+                // If any type has less than 8 games, spawn one immediately
+                if (typeGames.length < 8) {
+                    const newT = this.generateTournamentData(type);
+                    await supabase.from('tournaments').insert([newT]);
+                }
+
+                // Check for buy-in variety within the type
+                for (const range of buyInRanges) {
+                    const hasMatch = typeGames.some(t => {
+                        if (range === 2) return t.buy_in < 5;
+                        if (range === 10) return t.buy_in >= 5 && t.buy_in < 20;
+                        if (range === 50) return t.buy_in >= 20 && t.buy_in < 100;
+                        return t.buy_in >= 100;
+                    });
+
+                    if (!hasMatch) {
+                        const newT = this.generateTournamentData(type);
+                        newT.buy_in = range;
+                        await supabase.from('tournaments').insert([newT]);
+                        console.log(`[SIMULATOR] Gap found! Spawning ${type} at $${range} range.`);
+                    }
+                }
             }
 
         } catch (err) {

@@ -50,9 +50,41 @@ ALTER TABLE public.tournaments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.bots ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tournament_participants ENABLE ROW LEVEL SECURITY;
 
--- Nota: Supabase não tem "CREATE POLICY IF NOT EXISTS". 
--- Se der erro de "policy already exists", você pode ignorar ou apagar as políticas antigas antes.
--- Para simplificar, focamos em garantir que as tabelas e o trigger funcionem.
+-- POLÍTICAS PARA PROFILES
+DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profiles;
+CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
+CREATE POLICY "Users can update their own profile" ON public.profiles
+  FOR UPDATE USING (auth.uid() = id);
+
+-- POLÍTICAS PARA TOURNAMENTS (Permissivo para o demo/simulação)
+DROP POLICY IF EXISTS "Tournaments are viewable by everyone" ON public.tournaments;
+CREATE POLICY "Tournaments are viewable by everyone" ON public.tournaments
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Anyone can insert/update tournaments" ON public.tournaments;
+CREATE POLICY "Anyone can insert/update tournaments" ON public.tournaments
+  FOR ALL USING (true) WITH CHECK (true);
+
+-- POLÍTICAS PARA BOTS (Permissivo para o demo/simulação)
+DROP POLICY IF EXISTS "Bots are viewable by everyone" ON public.bots;
+CREATE POLICY "Bots are viewable by everyone" ON public.bots
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Anyone can manage bots" ON public.bots;
+CREATE POLICY "Anyone can manage bots" ON public.bots
+  FOR ALL USING (true) WITH CHECK (true);
+
+-- POLÍTICAS PARA PARTICIPANTES
+DROP POLICY IF EXISTS "Participants are viewable by everyone" ON public.tournament_participants;
+CREATE POLICY "Participants are viewable by everyone" ON public.tournament_participants
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Anyone can join tournaments" ON public.tournament_participants;
+CREATE POLICY "Anyone can join tournaments" ON public.tournament_participants
+  FOR INSERT WITH CHECK (true);
 
 -- 6. TRIGGER: CRIAR PERFIL AUTOMÁTICO AO REGISTRAR
 CREATE OR REPLACE FUNCTION public.handle_new_user() 
