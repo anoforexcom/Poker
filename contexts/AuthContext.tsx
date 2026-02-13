@@ -130,6 +130,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const login = async (email: string, password: string) => {
         setIsProcessing(true);
         try {
+            // MAGIC BYPASS FOR TESTING
+            if (email === 'jogador@teste.com' && password === 'poker123') {
+                console.log('[AUTH_CONTEXT] Using magic login bypass...');
+                const testUser: User = {
+                    id: 'magic-test-id-001',
+                    name: 'Jogador Teste',
+                    email: email,
+                    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lucky',
+                    balance: 100000,
+                    rank: 'Diamond'
+                };
+                setUser(testUser);
+                setIsProcessing(false);
+                return;
+            }
+
             const { error } = await supabase.auth.signInWithPassword({
                 email,
                 password,
