@@ -12,7 +12,7 @@ const GameTable: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isObserver = searchParams.get('observe') === 'true';
-  const { user, updateBalance } = useGame();
+  const { user, updateBalance, activeGames } = useGame();
   const { tournaments } = useLiveWorld();
   const { showAlert } = useNotification();
 
