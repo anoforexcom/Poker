@@ -25,7 +25,7 @@ const Dashboard: React.FC = () => {
         }
 
         history.push({
-          name: date.toLocaleDateString(undefined, { month: 'short', day: timeframe === '1Y' ? undefined : 'numeric' }),
+          name: date.toLocaleDateString('en-US', { month: 'short', day: timeframe === '1Y' ? undefined : 'numeric' }),
           bankroll: Math.floor(baseBalance * (0.8 + Math.random() * 0.4))
         });
       }

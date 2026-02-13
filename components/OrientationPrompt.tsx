@@ -37,9 +37,9 @@ export const OrientationPrompt: React.FC = () => {
                 </div>
             </div>
 
-            <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-tighter italic">Roda o teu dispositivo</h2>
+            <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-tighter italic">Rotate your device</h2>
             <p className="text-slate-400 text-sm max-w-[250px] leading-relaxed">
-                Para a melhor experiência de jogo, por favor utiliza o modo <span className="text-primary font-bold">Paisagem (Horizontal)</span>.
+                For the best gaming experience, please use <span className="text-primary font-bold">Landscape Mode (Horizontal)</span>.
             </p>
 
             <div className="mt-8 flex gap-2">

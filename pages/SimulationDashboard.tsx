@@ -16,21 +16,21 @@ const SimulationDashboard: React.FC = () => {
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-4xl font-black text-white mb-2">
-                        🎮 Simulação de Torneios <span className="text-primary">Ao Vivo</span>
+                        🎮 Live Tournament <span className="text-primary">Simulation</span>
                     </h1>
                     <p className="text-slate-400">
-                        Sistema de simulação em tempo real com milhares de bots
+                        Real-time simulation system with thousands of bots
                     </p>
                 </div>
                 <div className="flex gap-4">
                     <button
                         onClick={isRunning ? stopSimulation : startSimulation}
                         className={`px-6 py-3 rounded-lg font-bold transition-all ${isRunning
-                                ? 'bg-red-600 hover:bg-red-700 text-white'
-                                : 'bg-green-600 hover:bg-green-700 text-white'
+                            ? 'bg-red-600 hover:bg-red-700 text-white'
+                            : 'bg-green-600 hover:bg-green-700 text-white'
                             }`}
                     >
-                        {isRunning ? '⏹️ Parar' : '▶️ Iniciar'} Simulação
+                        {isRunning ? '⏹️ Stop' : '▶️ Start'} Simulation
                     </button>
                 </div>
             </div>
@@ -45,31 +45,31 @@ const SimulationDashboard: React.FC = () => {
                 />
                 <StatCard
                     icon="emoji_events"
-                    label="Torneios Ativos"
+                    label="Active Tournaments"
                     value={stats.totalTournaments}
                     color="text-gold"
                 />
                 <StatCard
                     icon="app_registration"
-                    label="Registrando"
+                    label="Registering"
                     value={stats.registeringTournaments}
                     color="text-green-400"
                 />
                 <StatCard
                     icon="play_circle"
-                    label="Em Andamento"
+                    label="Running"
                     value={stats.runningTournaments}
                     color="text-primary"
                 />
                 <StatCard
                     icon="check_circle"
-                    label="Finalizados"
+                    label="Finished"
                     value={stats.finishedTournaments}
                     color="text-slate-400"
                 />
                 <StatCard
                     icon="groups"
-                    label="Jogadores Ativos"
+                    label="Active Players"
                     value={stats.totalPlayersInTournaments.toLocaleString()}
                     color="text-purple-400"
                 />
@@ -79,9 +79,9 @@ const SimulationDashboard: React.FC = () => {
             <div className="bg-surface rounded-2xl border border-border-dark p-6">
                 <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
                     <span className="material-symbols-outlined text-primary">live_tv</span>
-                    Torneios Ao Vivo
+                    Live Tournaments
                     <span className="ml-auto text-sm font-normal text-slate-400">
-                        Atualização em tempo real
+                        Real-time updates
                     </span>
                 </h2>
 
@@ -96,7 +96,7 @@ const SimulationDashboard: React.FC = () => {
                         <span className="material-symbols-outlined text-6xl mb-4 opacity-50">
                             hourglass_empty
                         </span>
-                        <p>Aguardando torneios...</p>
+                        <p>Waiting for tournaments...</p>
                     </div>
                 )}
             </div>
@@ -115,9 +115,9 @@ const SimulationDashboard: React.FC = () => {
                             className="flex items-center gap-4 bg-background/50 p-4 rounded-lg hover:bg-background transition-colors"
                         >
                             <div className={`text-2xl font-black ${index === 0 ? 'text-gold' :
-                                    index === 1 ? 'text-slate-300' :
-                                        index === 2 ? 'text-orange-600' :
-                                            'text-slate-500'
+                                index === 1 ? 'text-slate-300' :
+                                    index === 2 ? 'text-orange-600' :
+                                        'text-slate-500'
                                 }`}>
                                 #{index + 1}
                             </div>
@@ -129,7 +129,7 @@ const SimulationDashboard: React.FC = () => {
                             <div className="flex-1">
                                 <p className="text-white font-bold">{bot.name}</p>
                                 <p className="text-xs text-slate-400">
-                                    {bot.gamesPlayed.toLocaleString()} jogos • {(bot.winRate * 100).toFixed(1)}% win rate
+                                    {bot.gamesPlayed.toLocaleString()} games • {(bot.winRate * 100).toFixed(1)}% win rate
                                 </p>
                             </div>
                             <div className="text-right">
@@ -174,15 +174,15 @@ const TournamentCard: React.FC<{ tournament: any }> = ({ tournament }) => {
                     <p className="text-xs text-slate-400">Buy-in: ${tournament.buyIn}</p>
                 </div>
                 <span className={`px-2 py-1 rounded text-xs font-bold border ${statusColors[tournament.status]}`}>
-                    {tournament.status === 'registering' ? '📝 Registrando' :
-                        tournament.status === 'running' ? '▶️ Em Jogo' :
-                            '✅ Finalizado'}
+                    {tournament.status === 'registering' ? '📝 Registering' :
+                        tournament.status === 'running' ? '▶️ Running' :
+                            '✅ Finished'}
                 </span>
             </div>
 
             <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="bg-surface/50 rounded p-2">
-                    <p className="text-xs text-slate-400">Jogadores</p>
+                    <p className="text-xs text-slate-400">Players</p>
                     <p className="text-lg font-bold text-white">{tournament.players.length}/{tournament.maxPlayers}</p>
                 </div>
                 <div className="bg-surface/50 rounded p-2">

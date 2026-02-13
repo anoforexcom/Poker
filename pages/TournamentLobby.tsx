@@ -104,7 +104,7 @@ const TournamentLobby: React.FC = () => {
                 {/* Header */}
                 <div className="p-4 md:p-8 border-b border-white/5 bg-surface/20 backdrop-blur-md">
                     <button onClick={() => navigate('/play')} className="mb-4 text-slate-500 hover:text-white flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-colors">
-                        <span className="material-symbols-outlined text-base">arrow_back</span> Voltar ao Lobby
+                        <span className="material-symbols-outlined text-base">arrow_back</span> Back to Lobby
                     </button>
 
                     <div className="flex flex-col md:flex-row justify-between items-start gap-4">
@@ -125,7 +125,7 @@ const TournamentLobby: React.FC = () => {
                         <div className="text-left md:text-right bg-gold/5 p-4 rounded-2xl border border-gold/10 w-full md:w-auto">
                             <div className="text-2xl md:text-4xl font-black text-gold font-mono tracking-tighter">${tournament.prizePool.toLocaleString()}</div>
                             <div className="text-[10px] font-black text-gold/60 uppercase tracking-widest">
-                                {tournament.type === 'sitgo' || tournament.type === 'spingo' ? 'Prêmio Máximo' : 'Prize Pool Garantido'}
+                                {tournament.type === 'sitgo' || tournament.type === 'spingo' ? 'Max Prize' : 'Guaranteed Prize Pool'}
                             </div>
                         </div>
                     </div>
@@ -142,7 +142,7 @@ const TournamentLobby: React.FC = () => {
                                 : 'border-transparent text-slate-500 hover:text-slate-300'
                                 }`}
                         >
-                            {tab === 'home' ? 'Resumo' : tab === 'players' ? 'Jogadores' : 'Mesas'}
+                            {tab === 'home' ? 'Summary' : tab === 'players' ? 'Players' : 'Tables'}
                         </button>
                     ))}
                 </div>
@@ -275,10 +275,10 @@ const TournamentLobby: React.FC = () => {
                 </div>
 
                 <div>
-                    <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Seu Status</h2>
+                    <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Your Status</h2>
                     <div className="bg-white/5 border border-white/5 rounded-2xl p-6 text-center shadow-inner">
                         <div className={`text-sm font-black uppercase tracking-tighter mb-1 ${isRegistered ? 'text-emerald-400' : 'text-slate-500'}`}>
-                            {isRegistered ? 'Inscrito' : 'Não Inscrito'}
+                            {isRegistered ? 'Registered' : 'Not Registered'}
                         </div>
                         <div className="text-white text-lg font-black font-mono tracking-tighter">${user.balance.toLocaleString()}</div>
                     </div>

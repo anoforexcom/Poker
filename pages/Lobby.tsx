@@ -165,23 +165,23 @@ const Lobby: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div>
               <h2 className="text-xl md:text-3xl font-black text-white tracking-tighter font-display uppercase italic">Lobby</h2>
-              <p className="text-slate-500 text-[9px] md:text-sm font-bold uppercase tracking-widest mt-0.5">Explore as mesas ativas</p>
+              <p className="text-slate-500 text-[9px] md:text-sm font-bold uppercase tracking-widest mt-0.5">Explore active tables</p>
             </div>
             <div className="flex flex-wrap gap-1.5 sm:gap-2">
               <div className="bg-emerald-500/10 text-emerald-400 text-[9px] font-black px-2 py-1 rounded-lg border border-emerald-500/20 flex items-center gap-1.5 shadow-sm">
                 <span className="size-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-                {safeTournaments.length} <span className="hidden xs:inline">TORNEIOS</span>
+                {safeTournaments.length} <span className="hidden xs:inline">TOURNAMENTS</span>
               </div>
               <div className="bg-primary/10 text-primary-light text-[9px] font-black px-2 py-1 rounded-lg border border-primary/20 flex items-center gap-1.5 shadow-sm">
                 <span className="size-1.5 bg-primary-light rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]"></span>
-                {headerOnlinePlayers.toLocaleString()} <span className="hidden xs:inline">JOGADORES</span>
+                {headerOnlinePlayers.toLocaleString()} <span className="hidden xs:inline">PLAYERS</span>
               </div>
               <button
                 onClick={() => setShowMobileFilters(!showMobileFilters)}
                 className="lg:hidden bg-slate-800 text-slate-400 p-2 rounded-lg border border-slate-700 flex items-center gap-1"
               >
                 <span className="material-symbols-outlined text-sm">{showMobileFilters ? 'expand_less' : 'filter_list'}</span>
-                <span className="text-[10px] font-black uppercase">Filtros</span>
+                <span className="text-[10px] font-black uppercase">Filters</span>
               </button>
             </div>
           </div>
@@ -189,7 +189,7 @@ const Lobby: React.FC = () => {
           {/* Tabs */}
           <div className="flex gap-1 mt-4 overflow-x-auto pb-2 scrollbar-hide snap-x -mx-1 px-1">
             {[
-              { id: 'tournaments', label: 'Torneios', icon: 'emoji_events' },
+              { id: 'tournaments', label: 'Tournaments', icon: 'emoji_events' },
               { id: 'cash', label: 'Cash', icon: 'payments' },
               { id: 'sitgo', label: 'Sit & Go', icon: 'group' },
               { id: 'spingo', label: 'Spin', icon: 'casino' }
@@ -327,7 +327,7 @@ const Lobby: React.FC = () => {
                         ? 'bg-blue-600 border-blue-500 text-white shadow-blue-900/40'
                         : 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed'
                       }`}>
-                      {t.type === 'cash' ? 'ENTRAR' : t.status === 'Running' || t.status === 'Final Table' ? 'OBSERVAR' : t.status === 'Finished' ? 'FINALIZADO' : 'REGISTRAR'}
+                      {t.type === 'cash' ? 'ENTER' : t.status === 'Running' || t.status === 'Final Table' ? 'OBSERVE' : t.status === 'Finished' ? 'FINISHED' : 'REGISTER'}
                     </button>
                   </div>
                 </div>

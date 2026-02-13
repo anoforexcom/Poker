@@ -48,19 +48,33 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
         }
 
         if (data && data.length > 0) {
-            const mapped: Tournament[] = data.map(t => ({
-                id: t.id,
-                name: t.name,
-                gameType: t.type === 'cash' ? 'NL Hold\'em' : t.type.toUpperCase(),
-                buyIn: Number(t.buy_in),
-                prizePool: Number(t.prize_pool),
-                players: t.players_count,
-                maxPlayers: t.max_players,
-                status: t.status as TournamentStatus,
-                startTime: 'Now',
-                progress: t.status === 'running' ? 50 : 0,
-                type: t.type as any
-            }));
+            const normalizeStatus = (s: string): TournamentStatus => {
+                const statusMap: Record<string, TournamentStatus> = {
+                    'registering': 'Registering',
+                    'late reg': 'Late Reg',
+                    'running': 'Running',
+                    'final table': 'Final Table',
+                    'finished': 'Finished'
+                };
+                return statusMap[s.toLowerCase()] || s as TournamentStatus;
+            };
+
+            const mapped: Tournament[] = data.map(t => {
+                const normalizedStatus = normalizeStatus(t.status);
+                return {
+                    id: t.id,
+                    name: t.name,
+                    gameType: t.type === 'cash' ? 'NL Hold\'em' : t.type.toUpperCase(),
+                    buyIn: Number(t.buy_in),
+                    prizePool: Number(t.prize_pool),
+                    players: t.players_count,
+                    maxPlayers: t.max_players,
+                    status: normalizedStatus,
+                    startTime: 'Now',
+                    progress: normalizedStatus === 'Running' ? 50 : 0,
+                    type: t.type as any
+                };
+            });
             setTournaments(mapped);
 
             const totalTournamentPlayers = mapped.reduce((acc, t) => acc + t.players, 0);
