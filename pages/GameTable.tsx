@@ -6,6 +6,7 @@ import { useSimulation } from '../contexts/SimulationContext';
 import { useLiveWorld } from '../contexts/LiveWorldContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { BlindStructureType } from '../utils/blindStructure';
+import { ActiveGamesSwitcher } from '../components/ActiveGamesSwitcher';
 
 const GameTable: React.FC = () => {
   const { id } = useParams();
@@ -416,6 +417,31 @@ const GameTable: React.FC = () => {
               >
                 <span className="material-symbols-outlined text-sm">play_arrow</span>
                 Voltar ao Jogo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Active Games Switcher Overlay */}
+      {showGameSwitcher && (
+        <div className="absolute top-16 right-4 md:top-20 md:right-8 z-50 w-64 md:w-72 animate-scale-in origin-top-right">
+          <div className="bg-[#0f172a]/95 border border-white/10 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl">
+            <div className="p-4 border-b border-white/5 flex justify-between items-center bg-white/5">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Suas Mesas</span>
+              <button onClick={() => setShowGameSwitcher(false)} className="text-slate-500 hover:text-white transition">
+                <span className="material-symbols-outlined text-base">close</span>
+              </button>
+            </div>
+            <div className="p-2">
+              <ActiveGamesSwitcher />
+            </div>
+            <div className="p-3 bg-black/20 text-center">
+              <button
+                onClick={() => navigate('/play')}
+                className="text-[9px] font-black text-primary hover:text-white transition uppercase tracking-widest"
+              >
+                + Abrir Nova Mesa
               </button>
             </div>
           </div>
