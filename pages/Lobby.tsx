@@ -163,39 +163,39 @@ const Lobby: React.FC = () => {
         <div className="p-3 md:p-6 border-b border-border-dark bg-surface/20">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div>
-              <h2 className="text-xl md:text-3xl font-bold text-white tracking-tight font-display">Lobby</h2>
-              <p className="text-slate-400 text-[10px] md:text-sm mt-0.5">Join thousands of players worldwide</p>
+              <h2 className="text-xl md:text-3xl font-black text-white tracking-tighter font-display uppercase italic">Lobby</h2>
+              <p className="text-slate-500 text-[10px] md:text-sm font-bold uppercase tracking-widest mt-0.5">Explore as mesas ativas</p>
             </div>
             <div className="flex flex-wrap gap-1.5 sm:gap-2">
-              <div className="bg-poker-green/10 text-poker-green text-[9px] md:text-[10px] font-bold px-2 py-1 md:px-3 md:py-1.5 rounded border border-poker-green/20 flex items-center gap-1.5 md:gap-2">
-                <span className="size-1.5 md:size-2 bg-poker-green rounded-full animate-pulse"></span>
-                {safeTournaments.length.toLocaleString()} <span className="hidden xs:inline">TOURNAMENTS</span>
+              <div className="bg-emerald-500/10 text-emerald-400 text-[9px] font-black px-2 py-1 rounded-lg border border-emerald-500/20 flex items-center gap-1.5 shadow-sm">
+                <span className="size-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+                {safeTournaments.length} <span className="hidden xs:inline">TORNEIOS</span>
               </div>
-              <div className="bg-primary/10 text-primary text-[9px] md:text-[10px] font-bold px-2 py-1 md:px-3 md:py-1.5 rounded border border-primary/20 flex items-center gap-1.5 md:gap-2">
-                <span className="size-1.5 md:size-2 bg-primary rounded-full animate-pulse"></span>
-                {headerOnlinePlayers.toLocaleString()} <span className="hidden xs:inline">PLAYERS</span>
+              <div className="bg-primary/10 text-primary-light text-[9px] font-black px-2 py-1 rounded-lg border border-primary/20 flex items-center gap-1.5 shadow-sm">
+                <span className="size-1.5 bg-primary-light rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]"></span>
+                {headerOnlinePlayers.toLocaleString()} <span className="hidden xs:inline">JOGADORES</span>
               </div>
             </div>
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-1 mt-4 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="flex gap-1.5 mt-4 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
             {[
-              { id: 'tournaments', label: 'Tournaments', icon: 'emoji_events' },
-              { id: 'cash', label: 'Cash Games', icon: 'attach_money' },
+              { id: 'tournaments', label: 'Torneios', icon: 'emoji_events' },
+              { id: 'cash', label: 'Cash', icon: 'payments' },
               { id: 'sitgo', label: 'Sit & Go', icon: 'group' },
-              { id: 'spingo', label: 'Spin & Go', icon: 'casino' }
+              { id: 'spingo', label: 'Spin', icon: 'casino' }
             ].map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as LobbyTab)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-bold text-sm whitespace-nowrap transition-all ${activeTab === tab.id
-                  ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                  : 'bg-surface/50 text-slate-400 hover:text-white hover:bg-surface'
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs whitespace-nowrap transition-all border ${activeTab === tab.id
+                  ? 'bg-primary border-primary text-white shadow-xl shadow-primary/20 scale-95'
+                  : 'bg-white/5 border-transparent text-slate-400 hover:text-white hover:bg-white/10'
                   }`}
               >
-                <span className="material-symbols-outlined text-lg">{tab.icon}</span>
-                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="material-symbols-outlined text-base">{tab.icon}</span>
+                {tab.label}
               </button>
             ))}
           </div>
@@ -282,44 +282,44 @@ const Lobby: React.FC = () => {
               {filteredTournaments.map(t => (
                 <div
                   key={t.id}
-                  className="bg-surface/30 rounded-xl border border-border-dark p-4 hover:bg-surface/50 transition-all cursor-pointer group"
+                  className="bg-surface/40 backdrop-blur-sm rounded-2xl border border-white/5 p-3.5 md:p-5 hover:bg-white/5 transition-all cursor-pointer group shadow-lg"
                   onClick={() => handleJoinGame(t)}
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 md:gap-4">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`size-2 rounded-full ${t.status === 'Running' ? 'bg-blue-500' : 'bg-slate-600'}`}></span>
-                        <h3 className="text-sm font-bold text-white truncate">{t.name}</h3>
-                        <span className={`text-[10px] font-black uppercase tracking-wider ${getStatusColor(t.status)}`}>
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className={`size-2 rounded-full ${t.status === 'Running' ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-slate-700'}`}></span>
+                        <h3 className="text-xs md:text-sm font-black text-white truncate leading-tight">{t.name}</h3>
+                        <span className={`text-[8px] md:text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-black/40 ${getStatusColor(t.status)}`}>
                           {t.status}
                         </span>
-                        {t.type === 'spingo' && <span className="text-[10px] bg-gold/20 text-gold px-1.5 py-0.5 rounded font-black">SPIN</span>}
+                        {t.type === 'spingo' && <span className="text-[8px] md:text-[9px] bg-gold/20 text-gold px-1.5 py-0.5 rounded font-black border border-gold/10">SPIN</span>}
                       </div>
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
-                        <span className="flex items-center gap-1">
-                          <span className="material-symbols-outlined text-sm">attach_money</span>
-                          {t.type === 'cash' ? `Blinds ${t.buyIn}/${t.buyIn * 2}` : `$${t.buyIn.toFixed(2)}`}
+                      <div className="flex flex-wrap items-center gap-4 text-[10px] md:text-xs text-slate-400">
+                        <span className="flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-base text-slate-500">payments</span>
+                          <span className="font-bold text-slate-300">{t.type === 'cash' ? `Blinds ${t.buyIn}/${t.buyIn * 2}` : `$${t.buyIn.toFixed(2)}`}</span>
                         </span>
-                        <span className="flex items-center gap-1">
-                          <span className="material-symbols-outlined text-sm">group</span>
-                          {t.players}/{t.maxPlayers}
+                        <span className="flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-base text-slate-500">group</span>
+                          <span className="font-mono font-bold">{t.players}<span className="text-slate-600">/{t.maxPlayers}</span></span>
                         </span>
                         {t.type !== 'cash' && (
-                          <span className="flex items-center gap-1 text-gold">
-                            <span className="material-symbols-outlined text-sm">emoji_events</span>
-                            ${t.prizePool.toLocaleString()}
+                          <span className="flex items-center gap-1.5 text-gold-light">
+                            <span className="material-symbols-outlined text-base">emoji_events</span>
+                            <span className="font-black">${t.prizePool.toLocaleString()}</span>
                           </span>
                         )}
                       </div>
                     </div>
 
-                    <button className={`px-6 py-2 rounded-lg font-black text-xs transition-all shadow-lg hover:brightness-110 whitespace-nowrap ${t.status === 'Registering' || t.status === 'Late Reg'
-                      ? 'bg-poker-green text-white shadow-poker-green/20'
-                      : t.status === 'Running'
-                        ? 'bg-blue-600 text-white shadow-blue-600/20'
-                        : 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                    <button className={`px-5 py-2.5 md:px-8 md:py-3 rounded-xl font-black text-[10px] md:text-xs tracking-widest transition-all shadow-xl hover:brightness-110 active:scale-95 whitespace-nowrap uppercase border ${t.status === 'Registering' || t.status === 'Late Reg'
+                      ? 'bg-emerald-600 border-emerald-500 text-white shadow-emerald-900/40'
+                      : t.status === 'Running' || t.status === 'Final Table'
+                        ? 'bg-blue-600 border-blue-500 text-white shadow-blue-900/40'
+                        : 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed'
                       }`}>
-                      {t.type === 'cash' ? 'JOIN' : t.status === 'Running' || t.status === 'Final Table' ? 'OBSERVE' : t.status === 'Finished' ? 'ENDED' : 'REGISTER'}
+                      {t.type === 'cash' ? 'ENTRAR' : t.status === 'Running' || t.status === 'Final Table' ? 'OBSERVAR' : t.status === 'Finished' ? 'FINALIZADO' : 'REGISTRAR'}
                     </button>
                   </div>
                 </div>

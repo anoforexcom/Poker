@@ -23,6 +23,7 @@ import { LiveWorldProvider } from './contexts/LiveWorldContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ChatProvider } from './contexts/ChatContext';
 import { SimulationProvider } from './contexts/SimulationContext';
+import { ActiveGamesSwitcher } from './components/ActiveGamesSwitcher';
 
 // Scroll to top on route change
 const ScrollToTop = () => {
@@ -103,15 +104,20 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
             key={item.path}
             to={item.path}
             onClick={() => onClose()}
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${isActive(item.path)
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${isActive(item.path)
               ? 'bg-primary/10 text-primary'
               : 'text-slate-400 hover:text-white hover:bg-white/5'
               }`}
           >
-            <span className="material-symbols-outlined">{item.icon}</span>
+            <span className="material-symbols-outlined text-xl">{item.icon}</span>
             {item.name}
           </Link>
         ))}
+
+        {/* Active Games Switcher in Sidebar */}
+        <div className="mt-8 pt-6 border-t border-white/5">
+          <ActiveGamesSwitcher />
+        </div>
       </nav>
 
       <div className="p-4 border-t border-border-dark mt-auto">
@@ -155,17 +161,20 @@ const Header = ({ onToggle }: { onToggle: () => void }) => {
           <span className="material-symbols-outlined">menu</span>
         </button>
 
-        <div className="hidden md:flex items-center bg-background rounded-lg px-3 py-1.5 border border-border-dark">
-          <span className="text-gold text-xs font-bold mr-2 uppercase">Balance:</span>
+        <div className="hidden md:flex items-center bg-[#1a2333] rounded-xl px-3 py-1.5 border border-white/5 shadow-inner">
+          <span className="text-gold text-[10px] font-black mr-2 uppercase tracking-widest opacity-70">Balance:</span>
           <span className="text-white font-mono text-sm">${user.balance.toLocaleString()}</span>
         </div>
-        {/* Mobile Balance specialized view if needed, or just keep Deposit */}
-        <Link to="/cashier" className="bg-primary hover:bg-primary/90 text-white text-xs font-bold py-2 px-4 rounded-lg transition-all flex items-center gap-2">
+        {/* Mobile Balance display next to deposit */}
+        <div className="md:hidden flex flex-col justify-center">
+          <span className="text-white font-mono text-xs font-black shadow-sm">${user.balance.toLocaleString()}</span>
+          <span className="text-[7px] text-emerald-400 font-bold uppercase tracking-tighter -mt-0.5">Available</span>
+        </div>
+
+        <Link to="/cashier" className="bg-primary hover:brightness-110 text-white text-[10px] font-black py-2 px-3 md:px-5 rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-primary/20">
           <span className="material-symbols-outlined text-sm">add_circle</span>
           <span className="hidden md:inline">DEPOSIT</span>
         </Link>
-        {/* Mobile Balance display next to deposit */}
-        <span className="md:hidden text-white font-mono text-sm font-bold">${user.balance.toLocaleString()}</span>
       </div>
 
       <div className="flex items-center gap-4 md:gap-6">
@@ -208,8 +217,8 @@ const ProtectedLayout = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  const isTable = location.pathname.startsWith('/table/');
-  console.log('[PROTECTED_LAYOUT] Rendering main layout, isTable:', isTable);
+  // Hide nav for both game tables and tournament lobbies to maximize space
+  const isGameView = location.pathname.startsWith('/table/') || location.pathname.startsWith('/tournament/');
 
   return (
     <GameProvider>
@@ -217,19 +226,19 @@ const ProtectedLayout = ({ children }: { children: React.ReactNode }) => {
         <SimulationProvider>
           <ChatProvider>
             <div className="flex h-screen bg-[#0a0f1a] text-slate-100 font-sans overflow-hidden">
-              {!isTable && <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />}
+              {!isGameView && <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />}
 
               {/* Mobile Overlay */}
-              {isSidebarOpen && !isTable && (
+              {isSidebarOpen && !isGameView && (
                 <div
-                  className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm transition-opacity"
+                  className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-md transition-opacity duration-300"
                   onClick={() => setIsSidebarOpen(false)}
                 ></div>
               )}
 
               <div className="flex-1 flex flex-col min-w-0">
-                {!isTable && <Header onToggle={() => setIsSidebarOpen(!isSidebarOpen)} />}
-                <main className={`flex-1 overflow-auto custom-scrollbar relative ${isTable ? 'h-full' : ''}`}>
+                {!isGameView && <Header onToggle={() => setIsSidebarOpen(!isSidebarOpen)} />}
+                <main className={`flex-1 overflow-auto custom-scrollbar relative ${isGameView ? 'h-full' : 'p-0'}`}>
                   {children}
                 </main>
               </div>

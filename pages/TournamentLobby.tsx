@@ -7,6 +7,8 @@ import { useNotification } from '../contexts/NotificationContext';
 import { generateBotName } from '../utils/nameGenerator';
 import { useGame } from '../contexts/GameContext';
 
+import { ActiveGamesSwitcher } from '../components/ActiveGamesSwitcher';
+
 const TournamentLobby: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const { tournaments: liveWorldTournaments, onlinePlayers, registerForTournament } = useLiveWorld();
@@ -98,49 +100,49 @@ const TournamentLobby: React.FC = () => {
     return (
         <div className="flex flex-col md:flex-row h-full">
             {/* Main Content */}
-            <div className="flex-1 flex flex-col min-w-0">
+            <div className="flex-1 flex flex-col min-w-0 bg-background/50">
                 {/* Header */}
-                <div className="p-8 border-b border-border-dark bg-surface/5">
-                    <button onClick={() => navigate('/')} className="mb-4 text-slate-400 hover:text-white flex items-center gap-2 text-sm font-bold">
-                        <span className="material-symbols-outlined text-lg">arrow_back</span> Back to Lobby
+                <div className="p-4 md:p-8 border-b border-white/5 bg-surface/20 backdrop-blur-md">
+                    <button onClick={() => navigate('/play')} className="mb-4 text-slate-500 hover:text-white flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-colors">
+                        <span className="material-symbols-outlined text-base">arrow_back</span> Voltar ao Lobby
                     </button>
 
-                    <div className="flex justify-between items-start">
+                    <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                         <div>
-                            <div className="flex items-center gap-3 mb-2">
-                                <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider border ${isRegistering ? 'bg-poker-green/10 text-poker-green border-poker-green/20' :
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className={`px-2 py-0.5 rounded-[4px] text-[9px] font-black uppercase tracking-widest border ${isRegistering ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
                                     isRunning ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
                                         'bg-slate-500/10 text-slate-500 border-slate-500/20'
                                     }`}>
                                     {tournament.status}
                                 </span>
-                                <span className="text-xs font-bold text-slate-500">{tournament.gameType}</span>
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{tournament.gameType}</span>
                             </div>
-                            <h1 className="text-4xl font-black text-white font-display mb-2">{tournament.name}</h1>
-                            <p className="text-slate-400">ID: {tournament.id}</p>
+                            <h1 className="text-2xl md:text-5xl font-black text-white font-display tracking-tighter uppercase italic">{tournament.name}</h1>
+                            <p className="text-slate-500 text-[10px] font-mono mt-1 opacity-60">ID: {tournament.id.substring(0, 12)}</p>
                         </div>
 
-                        <div className="text-right">
-                            <div className="text-3xl font-black text-gold font-mono">${tournament.prizePool.toLocaleString()}</div>
-                            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                {tournament.type === 'sitgo' || tournament.type === 'spingo' ? 'Top Prizes' : 'Prize Pool'}
+                        <div className="text-left md:text-right bg-gold/5 p-4 rounded-2xl border border-gold/10 w-full md:w-auto">
+                            <div className="text-2xl md:text-4xl font-black text-gold font-mono tracking-tighter">${tournament.prizePool.toLocaleString()}</div>
+                            <div className="text-[10px] font-black text-gold/60 uppercase tracking-widest">
+                                {tournament.type === 'sitgo' || tournament.type === 'spingo' ? 'Prêmio Máximo' : 'Prize Pool Garantido'}
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Tabs */}
-                <div className="flex border-b border-border-dark px-8 bg-surface">
+                <div className="flex border-b border-white/5 px-4 md:px-8 bg-surface/30 backdrop-blur-sm overflow-x-auto scrollbar-hide">
                     {(['home', 'players', 'tables'] as const).map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
-                            className={`px-6 py-4 text-sm font-bold border-b-2 transition-colors uppercase tracking-wider ${activeTab === tab
-                                ? 'border-primary text-white'
+                            className={`px-4 md:px-6 py-4 text-[10px] md:text-sm font-black border-b-2 transition-all uppercase tracking-widest whitespace-nowrap ${activeTab === tab
+                                ? 'border-primary text-white shadow-inner bg-primary/5'
                                 : 'border-transparent text-slate-500 hover:text-slate-300'
                                 }`}
                         >
-                            {tab}
+                            {tab === 'home' ? 'Resumo' : tab === 'players' ? 'Jogadores' : 'Mesas'}
                         </button>
                     ))}
                 </div>
@@ -265,12 +267,20 @@ const TournamentLobby: React.FC = () => {
             </div>
 
             {/* Sidebar / Action Panel */}
-            <div className="w-full md:w-80 border-t md:border-t-0 md:border-l border-border-dark bg-surface/5 p-4 md:p-6 flex flex-col gap-4 md:gap-6">
+            <div className="w-full md:w-80 border-t md:border-t-0 md:border-l border-white/5 bg-surface/10 p-4 md:p-6 flex flex-col gap-6 md:gap-8 overflow-y-auto custom-scrollbar">
+                {/* Active Games Switcher inside the tournament lobby panel for easy switching */}
+                <div className="md:hidden pt-2">
+                    <ActiveGamesSwitcher />
+                    <div className="h-px bg-white/5 my-6"></div>
+                </div>
+
                 <div>
-                    <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Your Status</h2>
-                    <div className="bg-surface border border-border-dark rounded-xl p-4 text-center">
-                        <div className="text-slate-400 text-sm mb-1">{isRegistered ? 'Registered' : 'Not Registered'}</div>
-                        <div className="text-white font-bold">Balance: ${user.balance.toLocaleString()}</div>
+                    <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Seu Status</h2>
+                    <div className="bg-white/5 border border-white/5 rounded-2xl p-6 text-center shadow-inner">
+                        <div className={`text-sm font-black uppercase tracking-tighter mb-1 ${isRegistered ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            {isRegistered ? 'Inscrito' : 'Não Inscrito'}
+                        </div>
+                        <div className="text-white text-lg font-black font-mono tracking-tighter">${user.balance.toLocaleString()}</div>
                     </div>
                 </div>
 

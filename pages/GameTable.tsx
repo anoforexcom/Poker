@@ -121,6 +121,7 @@ const GameTable: React.FC = () => {
   const [showLobbyModal, setShowLobbyModal] = useState(false);
   const [activeLobbyTab, setActiveLobbyTab] = useState<'info' | 'players' | 'payouts'>('info');
   const [showOrientationPrompt, setShowOrientationPrompt] = useState(false);
+  const [showGameSwitcher, setShowGameSwitcher] = useState(false);
 
   // Detect mobile and orientation
   useEffect(() => {
@@ -234,6 +235,16 @@ const GameTable: React.FC = () => {
       </div>
 
       <div className="absolute top-4 right-4 md:top-6 md:right-8 z-20 flex gap-2 md:gap-4">
+        <button
+          onClick={() => setShowGameSwitcher(!showGameSwitcher)}
+          className="bg-black/60 hover:bg-black/80 size-9 md:size-12 rounded-xl text-white transition-all border border-white/10 flex items-center justify-center shadow-2xl backdrop-blur-md group relative"
+          title="Alternar Mesas"
+        >
+          <span className="material-symbols-outlined text-lg md:text-2xl group-hover:rotate-12 transition-transform">layers</span>
+          <span className="absolute -top-1 -right-1 bg-primary text-[8px] font-black px-1.5 py-0.5 rounded-full border border-white/20 animate-pulse">
+            {activeGames.length}
+          </span>
+        </button>
         <button
           onClick={() => setShowLobbyModal(true)}
           className="bg-primary/20 hover:bg-primary/30 px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all border border-primary/30 flex items-center gap-1.5 md:gap-2 text-white shadow-xl backdrop-blur-md group"
