@@ -460,6 +460,16 @@ const GameTable: React.FC = () => {
                 </button>
               </div>
             )}
+
+            {/* Human current bet chips on table */}
+            {!isObserver && activeUser && activeUser.currentBet > 0 && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center animate-bounce-short z-20">
+                <ChipStack amount={activeUser.currentBet} />
+                <span className="bg-black/90 text-white text-[10px] font-black px-2 py-0.5 rounded mt-2 border border-gold/50 shadow-2xl backdrop-blur-md">
+                  ${activeUser.currentBet.toLocaleString()}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Players Seats */}

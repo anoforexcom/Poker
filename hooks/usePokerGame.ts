@@ -106,10 +106,11 @@ export const usePokerGame = (
         return initialPlayers;
     });
 
-    // Sync external user balance
-    useEffect(() => {
-        setPlayers(prev => prev.map(p => p.isHuman ? { ...p, balance: initialUserBalance } : p));
-    }, [initialUserBalance]);
+    // Sync external user balance ONLY at initialization or when not in a hand
+    // Removing this effect because it resets the player's chips after every bet
+    // useEffect(() => {
+    //     setPlayers(prev => prev.map(p => p.isHuman ? { ...p, balance: initialUserBalance } : p));
+    // }, [initialUserBalance]);
 
     // Blind level timer (for tournament mode)
     useEffect(() => {
