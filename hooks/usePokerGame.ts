@@ -106,11 +106,20 @@ export const usePokerGame = (
         return initialPlayers;
     });
 
-    // Sync external user balance ONLY at initialization or when not in a hand
-    // Removing this effect because it resets the player's chips after every bet
-    // useEffect(() => {
-    //     setPlayers(prev => prev.map(p => p.isHuman ? { ...p, balance: initialUserBalance } : p));
-    // }, [initialUserBalance]);
+    // Smart sync external user balance
+    // Only updates if the human player has 0 chips and the game is at the very start
+    // This allows Demo/Guest balances to load without resetting mid-hand stacks.
+    useEffect(() => {
+        if (initialUserBalance > 0 && phase === 'Pre-flop' && pot === 0) {
+            setPlayers(prev => {
+                const needsBalance = prev.some(p => p.isHuman && p.balance === 0);
+                if (needsBalance) {
+                    return prev.map(p => p.isHuman ? { ...p, balance: initialUserBalance, isActive: true } : p);
+                }
+                return prev;
+            });
+        }
+    }, [initialUserBalance, phase, pot]);
 
     // Blind level timer (for tournament mode)
     useEffect(() => {
