@@ -19,14 +19,47 @@ const GameTable: React.FC = () => {
   // Find tournament config
   const tournament = tournaments.find(t => t.id === id);
 
+  // Rigorous rule derivation for each game type
   const gameConfig: GameConfig | undefined = tournament ? {
     mode: (tournament as any).type || 'tournament',
-    smallBlind: (tournament as any).type === 'cash' ? tournament.buyIn : (tournament.buyIn / 10), // Rough estimate for tourn blinds
-    bigBlind: (tournament as any).type === 'cash' ? tournament.buyIn * 2 : (tournament.buyIn / 5),
+
+    // Starting Stack Logic
+    startingStack: (() => {
+      const type = (tournament as any).type;
+      if (type === 'cash') return 1000; // 100 Big Blinds for fixed 5/10
+      if (type === 'spingo') return 500; // Fast-paced 50 BB
+      if (type === 'sitgo') return 1500; // Standard 75 BB
+      return 1500; // Tournament default
+    })(),
+
+    // Blinds Logic
+    smallBlind: (() => {
+      const type = (tournament as any).type;
+      if (type === 'cash') return 5;
+      if (type === 'spingo') return 10;
+      return tournament.buyIn / 10;
+    })(),
+
+    bigBlind: (() => {
+      const type = (tournament as any).type;
+      if (type === 'cash') return 10;
+      if (type === 'spingo') return 20;
+      return tournament.buyIn / 5;
+    })(),
+
     ante: 0,
-    startingStack: (tournament as any).type === 'cash' ? Math.min(user.balance, 1000) : 1500,
-    maxPlayers: tournament.maxPlayers,
-    blindStructureType: 'regular' as BlindStructureType,
+    maxPlayers: (tournament as any).type === 'spingo' ? 3 : tournament.maxPlayers,
+
+    // Structure Logic (Tempo de aumento de blinds)
+    blindStructureType: (() => {
+      const type = (tournament as any).type;
+      const name = tournament.name.toLowerCase();
+      if (type === 'spingo') return 'turbo'; // Spins always turbo
+      if (name.includes('turbo')) return 'turbo';
+      if (name.includes('deep')) return 'deep';
+      return 'regular';
+    })() as BlindStructureType,
+
     isObserver
   } : undefined;
 

@@ -131,11 +131,19 @@ export class TournamentSimulator {
                 // Registering tournaments fill up
                 if (t.status === 'registering') {
                     if (t.players_count < t.max_players && Math.random() > 0.4) {
+                        const newCount = Math.min(t.players_count + Math.floor(Math.random() * 3) + 1, t.max_players);
+
+                        // For Spins, the prize pool is set once at start (multiplier)
+                        // For others, it grows with buy-ins
+                        const newPrizePool = t.type === 'spingo'
+                            ? (newCount === t.max_players ? t.buy_in * (Math.random() > 0.9 ? 10 : 3) : 0)
+                            : (newCount * t.buy_in * 0.9);
+
                         await supabase
                             .from('tournaments')
                             .update({
-                                players_count: t.players_count + Math.floor(Math.random() * 3) + 1,
-                                prize_pool: (t.players_count + 1) * t.buy_in * 0.9
+                                players_count: newCount,
+                                prize_pool: newPrizePool
                             })
                             .eq('id', t.id);
                     } else if (t.players_count >= t.max_players) {

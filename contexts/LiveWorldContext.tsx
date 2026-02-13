@@ -129,6 +129,15 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
     const registerForTournament = async (tournamentId: string, userId: string) => {
         console.log('[LIVE_WORLD] Registering user:', userId, 'for tournament:', tournamentId);
 
+        // 1. Get current tournament state
+        const tournament = tournaments.find(t => t.id === tournamentId);
+        if (!tournament) throw new Error('Tournament not found');
+
+        // Check if full
+        if (tournament.players >= tournament.maxPlayers) {
+            throw new Error('Tournament is full');
+        }
+
         // Se for um usuário Demo Guest, não tentamos inserir no Supabase (pois falharia por causa da FK)
         // Apenas deixamos ele prosseguir para a visualização da mesa
         if (userId === 'demo-guest-id') {
@@ -144,13 +153,10 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
         if (joinError) throw joinError;
 
         // 2. Increment player count in tournament table
-        const tournament = tournaments.find(t => t.id === tournamentId);
-        if (tournament) {
-            await supabase
-                .from('tournaments')
-                .update({ players_count: tournament.players + 1 })
-                .eq('id', tournamentId);
-        }
+        await supabase
+            .from('tournaments')
+            .update({ players_count: tournament.players + 1 })
+            .eq('id', tournamentId);
     };
 
     return (
