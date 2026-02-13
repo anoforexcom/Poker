@@ -7,6 +7,7 @@ import { useLiveWorld } from '../contexts/LiveWorldContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { BlindStructureType } from '../utils/blindStructure';
 import { ActiveGamesSwitcher } from '../components/ActiveGamesSwitcher';
+import { OrientationPrompt } from '../components/OrientationPrompt';
 
 const GameTable: React.FC = () => {
   const { id } = useParams();
@@ -191,35 +192,10 @@ const GameTable: React.FC = () => {
     }
   };
 
-  if (!tournament) {
-    return (
-      <div className="h-screen w-full bg-[#0a0f1a] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <span className="size-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></span>
-          <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">Entering Table...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="relative flex flex-col h-full bg-slate-900 overflow-hidden">
-      {/* Landscape Orientation Prompt for Mobile */}
-      {showOrientationPrompt && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm">
-          <div className="bg-slate-800 p-8 rounded-2xl border border-primary shadow-2xl max-w-sm mx-4 text-center">
-            <span className="material-symbols-outlined text-primary text-6xl mb-4 inline-block animate-bounce">screen_rotation</span>
-            <h3 className="text-white font-bold text-xl mb-2">Melhor Experiência</h3>
-            <p className="text-slate-400 text-sm mb-4">Para jogar, vire seu dispositivo para o modo paisagem (horizontal)</p>
-            <button
-              onClick={() => setShowOrientationPrompt(false)}
-              className="text-primary text-sm font-bold hover:underline"
-            >
-              Continuar mesmo assim
-            </button>
-          </div>
-        </div>
-      )}
+    <div className="flex flex-col h-screen bg-[#0a0f1a] overflow-hidden select-none">
+      <OrientationPrompt />
+
       {/* Table Header Overlay */}
       <div className="absolute top-4 left-4 md:top-6 md:left-8 z-20 pointer-events-none">
         <div className="bg-background/80 backdrop-blur-md p-2 md:p-4 rounded-xl border border-white/5 shadow-2xl">
@@ -256,225 +232,231 @@ const GameTable: React.FC = () => {
       </div>
 
       {/* Tournament Lobby Modal */}
-      {showLobbyModal && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in" onClick={() => setShowLobbyModal(false)}>
-          <div className="bg-slate-900 border border-slate-700 w-full max-w-2xl h-[80vh] flex flex-col rounded-3xl overflow-hidden shadow-2xl animate-scale-in" onClick={e => e.stopPropagation()}>
-            {/* Header */}
-            <div className="p-6 bg-gradient-to-r from-slate-800 to-slate-900 border-b border-slate-700">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h2 className="text-xl md:text-2xl font-black text-white">{tournament?.name || 'Tournament Lobby'}</h2>
-                  <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">ID: {id?.substring(0, 8)} • {tournament?.gameType || 'NL Hold\'em'}</p>
-                </div>
-                <button onClick={() => setShowLobbyModal(false)} className="text-slate-500 hover:text-white transition p-2">
-                  <span className="material-symbols-outlined">close</span>
-                </button>
-              </div>
-
-              {/* Tabs */}
-              <div className="flex gap-2 mt-6">
-                {[
-                  { id: 'info', label: 'Informações', icon: 'info' },
-                  { id: 'players', label: 'Jogadores', icon: 'group' },
-                  { id: 'payouts', label: 'Premiação', icon: 'payments' }
-                ].map(tab => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveLobbyTab(tab.id as any)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeLobbyTab === tab.id
-                      ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                      : 'text-slate-400 hover:text-white hover:bg-white/5'
-                      }`}
-                  >
-                    <span className="material-symbols-outlined text-sm">{tab.icon}</span>
-                    {tab.label}
+      {
+        showLobbyModal && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in" onClick={() => setShowLobbyModal(false)}>
+            <div className="bg-slate-900 border border-slate-700 w-full max-w-2xl h-[80vh] flex flex-col rounded-3xl overflow-hidden shadow-2xl animate-scale-in" onClick={e => e.stopPropagation()}>
+              {/* Header */}
+              <div className="p-6 bg-gradient-to-r from-slate-800 to-slate-900 border-b border-slate-700">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-xl md:text-2xl font-black text-white">{tournament?.name || 'Tournament Lobby'}</h2>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">ID: {id?.substring(0, 8)} • {tournament?.gameType || 'NL Hold\'em'}</p>
+                  </div>
+                  <button onClick={() => setShowLobbyModal(false)} className="text-slate-500 hover:text-white transition p-2">
+                    <span className="material-symbols-outlined">close</span>
                   </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-              {activeLobbyTab === 'info' && (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Buy-in</p>
-                      <p className="text-lg font-black text-white">${tournament?.buyIn.toLocaleString() || '0'}</p>
-                    </div>
-                    <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Prize Pool</p>
-                      <p className="text-lg font-black text-gold">${tournament?.prizePool.toLocaleString() || '0'}</p>
-                    </div>
-                    <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Jogadores</p>
-                      <p className="text-lg font-black text-white">{players.length}/{tournament?.maxPlayers || '9'}</p>
-                    </div>
-                    <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Status</p>
-                      <p className="text-lg font-black text-primary uppercase">{phase}</p>
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-800/30 border border-slate-700/50 rounded-2xl p-6 space-y-4">
-                    <div className="flex justify-between items-center pb-4 border-b border-slate-700/50">
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-bold text-slate-500 uppercase">Nível Atual</p>
-                        <p className="text-white font-bold">{isTournamentMode ? `Level ${blindLevel}` : 'Cash Game'}</p>
-                      </div>
-                      <div className="text-right space-y-1">
-                        <p className="text-[10px] font-bold text-slate-500 uppercase">Blinds</p>
-                        <p className="text-primary font-black">${gameConfig?.smallBlind}/${gameConfig?.bigBlind}</p>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-bold text-slate-500 uppercase">Próximo Nível</p>
-                        <p className="text-slate-400 font-bold">{isTournamentMode ? `Level ${blindLevel + 1}` : '-'}</p>
-                      </div>
-                      <div className="text-right space-y-1">
-                        <p className="text-[10px] font-bold text-slate-500 uppercase">Tempo Restante</p>
-                        <div className="flex items-center gap-2 justify-end">
-                          <span className="material-symbols-outlined text-sm text-slate-500">schedule</span>
-                          <p className="text-white font-mono font-bold">
-                            {isTournamentMode ? (
-                              `${Math.floor(timeToNextLevel / 60000).toString().padStart(2, '0')}:${Math.floor((timeToNextLevel % 60000) / 1000).toString().padStart(2, '0')}`
-                            ) : '--:--'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
                 </div>
-              )}
 
-              {activeLobbyTab === 'players' && (
-                <div className="space-y-2">
-                  <div className="flex justify-between px-4 py-2 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700/50 mb-2">
-                    <span>Jogador</span>
-                    <span>Chips</span>
-                  </div>
-                  {[...players].sort((a, b) => b.balance - a.balance).map((p, i) => (
-                    <div key={p.id} className={`flex justify-between items-center p-4 rounded-xl border ${p.isHuman ? 'bg-primary/10 border-primary/30' : 'bg-slate-800/30 border-slate-700/50'} hover:bg-slate-800/50 transition`}>
-                      <div className="flex items-center gap-3">
-                        <span className="text-[10px] font-mono text-slate-500 w-4">{i + 1}</span>
-                        <div className="size-8 rounded-full bg-slate-700 overflow-hidden">
-                          <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${p.name}`} alt="" />
-                        </div>
-                        <span className={`text-sm font-bold ${p.isHuman ? 'text-white' : 'text-slate-300'}`}>{p.name} {p.isHuman && '(Você)'}</span>
-                      </div>
-                      <span className="text-sm font-black text-white">${p.balance.toLocaleString()}</span>
-                    </div>
+                {/* Tabs */}
+                <div className="flex gap-2 mt-6">
+                  {[
+                    { id: 'info', label: 'Informações', icon: 'info' },
+                    { id: 'players', label: 'Jogadores', icon: 'group' },
+                    { id: 'payouts', label: 'Premiação', icon: 'payments' }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveLobbyTab(tab.id as any)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeLobbyTab === tab.id
+                        ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                        }`}
+                    >
+                      <span className="material-symbols-outlined text-sm">{tab.icon}</span>
+                      {tab.label}
+                    </button>
                   ))}
                 </div>
-              )}
+              </div>
 
-              {activeLobbyTab === 'payouts' && (
-                <div className="space-y-4">
-                  <div className="bg-gold/10 border border-gold/20 p-4 rounded-2xl flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-3">
-                      <span className="material-symbols-outlined text-gold">emoji_events</span>
-                      <p className="text-sm font-bold text-white">Prêmio Total Garantido</p>
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                {activeLobbyTab === 'info' && (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
+                        <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Buy-in</p>
+                        <p className="text-lg font-black text-white">${tournament?.buyIn.toLocaleString() || '0'}</p>
+                      </div>
+                      <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
+                        <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Prize Pool</p>
+                        <p className="text-lg font-black text-gold">${tournament?.prizePool.toLocaleString() || '0'}</p>
+                      </div>
+                      <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
+                        <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Jogadores</p>
+                        <p className="text-lg font-black text-white">{players.length}/{tournament?.maxPlayers || '9'}</p>
+                      </div>
+                      <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
+                        <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Status</p>
+                        <p className="text-lg font-black text-primary uppercase">{phase}</p>
+                      </div>
                     </div>
-                    <p className="text-xl font-black text-gold">${tournament?.prizePool.toLocaleString() || '0'}</p>
+
+                    <div className="bg-slate-800/30 border border-slate-700/50 rounded-2xl p-6 space-y-4">
+                      <div className="flex justify-between items-center pb-4 border-b border-slate-700/50">
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase">Nível Atual</p>
+                          <p className="text-white font-bold">{isTournamentMode ? `Level ${blindLevel}` : 'Cash Game'}</p>
+                        </div>
+                        <div className="text-right space-y-1">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase">Blinds</p>
+                          <p className="text-primary font-black">${gameConfig?.smallBlind}/${gameConfig?.bigBlind}</p>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase">Próximo Nível</p>
+                          <p className="text-slate-400 font-bold">{isTournamentMode ? `Level ${blindLevel + 1}` : '-'}</p>
+                        </div>
+                        <div className="text-right space-y-1">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase">Tempo Restante</p>
+                          <div className="flex items-center gap-2 justify-end">
+                            <span className="material-symbols-outlined text-sm text-slate-500">schedule</span>
+                            <p className="text-white font-mono font-bold">
+                              {isTournamentMode ? (
+                                `${Math.floor(timeToNextLevel / 60000).toString().padStart(2, '0')}:${Math.floor((timeToNextLevel % 60000) / 1000).toString().padStart(2, '0')}`
+                              ) : '--:--'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
+                )}
+
+                {activeLobbyTab === 'players' && (
                   <div className="space-y-2">
-                    {[
-                      { rank: 1, percent: 45 },
-                      { rank: 2, percent: 25 },
-                      { rank: 3, percent: 15 },
-                      { rank: 4, percent: 10 },
-                      { rank: 5, percent: 5 },
-                    ].map((payout) => (
-                      <div key={payout.rank} className="flex justify-between items-center p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
+                    <div className="flex justify-between px-4 py-2 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700/50 mb-2">
+                      <span>Jogador</span>
+                      <span>Chips</span>
+                    </div>
+                    {[...players].sort((a, b) => b.balance - a.balance).map((p, i) => (
+                      <div key={p.id} className={`flex justify-between items-center p-4 rounded-xl border ${p.isHuman ? 'bg-primary/10 border-primary/30' : 'bg-slate-800/30 border-slate-700/50'} hover:bg-slate-800/50 transition`}>
                         <div className="flex items-center gap-3">
-                          <span className={`size-6 rounded-full flex items-center justify-center font-bold text-[10px] ${payout.rank === 1 ? 'bg-gold text-background' : 'bg-slate-700 text-slate-300'}`}>{payout.rank}º</span>
-                          <span className="text-sm text-slate-400">Posição</span>
+                          <span className="text-[10px] font-mono text-slate-500 w-4">{i + 1}</span>
+                          <div className="size-8 rounded-full bg-slate-700 overflow-hidden">
+                            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${p.name}`} alt="" />
+                          </div>
+                          <span className={`text-sm font-bold ${p.isHuman ? 'text-white' : 'text-slate-300'}`}>{p.name} {p.isHuman && '(Você)'}</span>
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm font-black text-white">${((tournament?.prizePool || 0) * (payout.percent / 100)).toLocaleString()}</p>
-                          <p className="text-[9px] font-bold text-slate-500 uppercase">{payout.percent}% do total</p>
-                        </div>
+                        <span className="text-sm font-black text-white">${p.balance.toLocaleString()}</span>
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
-            </div>
+                )}
 
-            {/* Footer Actions */}
-            <div className="p-6 bg-slate-900 border-t border-slate-700 flex gap-3">
-              <button
-                onClick={handleLeaveTable}
-                className="flex-1 bg-slate-800 hover:bg-red-600/20 hover:text-red-400 text-slate-400 font-bold py-3 rounded-2xl transition-all flex items-center justify-center gap-2 border border-slate-700 group"
-              >
-                <span className="material-symbols-outlined text-sm group-hover:animate-pulse">logout</span>
-                Sair da Mesa
-              </button>
-              <button
-                onClick={() => setShowLobbyModal(false)}
-                className="flex-1 bg-primary hover:brightness-110 text-white font-black py-3 rounded-2xl shadow-xl shadow-primary/20 transition-all flex items-center justify-center gap-2"
-              >
-                <span className="material-symbols-outlined text-sm">play_arrow</span>
-                Voltar ao Jogo
-              </button>
+                {activeLobbyTab === 'payouts' && (
+                  <div className="space-y-4">
+                    <div className="bg-gold/10 border border-gold/20 p-4 rounded-2xl flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <span className="material-symbols-outlined text-gold">emoji_events</span>
+                        <p className="text-sm font-bold text-white">Prêmio Total Garantido</p>
+                      </div>
+                      <p className="text-xl font-black text-gold">${tournament?.prizePool.toLocaleString() || '0'}</p>
+                    </div>
+                    <div className="space-y-2">
+                      {[
+                        { rank: 1, percent: 45 },
+                        { rank: 2, percent: 25 },
+                        { rank: 3, percent: 15 },
+                        { rank: 4, percent: 10 },
+                        { rank: 5, percent: 5 },
+                      ].map((payout) => (
+                        <div key={payout.rank} className="flex justify-between items-center p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
+                          <div className="flex items-center gap-3">
+                            <span className={`size-6 rounded-full flex items-center justify-center font-bold text-[10px] ${payout.rank === 1 ? 'bg-gold text-background' : 'bg-slate-700 text-slate-300'}`}>{payout.rank}º</span>
+                            <span className="text-sm text-slate-400">Posição</span>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-black text-white">${((tournament?.prizePool || 0) * (payout.percent / 100)).toLocaleString()}</p>
+                            <p className="text-[9px] font-bold text-slate-500 uppercase">{payout.percent}% do total</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer Actions */}
+              <div className="p-6 bg-slate-900 border-t border-slate-700 flex gap-3">
+                <button
+                  onClick={handleLeaveTable}
+                  className="flex-1 bg-slate-800 hover:bg-red-600/20 hover:text-red-400 text-slate-400 font-bold py-3 rounded-2xl transition-all flex items-center justify-center gap-2 border border-slate-700 group"
+                >
+                  <span className="material-symbols-outlined text-sm group-hover:animate-pulse">logout</span>
+                  Sair da Mesa
+                </button>
+                <button
+                  onClick={() => setShowLobbyModal(false)}
+                  className="flex-1 bg-primary hover:brightness-110 text-white font-black py-3 rounded-2xl shadow-xl shadow-primary/20 transition-all flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-sm">play_arrow</span>
+                  Voltar ao Jogo
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Active Games Switcher Overlay */}
-      {showGameSwitcher && (
-        <div className="absolute top-16 right-4 md:top-20 md:right-8 z-50 w-64 md:w-72 animate-scale-in origin-top-right">
-          <div className="bg-[#0f172a]/95 border border-white/10 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl">
-            <div className="p-4 border-b border-white/5 flex justify-between items-center bg-white/5">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Suas Mesas</span>
-              <button onClick={() => setShowGameSwitcher(false)} className="text-slate-500 hover:text-white transition">
-                <span className="material-symbols-outlined text-base">close</span>
-              </button>
-            </div>
-            <div className="p-2">
-              <ActiveGamesSwitcher />
-            </div>
-            <div className="p-3 bg-black/20 text-center">
-              <button
-                onClick={() => navigate('/play')}
-                className="text-[9px] font-black text-primary hover:text-white transition uppercase tracking-widest"
-              >
-                + Abrir Nova Mesa
-              </button>
+      {
+        showGameSwitcher && (
+          <div className="absolute top-16 right-4 md:top-20 md:right-8 z-50 w-64 md:w-72 animate-scale-in origin-top-right">
+            <div className="bg-[#0f172a]/95 border border-white/10 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl">
+              <div className="p-4 border-b border-white/5 flex justify-between items-center bg-white/5">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Suas Mesas</span>
+                <button onClick={() => setShowGameSwitcher(false)} className="text-slate-500 hover:text-white transition">
+                  <span className="material-symbols-outlined text-base">close</span>
+                </button>
+              </div>
+              <div className="p-2">
+                <ActiveGamesSwitcher />
+              </div>
+              <div className="p-3 bg-black/20 text-center">
+                <button
+                  onClick={() => navigate('/play')}
+                  className="text-[9px] font-black text-primary hover:text-white transition uppercase tracking-widest"
+                >
+                  + Abrir Nova Mesa
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Settings Modal (Simple) */}
-      {showSettings && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowSettings(false)}>
-          <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-2xl w-80" onClick={e => e.stopPropagation()}>
-            <h3 className="text-white font-bold text-lg mb-4">Settings</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between text-slate-400 text-sm">
-                <span>Sound Effects</span>
-                <input type="checkbox" defaultChecked className="accent-primary" />
+      {
+        showSettings && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowSettings(false)}>
+            <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-2xl w-80" onClick={e => e.stopPropagation()}>
+              <h3 className="text-white font-bold text-lg mb-4">Settings</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between text-slate-400 text-sm">
+                  <span>Sound Effects</span>
+                  <input type="checkbox" defaultChecked className="accent-primary" />
+                </div>
+                <div className="flex justify-between text-slate-400 text-sm">
+                  <span>Music</span>
+                  <input type="checkbox" className="accent-primary" />
+                </div>
+                <div className="flex justify-between text-slate-400 text-sm">
+                  <span>Auto Muck</span>
+                  <input type="checkbox" defaultChecked className="accent-primary" />
+                </div>
               </div>
-              <div className="flex justify-between text-slate-400 text-sm">
-                <span>Music</span>
-                <input type="checkbox" className="accent-primary" />
-              </div>
-              <div className="flex justify-between text-slate-400 text-sm">
-                <span>Auto Muck</span>
-                <input type="checkbox" defaultChecked className="accent-primary" />
-              </div>
+              <button onClick={() => setShowSettings(false)} className="mt-6 w-full bg-primary hover:bg-blue-600 text-white font-bold py-2 rounded-lg transition">Close</button>
             </div>
-            <button onClick={() => setShowSettings(false)} className="mt-6 w-full bg-primary hover:bg-blue-600 text-white font-bold py-2 rounded-lg transition">Close</button>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* The Poker Table Rendering */}
-      <div className="flex-1 flex items-center justify-center p-1 md:p-12 overflow-hidden">
-        <div className="poker-table relative w-full h-full max-h-[45vh] md:max-h-[65vh] max-w-5xl aspect-[2/1] bg-emerald-900 border-2 md:border-[16px] border-[#3a2a1a] flex flex-col items-center justify-center shadow-2xl rounded-[60px] md:rounded-[200px]">
+      <div className="flex-1 flex items-center justify-center p-1 md:p-12 overflow-hidden landscape:py-2">
+        <div className="poker-table relative w-full h-full max-h-[75vh] md:max-h-[65vh] max-w-5xl aspect-[2/1] bg-emerald-900 border-2 md:border-[16px] border-[#3a2a1a] flex flex-col items-center justify-center shadow-2xl rounded-[60px] md:rounded-[200px]">
 
           {/* Table Center: Pot & Cards */}
           <div className="flex flex-col items-center gap-6">
@@ -713,7 +695,7 @@ const GameTable: React.FC = () => {
           </div>
         )}
       </footer>
-    </div>
+    </div >
   );
 };
 
@@ -764,18 +746,18 @@ const ChipStack = ({ amount, size = 'md' }: { amount: number, size?: 'sm' | 'md'
 
 const PlayerSeat = ({ position, name, balance, active, inactive, dealer, currentBet, timeLeft, totalTime }: any) => {
   const positions: any = {
-    'top': '-top-6 md:-top-12 left-1/2 -translate-x-1/2',
-    'top-left': 'top-0 md:top-4 left-[2%] md:left-[15%]',
-    'top-right': 'top-0 md:top-4 right-[2%] md:right-[15%]',
-    'mid-left': 'top-[25%] md:top-1/2 -translate-y-1/2 -left-4 md:-left-12',
-    'mid-right': 'top-[25%] md:top-1/2 -translate-y-1/2 -right-4 md:-right-12',
-    'bottom-left': 'bottom-0 md:bottom-12 left-[2%] md:left-[15%]',
-    'bottom-right': 'bottom-0 md:bottom-12 right-[2%] md:right-[15%]',
+    'top': '-top-2 md:-top-12 left-1/2 -translate-x-1/2',
+    'top-left': 'top-0 md:top-4 left-[8%] md:left-[15%]',
+    'top-right': 'top-0 md:top-4 right-[8%] md:right-[15%]',
+    'mid-left': 'top-1/2 -translate-y-1/2 -left-4 md:-left-12',
+    'mid-right': 'top-1/2 -translate-y-1/2 -right-4 md:-right-12',
+    'bottom-left': 'bottom-0 md:bottom-12 left-[8%] md:left-[15%]',
+    'bottom-right': 'bottom-0 md:bottom-12 right-[8%] md:right-[15%]',
   };
 
   return (
-    <div className={`absolute ${positions[position]} flex flex-col items-center gap-1 md:gap-2 z-10 transition-all duration-500 scale-75 md:scale-100`}>
-      <div className={`relative size-16 md:size-24 rounded-full border-2 md:border-4 ${active ? 'border-amber-400 ring-4 md:ring-8 ring-amber-400/20 scale-110' : 'border-slate-800'} bg-slate-700 overflow-hidden ${inactive ? 'grayscale opacity-50' : ''} transition-all duration-300 shadow-xl`}>
+    <div className={`absolute ${positions[position]} flex flex-col items-center gap-0.5 md:gap-2 z-10 transition-all duration-500 scale-[0.6] xs:scale-[0.7] md:scale-100`}>
+      <div className={`relative size-14 md:size-24 rounded-full border-2 md:border-4 ${active ? 'border-amber-400 ring-2 md:ring-8 ring-amber-400/20 scale-110' : 'border-slate-800'} bg-slate-700 overflow-hidden ${inactive ? 'grayscale opacity-50' : ''} transition-all duration-300 shadow-xl`}>
         {active && timeLeft > 0 && (
           <svg className="absolute inset-0 size-full -rotate-90 pointer-events-none" viewBox="0 0 100 100">
             <circle
@@ -810,7 +792,7 @@ const PlayerSeat = ({ position, name, balance, active, inactive, dealer, current
 
       {/* Current Bet Chips */}
       {currentBet > 0 && (
-        <div className="absolute -bottom-16 flex flex-col items-center animate-bounce-short z-20">
+        <div className="absolute -bottom-10 md:-bottom-16 flex flex-col items-center animate-bounce-short z-20 scale-75 md:scale-100">
           <ChipStack amount={currentBet} />
           <span className="bg-black/90 text-white text-[10px] font-black px-2 py-0.5 rounded mt-2 border border-gold/50 shadow-2xl backdrop-blur-md">
             ${currentBet.toLocaleString()}

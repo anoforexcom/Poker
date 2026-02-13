@@ -16,6 +16,7 @@ const Lobby: React.FC = () => {
   const [filter, setFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [speedFilter, setSpeedFilter] = useState<string[]>([]);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
   const navigate = useNavigate();
   const { user: gameUser, withdraw } = useGame();
   const { showAlert } = useNotification();
@@ -175,6 +176,13 @@ const Lobby: React.FC = () => {
                 <span className="size-1.5 bg-primary-light rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]"></span>
                 {headerOnlinePlayers.toLocaleString()} <span className="hidden xs:inline">JOGADORES</span>
               </div>
+              <button
+                onClick={() => setShowMobileFilters(!showMobileFilters)}
+                className="lg:hidden bg-slate-800 text-slate-400 p-2 rounded-lg border border-slate-700 flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-sm">{showMobileFilters ? 'expand_less' : 'filter_list'}</span>
+                <span className="text-[10px] font-black uppercase">Filtros</span>
+              </button>
             </div>
           </div>
 
@@ -202,7 +210,7 @@ const Lobby: React.FC = () => {
         </div>
 
         {/* Filters & Controls */}
-        <div className="p-4 md:p-6 border-b border-border-dark bg-surface/10">
+        <div className={`p-4 md:p-6 border-b border-border-dark bg-surface/10 ${showMobileFilters ? 'block' : 'hidden lg:block'}`}>
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Buy-in Filters */}
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">

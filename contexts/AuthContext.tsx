@@ -26,55 +26,71 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    const fetchProfile = async (userId: string, email: string) => {
-        console.log('[AUTH_CONTEXT] Fetching profile for:', userId);
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .single();
+    const fetchProfile = async (userId: string, email: string, retries = 3) => {
+        console.log(`[AUTH_CONTEXT] Fetching profile for: ${userId} (Attempts left: ${retries})`);
 
-        if (error) {
-            console.error('[AUTH_CONTEXT] Error fetching profile:', error);
-            return null;
+        for (let i = 0; i <= retries; i++) {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
+                .maybeSingle();
+
+            if (data) {
+                console.log('[AUTH_CONTEXT] Profile found:', data.name);
+                return {
+                    id: data.id,
+                    name: data.name,
+                    email: email,
+                    avatar: data.avatar_url,
+                    balance: data.balance,
+                    rank: data.rank
+                };
+            }
+
+            if (error) {
+                console.error('[AUTH_CONTEXT] Error fetching profile:', error);
+            }
+
+            if (i < retries) {
+                console.log(`[AUTH_CONTEXT] Profile not found yet, retrying in ${1000 * (i + 1)}ms...`);
+                await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+            }
         }
 
-        if (data) {
-            const profile: User = {
-                id: data.id,
-                name: data.name,
-                email: email,
-                avatar: data.avatar_url,
-                balance: data.balance,
-                rank: data.rank
-            };
-            return profile;
-        }
+        console.warn('[AUTH_CONTEXT] Profile not found after retries. Creating temporary guest-like profile.');
         return null;
     };
 
     useEffect(() => {
-        // Check active session on mount
         const initAuth = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session?.user) {
-                const profile = await fetchProfile(session.user.id, session.user.email || '');
-                setUser(profile);
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session?.user) {
+                    const profile = await fetchProfile(session.user.id, session.user.email || '');
+                    setUser(profile);
+                }
+            } catch (err) {
+                console.error('[AUTH_CONTEXT] Initialization error:', err);
+            } finally {
+                setIsLoading(false);
             }
-            setIsLoading(false);
         };
 
         initAuth();
 
-        // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             console.log('[AUTH_CONTEXT] Auth event:', event);
-            if (session?.user) {
-                const profile = await fetchProfile(session.user.id, session.user.email || '');
-                setUser(profile);
-            } else {
+
+            if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || (event === 'INITIAL_SESSION' && session)) {
+                if (session?.user) {
+                    const profile = await fetchProfile(session.user.id, session.user.email || '');
+                    setUser(profile);
+                }
+            } else if (event === 'SIGNED_OUT') {
                 setUser(null);
             }
+
             setIsLoading(false);
         });
 
@@ -83,32 +99,36 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const login = async (email: string, password: string) => {
         setIsLoading(true);
-        const { error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        });
-
-        if (error) {
+        try {
+            const { error } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
+            if (error) throw error;
+        } catch (err) {
             setIsLoading(false);
-            throw error;
+            throw err;
         }
     };
 
     const register = async (name: string, email: string, password: string) => {
         setIsLoading(true);
-        const { error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                data: {
-                    name: name,
+        try {
+            const { error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        name: name,
+                    }
                 }
-            }
-        });
+            });
+            if (error) throw error;
 
-        if (error) {
+            // Note: onAuthStateChange will handle setting the user and setIsLoading(false)
+        } catch (err) {
             setIsLoading(false);
-            throw error;
+            throw err;
         }
     };
 

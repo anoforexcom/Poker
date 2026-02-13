@@ -30,8 +30,7 @@ const Register: React.FC = () => {
 
         try {
             await register(name, email, password);
-            // Redirect to lobby after successful registration
-            navigate('/play');
+            // Redirection is handled by the overall App state sync
         } catch (err: any) {
             setError(err.message || 'Failed to register');
             setIsSubmitting(false);
