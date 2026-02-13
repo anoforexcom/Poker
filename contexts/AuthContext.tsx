@@ -134,7 +134,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (email === 'jogador@teste.com' && password === 'poker123') {
                 console.log('[AUTH_CONTEXT] Using magic login bypass...');
                 const testUser: User = {
-                    id: 'magic-test-id-001',
+                    id: '00000000-0000-0000-0000-000000000001',
                     name: 'Jogador Teste',
                     email: email,
                     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lucky',

@@ -91,7 +91,7 @@ const GameTable: React.FC = () => {
     if (id) addActiveGame(id);
   }, [id]);
 
-  const activeUser = players.find(p => p.isHuman);
+  const activeUser = players.find(p => p.id === user.id);
 
   const handleLeaveTable = async () => {
     if (activeUser) {
@@ -517,6 +517,19 @@ const GameTable: React.FC = () => {
                 <button onClick={startNewHand} className="bg-primary hover:bg-primary-light px-10 py-4 rounded-xl font-black text-white uppercase tracking-wider shadow-lg transform transition hover:scale-105">
                   Next Hand
                 </button>
+              </div>
+            )}
+
+            {/* Waiting for Players Overlay */}
+            {players.length < 2 && !winners.length && (
+              <div className="absolute inset-0 flex items-center justify-center z-30 bg-black/20 rounded-[200px]">
+                <div className="bg-slate-900/90 backdrop-blur-md p-8 rounded-3xl border border-white/10 text-center animate-pulse shadow-2xl">
+                  <div className="size-16 rounded-full border-4 border-primary border-t-transparent animate-spin mx-auto mb-4"></div>
+                  <h3 className="text-xl font-black text-white uppercase italic tracking-tighter">Waiting for Players</h3>
+                  <p className="text-slate-400 text-xs mt-2 max-w-[200px] leading-relaxed">
+                    Opponents are joining the tournament. <br /> <span className="text-gold font-bold">The game will start automatically soon.</span>
+                  </p>
+                </div>
               </div>
             )}
 

@@ -130,8 +130,10 @@ export class TournamentSimulator {
             for (const t of activeTournaments) {
                 // Registering tournaments fill up with BOTS
                 if (t.status === 'registering') {
-                    if (t.players_count < t.max_players && Math.random() > 0.4) {
-                        const botsToRegisterCount = Math.min(Math.floor(Math.random() * 3) + 1, t.max_players - t.players_count);
+                    // Fill faster if near full or just random chance
+                    const fillingChance = t.players_count > 0 ? 0.6 : 0.4;
+                    if (t.players_count < t.max_players && Math.random() > (1 - fillingChance)) {
+                        const botsToRegisterCount = Math.min(Math.floor(Math.random() * 4) + 1, t.max_players - t.players_count);
 
                         // Fetch random bots that are not already in this tournament
                         const { data: availableBots } = await supabase
@@ -209,12 +211,12 @@ export class TournamentSimulator {
             const buyInRanges = [2, 10, 50, 100]; // Micro, Low, Mid, High representative buyins
 
             // Ensure a healthy minimum total (increased for scale)
-            if (activeTournaments.length < 40) {
+            if (activeTournaments.length < 50) {
                 const typeToFill = types[Math.floor(Math.random() * types.length)];
                 const buyInToFill = buyInRanges[Math.floor(Math.random() * buyInRanges.length)];
 
                 const newT = this.generateTournamentData(typeToFill);
-                newT.buy_in = buyInToFill; // Hard set to ensure variety
+                newT.buy_in = buyInToFill;
                 await supabase.from('tournaments').insert([newT]);
                 console.log(`[SIMULATOR] Spawning ${typeToFill} ($${buyInToFill}) to maintain density.`);
             }

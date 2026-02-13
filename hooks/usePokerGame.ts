@@ -126,9 +126,14 @@ export const usePokerGame = (
                     };
                 });
 
-                // Sort so Hero is always at the bottom center or first in array if needed
-                // For simplicity, we just set them. UI handles positioning.
-                setPlayers(mappedPlayers);
+                // Sort so Hero is always at index 0 for consistent UI control/seating
+                const sortedPlayers = [...mappedPlayers].sort((a, b) => {
+                    if (a.id === currentUserId) return -1;
+                    if (b.id === currentUserId) return 1;
+                    return 0;
+                });
+
+                setPlayers(sortedPlayers);
             }
         } catch (err) {
             console.error('[POKER_GAME] Error fetching participants:', err);
@@ -138,6 +143,23 @@ export const usePokerGame = (
     useEffect(() => {
         if (tournamentId) {
             fetchParticipants();
+
+            const subscription = supabase
+                .channel(`participants:${tournamentId}`)
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'tournament_participants',
+                    filter: `tournament_id=eq.${tournamentId}`
+                }, () => {
+                    console.log('[POKER_GAME] Participant change detected, re-syncing...');
+                    fetchParticipants();
+                })
+                .subscribe();
+
+            return () => {
+                supabase.removeChannel(subscription);
+            };
         }
     }, [tournamentId, fetchParticipants]);
 
@@ -145,7 +167,7 @@ export const usePokerGame = (
     // Only updates if the human player has 0 chips and the game is at the very start
     // This allows Demo/Guest balances to load without resetting mid-hand stacks.
     useEffect(() => {
-        if (initialUserBalance > 0 && phase === 'Pre-flop' && pot === 0) {
+        if (initialUserBalance > 0 && phase === 'pre-flop' && pot === 0) {
             setPlayers(prev => {
                 const needsBalance = prev.some(p => p.isHuman && p.balance === 0);
                 if (needsBalance) {
@@ -203,6 +225,11 @@ export const usePokerGame = (
 
     // Start a new hand
     const startNewHand = useCallback(() => {
+        if (players.length < 2) {
+            console.log('[POKER_GAME] Not enough players to start a hand (min 2)');
+            return;
+        }
+
         const newDeck = shuffleDeck(createDeck());
         let currentDeck = newDeck;
 
