@@ -71,7 +71,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [authUser]);
 
   const updateProfileInDB = async (updates: any) => {
-    if (!authUser || user.id === 'demo-guest-id') return;
+    if (!authUser || authUser.id === 'demo-guest-id' || !authUser.id) return;
     const { error } = await supabase.from('profiles').update(updates).eq('id', authUser.id);
     if (error) throw error;
   };

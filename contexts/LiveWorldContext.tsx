@@ -138,10 +138,9 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
             throw new Error('Tournament is full');
         }
 
-        // Se for um usuário Demo Guest, não tentamos inserir no Supabase (pois falharia por causa da FK)
-        // Apenas deixamos ele prosseguir para a visualização da mesa
-        if (userId === 'demo-guest-id') {
-            console.log('[LIVE_WORLD] Guest user detected, bypassing DB registration');
+        // Se for um usuário Demo Guest ou ID vazio (não inicializado), ignoramos DB
+        if (userId === 'demo-guest-id' || !userId) {
+            console.log('[LIVE_WORLD] Guest user or empty ID detected, bypassing DB registration');
             return;
         }
 
