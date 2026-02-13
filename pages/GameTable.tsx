@@ -474,7 +474,7 @@ const GameTable: React.FC = () => {
 
       {/* The Poker Table Rendering */}
       <div className="flex-1 flex items-center justify-center p-2 md:p-12">
-        <div className="poker-table relative w-full h-full max-h-[45vh] md:max-h-none md:max-w-5xl md:aspect-[2/1] bg-emerald-900 border-4 md:border-[16px] border-[#3a2a1a] flex flex-col items-center justify-center shadow-2xl rounded-[2rem] md:rounded-none">
+        <div className="poker-table relative w-full h-full max-h-[50vh] md:max-h-[65vh] max-w-5xl aspect-[2/1] bg-emerald-900 border-4 md:border-[16px] border-[#3a2a1a] flex flex-col items-center justify-center shadow-2xl rounded-[100px] md:rounded-[200px]">
 
           {/* Table Center: Pot & Cards */}
           <div className="flex flex-col items-center gap-6">
@@ -563,7 +563,7 @@ const GameTable: React.FC = () => {
                 key={player.id}
                 position={pos}
                 name={player.name}
-                balance={`$${player.balance}`}
+                balance={player.balance}
                 active={index === currentTurn}
                 inactive={player.isFolded || !player.isActive}
                 dealer={player.isDealer}
@@ -577,7 +577,7 @@ const GameTable: React.FC = () => {
       </div>
 
       {/* Action Footer - Optimized for Mobile */}
-      <footer className="p-3 md:p-8 flex flex-col md:grid md:grid-cols-12 items-center md:items-end gap-3 md:gap-8 bg-gradient-to-t from-background to-transparent z-20 pb-safe">
+      <footer className="p-2 md:p-8 flex flex-col md:grid md:grid-cols-12 items-center md:items-end gap-2 md:gap-8 bg-gradient-to-t from-background to-transparent z-20 pb-safe w-full">
         {/* Chat - Hidden on mobile to save space, but accessible via settings */}
         <div className="hidden lg:block md:col-span-3 w-full">
           <div className="bg-background/80 backdrop-blur-lg border border-slate-700 rounded-xl overflow-hidden flex flex-col h-28 md:h-40 shadow-lg">
@@ -649,21 +649,29 @@ const GameTable: React.FC = () => {
         {!isObserver && activeUser && (
           <div className="w-full md:col-span-3 space-y-2 md:space-y-4">
             <div className="bg-background/80 backdrop-blur-md p-3 md:p-4 rounded-xl border border-slate-700 space-y-2 md:space-y-4">
-              <div className="flex justify-between items-center text-[9px] md:text-[10px] font-bold text-slate-400">
+              <div className="flex justify-between items-center text-[9px] md:text-[10px] font-bold text-slate-400 gap-4">
                 <span className="hidden xs:inline">MIN: $20</span>
-                <span className="text-primary text-xs md:text-sm font-mono ml-auto mr-auto sm:ml-0 sm:mr-0">${betValue}</span>
+                <div className="flex-1 flex items-center bg-slate-800 rounded-lg px-2 border border-primary/30">
+                  <span className="text-primary mr-1">$</span>
+                  <input
+                    type="number"
+                    value={betValue}
+                    onChange={(e) => setBetValue(Math.min(activeUser?.balance || 0, Math.max(0, Number(e.target.value))))}
+                    className="bg-transparent border-none text-white text-xs md:text-sm font-mono w-full focus:ring-0 p-1"
+                  />
+                </div>
                 <span className="hidden xs:inline">MAX: ${(activeUser?.balance || 0).toLocaleString()}</span>
               </div>
               <input
                 type="range" min="20" max={activeUser?.balance || 100} value={betValue}
                 onChange={(e) => setBetValue(Number(e.target.value))}
-                className="w-full h-1 bg-slate-700 rounded-full appearance-none accent-primary cursor-pointer"
+                className="w-full h-1.5 bg-slate-700 rounded-full appearance-none accent-primary cursor-pointer"
               />
               <div className="grid grid-cols-4 gap-1 md:gap-2">
-                <button onClick={() => setBetValue(Math.floor(pot / 2))} className="bg-slate-800 hover:bg-slate-700 text-[8px] md:text-[10px] font-bold py-1 md:py-1.5 rounded transition">1/2</button>
-                <button onClick={() => setBetValue(Math.floor(pot * 0.75))} className="bg-slate-800 hover:bg-slate-700 text-[8px] md:text-[10px] font-bold py-1 md:py-1.5 rounded transition">3/4</button>
-                <button onClick={() => setBetValue(pot)} className="bg-slate-800 hover:bg-slate-700 text-[8px] md:text-[10px] font-bold py-1 md:py-1.5 rounded transition">POT</button>
-                <button onClick={() => setBetValue(activeUser?.balance || 0)} className="bg-slate-800 hover:bg-slate-700 text-[8px] md:text-[10px] font-bold py-1 md:py-1.5 rounded transition">ALL-IN</button>
+                <button onClick={() => setBetValue(Math.floor(pot / 2))} className="bg-slate-800 hover:bg-slate-700 text-[10px] md:text-[10px] font-bold py-1.5 md:py-1.5 rounded transition">1/2</button>
+                <button onClick={() => setBetValue(Math.floor(pot * 0.75))} className="bg-slate-800 hover:bg-slate-700 text-[10px] md:text-[10px] font-bold py-1.5 md:py-1.5 rounded transition">3/4</button>
+                <button onClick={() => setBetValue(pot)} className="bg-slate-800 hover:bg-slate-700 text-[10px] md:text-[10px] font-bold py-1.5 md:py-1.5 rounded transition">POT</button>
+                <button onClick={() => setBetValue(activeUser?.balance || 0)} className="bg-slate-800 hover:bg-slate-700 text-[10px] md:text-[10px] font-bold py-1.5 md:py-1.5 rounded transition">ALL-IN</button>
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2 md:gap-3">
@@ -790,8 +798,8 @@ const PlayerSeat = ({ position, name, balance, active, inactive, dealer, current
 
         {/* Chip Stack Display */}
         <div className="flex items-center justify-center gap-2 mb-1">
-          <ChipStack amount={balance} size="sm" />
-          <p className={`text-sm font-black ${inactive ? 'text-slate-600' : 'text-gold'}`}>{balance}</p>
+          <ChipStack amount={Number(balance)} size="sm" />
+          <p className={`text-sm font-black ${inactive ? 'text-slate-600' : 'text-gold'}`}>${Number(balance).toLocaleString()}</p>
         </div>
       </div>
 

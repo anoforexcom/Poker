@@ -490,6 +490,10 @@ export const usePokerGame = (
                 setLastRaiseAmount(Math.max(lastRaiseAmount, raiseAmountRequested));
                 setCurrentBet(totalBet);
                 setLastRaiser(currentTurn);
+
+                if (currentPlayer.isHuman && !isObserver) {
+                    updateGlobalBalance(-addAmount);
+                }
             }
         }
 
