@@ -562,24 +562,29 @@ export const usePokerGame = (
             const random = Math.random();
 
             if (amountToCall === 0) {
-                // Can check
-                if (random > 0.3) {
+                // Can check or raise
+                if (random > 0.2) {
                     handlePlayerAction('check');
                 } else {
-                    // Small raise
-                    handlePlayerAction('raise', currentBet + initialBB);
+                    // Realistic raise: 3x Big Blind or half pot
+                    const raiseAmount = Math.max(initialBB * 3, Math.floor(pot * 0.5));
+                    handlePlayerAction('raise', currentBet + raiseAmount);
                 }
-            } else if (amountToCall > currentPlayer.balance * 0.5) {
-                // Too expensive, likely fold
-                if (random > 0.7) {
+            } else if (amountToCall > currentPlayer.balance * 0.6) {
+                // Large bet relative to stack
+                if (random > 0.8) {
                     handlePlayerAction('call');
                 } else {
                     handlePlayerAction('fold');
                 }
             } else {
-                // Affordable
-                if (random > 0.2) {
+                // Normal bet
+                if (random > 0.4) {
                     handlePlayerAction('call');
+                } else if (random > 0.1) {
+                    // Occasional re-raise
+                    const reRaiseAmount = Math.max(lastRaiseAmount, Math.floor(pot * 0.75));
+                    handlePlayerAction('raise', currentBet + reRaiseAmount);
                 } else {
                     handlePlayerAction('fold');
                 }
