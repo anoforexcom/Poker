@@ -22,6 +22,7 @@ export interface Player {
     isActive: boolean;
     isDealer?: boolean;
     hasActed?: boolean; // Track if player has acted this round
+    totalContribution: number; // For side pot calculation
 }
 
 export interface GameConfig {
@@ -81,7 +82,7 @@ export const usePokerGame = (
         const initialPlayers: Player[] = [];
 
         if (!isObserver) {
-            initialPlayers.push({ id: 'user', name: 'You', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=hero', balance: initialUserBalance, hand: [], isFolded: false, currentBet: 0, isHuman: true, isActive: true, hasActed: false });
+            initialPlayers.push({ id: 'user', name: 'You', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=hero', balance: initialUserBalance, hand: [], isFolded: false, currentBet: 0, isHuman: true, isActive: true, hasActed: false, totalContribution: 0 });
         }
 
         // Add Bots up to maxPlayers
@@ -98,7 +99,8 @@ export const usePokerGame = (
                 isHuman: false,
                 isActive: true,
                 hasActed: false,
-                isDealer: i === maxPlayers - 1
+                isDealer: i === maxPlayers - 1,
+                totalContribution: 0
             });
         }
         return initialPlayers;
@@ -207,7 +209,8 @@ export const usePokerGame = (
                 balance: playerBalance,
                 isDealer: index === newDealerPos,
                 hasActed: false,
-                isActive: true
+                isActive: true,
+                totalContribution: 0
             };
         });
 
@@ -231,21 +234,37 @@ export const usePokerGame = (
             loops++;
         }
 
+        // --- FIXED HEADS-UP BLIND LOGIC ---
+        // In Heads-up (2 players), Dealer (Button) is Small Blind
+        const activeCount = updatedPlayers.filter(p => p.isActive).length;
+        if (activeCount === 2) {
+            actualSmallBlindPos = newDealerPos;
+            actualBigBlindPos = (newDealerPos + 1) % players.length;
+            // Ensure big blind is an active player
+            if (!updatedPlayers[actualBigBlindPos].isActive) {
+                actualBigBlindPos = actualSmallBlindPos === 0 ? 1 : 0;
+            }
+        }
+
         if (updatedPlayers[actualSmallBlindPos].isActive) {
-            updatedPlayers[actualSmallBlindPos].currentBet = smallBlind;
-            updatedPlayers[actualSmallBlindPos].balance -= smallBlind;
+            const sbAmount = Math.min(smallBlind, updatedPlayers[actualSmallBlindPos].balance);
+            updatedPlayers[actualSmallBlindPos].currentBet = sbAmount;
+            updatedPlayers[actualSmallBlindPos].balance -= sbAmount;
+            updatedPlayers[actualSmallBlindPos].totalContribution = sbAmount;
 
             if (updatedPlayers[actualSmallBlindPos].isHuman && !isObserver) {
-                updateGlobalBalance(-smallBlind);
+                updateGlobalBalance(-sbAmount);
             }
         }
 
         if (updatedPlayers[actualBigBlindPos].isActive) {
-            updatedPlayers[actualBigBlindPos].currentBet = bigBlind;
-            updatedPlayers[actualBigBlindPos].balance -= bigBlind;
+            const bbAmount = Math.min(bigBlind, updatedPlayers[actualBigBlindPos].balance);
+            updatedPlayers[actualBigBlindPos].currentBet = bbAmount;
+            updatedPlayers[actualBigBlindPos].balance -= bbAmount;
+            updatedPlayers[actualBigBlindPos].totalContribution += bbAmount;
 
             if (updatedPlayers[actualBigBlindPos].isHuman && !isObserver) {
-                updateGlobalBalance(-bigBlind);
+                updateGlobalBalance(-bbAmount);
             }
         }
 
@@ -275,39 +294,60 @@ export const usePokerGame = (
 
         setCurrentTurn(firstToAct);
         setLastRaiser(actualBigBlindPos); // Big blind is initial "raiser"
-    }, [dealerPosition, players, updateGlobalBalance]);
+        setCurrentBet(bigBlind);
+    }, [dealerPosition, players, updateGlobalBalance, getCurrentBlindValues]);
 
     // Calculate side pots for all-in scenarios
-    const calculateSidePots = useCallback((playersInHand: Player[]): SidePot[] => {
-        const activePlayers = playersInHand.filter(p => !p.isFolded && p.currentBet > 0);
+    const calculateSidePots = useCallback((allPlayers: Player[]): SidePot[] => {
+        // Only consider players who have contributed SOMETHING
+        const contributors = allPlayers.filter(p => !p.isActive || p.isFolded || p.totalContribution > 0);
 
-        if (activePlayers.length === 0) return [];
+        if (contributors.length === 0) return [];
 
         const pots: SidePot[] = [];
 
-        // Sort players by their current bet (ascending)
-        const sorted = [...activePlayers].sort((a, b) => a.currentBet - b.currentBet);
+        // Use totalContribution as it's the only reliable source across rounds
+        const contributions = contributors.map(p => ({
+            id: p.id,
+            amount: p.totalContribution,
+            canWin: !p.isFolded && p.isActive
+        }));
 
-        let remainingPlayers = [...sorted];
-        let previousBet = 0;
+        // Sort contributions (ascending)
+        const sorted = contributions
+            .filter(c => c.amount > 0)
+            .sort((a, b) => a.amount - b.amount);
 
-        while (remainingPlayers.length > 0) {
-            const lowestBet = remainingPlayers[0].currentBet;
-            const betDiff = lowestBet - previousBet;
+        let previousLevel = 0;
+        let remaining = [...sorted];
 
-            if (betDiff > 0) {
-                // Calculate pot amount for this level
-                const potAmount = betDiff * remainingPlayers.length;
+        while (remaining.length > 0) {
+            const currentLevel = remaining[0].amount;
+            const levelDiff = currentLevel - previousLevel;
 
-                pots.push({
-                    amount: potAmount,
-                    eligiblePlayers: remainingPlayers.map(p => p.id)
-                });
+            if (levelDiff > 0) {
+                // Players eligible for THIS slice of the pot
+                const eligible = contributors
+                    .filter(p => p.totalContribution >= currentLevel && !p.isFolded && p.isActive)
+                    .map(p => p.id);
+
+                if (eligible.length > 0) {
+                    pots.push({
+                        amount: levelDiff * remaining.length,
+                        eligiblePlayers: eligible
+                    });
+                } else {
+                    // If no one is eligible to win this slice (e.g. everyone folded)
+                    // It goes to the next available winner or back to the last player
+                    // In real poker, the last folder wins, but here we just add it to the previous pot
+                    if (pots.length > 0) {
+                        pots[pots.length - 1].amount += levelDiff * remaining.length;
+                    }
+                }
             }
 
-            previousBet = lowestBet;
-            // Remove players who are all-in at this level
-            remainingPlayers = remainingPlayers.filter(p => p.currentBet > lowestBet);
+            previousLevel = currentLevel;
+            remaining = remaining.filter(c => c.amount > currentLevel);
         }
 
         return pots;
@@ -348,11 +388,13 @@ export const usePokerGame = (
         }
 
         setPhase(nextPhaseValue);
+        const { bigBlind } = getCurrentBlindValues();
 
         // Reset for new betting round
         setPlayers(prev => prev.map(p => ({ ...p, hasActed: false })));
         setCurrentBet(0);
         setLastRaiser(null);
+        setLastRaiseAmount(bigBlind); // Reset minimum raise to big blind
 
         // Start action after dealer
         const firstToAct = (dealerPosition + 1) % players.length;
@@ -391,6 +433,7 @@ export const usePokerGame = (
                 ...currentPlayer,
                 currentBet: currentPlayer.currentBet + actualCall,
                 balance: currentPlayer.balance - actualCall,
+                totalContribution: currentPlayer.totalContribution + actualCall,
                 hasActed: true
             };
 
@@ -419,6 +462,7 @@ export const usePokerGame = (
                 ...currentPlayer,
                 currentBet: totalBet,
                 balance: currentPlayer.balance - addAmount,
+                totalContribution: currentPlayer.totalContribution + addAmount,
                 hasActed: true
             };
 
@@ -550,6 +594,7 @@ export const usePokerGame = (
                 }
             } else if (activePlayers.length > 1) {
                 // Multiple players - calculate side pots
+                // Use totalContribution for calculation
                 const pots = calculateSidePots(players);
 
                 // If no side pots calculated, use main pot
