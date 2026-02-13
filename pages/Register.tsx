@@ -9,8 +9,15 @@ const Register: React.FC = () => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const { register } = useAuth();
+    const { register, isAuthenticated } = useAuth();
     const navigate = useNavigate();
+
+    // Safety: If we become authenticated while on this page, move to play
+    React.useEffect(() => {
+        if (isAuthenticated) {
+            navigate('/play');
+        }
+    }, [isAuthenticated, navigate]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -30,7 +37,9 @@ const Register: React.FC = () => {
 
         try {
             await register(name, email, password);
-            // Redirection is handled by the overall App state sync
+            // Redirection is usually handled by the global state, 
+            // but we keep isSubmitting true here to keep the loader showing 
+            // until the component unmounts or navigates.
         } catch (err: any) {
             setError(err.message || 'Failed to register');
             setIsSubmitting(false);

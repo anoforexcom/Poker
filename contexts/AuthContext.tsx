@@ -58,7 +58,36 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
         }
 
-        console.warn('[AUTH_CONTEXT] Profile not found after retries. Creating temporary guest-like profile.');
+        console.warn(`[AUTH_CONTEXT] Profile not found for ${userId} after retries. Creating/Upserting manually...`);
+
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .upsert({
+                    id: userId,
+                    name: email.split('@')[0], // Fallback name
+                    avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
+                    balance: 10000,
+                    rank: 'Bronze'
+                })
+                .select()
+                .maybeSingle();
+
+            if (data) {
+                return {
+                    id: data.id,
+                    name: data.name,
+                    email: email,
+                    avatar: data.avatar_url,
+                    balance: data.balance,
+                    rank: data.rank
+                };
+            }
+            if (error) throw error;
+        } catch (err) {
+            console.error('[AUTH_CONTEXT] Manual profile creation failed:', err);
+        }
+
         return null;
     };
 
@@ -114,7 +143,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const register = async (name: string, email: string, password: string) => {
         setIsLoading(true);
         try {
-            const { error } = await supabase.auth.signUp({
+            const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
                 options: {
@@ -123,8 +152,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     }
                 }
             });
+
             if (error) throw error;
 
+            console.log('[AUTH_CONTEXT] SignUp successful, ensuring profile exists...');
+
+            // Proactively ensure profile exists to assist the trigger
+            if (data.user) {
+                const { error: profileError } = await supabase
+                    .from('profiles')
+                    .upsert({
+                        id: data.user.id,
+                        name: name,
+                        avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user.id}`,
+                        balance: 10000,
+                        rank: 'Bronze'
+                    });
+
+                if (profileError) {
+                    console.warn('[AUTH_CONTEXT] Manual profile upsert warning (might be RLS or already done):', profileError);
+                }
+            }
             // Note: onAuthStateChange will handle setting the user and setIsLoading(false)
         } catch (err) {
             setIsLoading(false);
