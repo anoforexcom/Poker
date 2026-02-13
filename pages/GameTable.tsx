@@ -82,6 +82,13 @@ const GameTable: React.FC = () => {
     totalTurnTime
   } = usePokerGame(gameConfig?.startingStack || 0, updateBalance, gameConfig);
 
+  const { addActiveGame } = useGame();
+
+  // Multi-game coordination: Add this table to active games on mount
+  useEffect(() => {
+    if (id) addActiveGame(id);
+  }, [id]);
+
   const activeUser = players.find(p => p.isHuman);
 
   const handleLeaveTable = async () => {
@@ -429,8 +436,8 @@ const GameTable: React.FC = () => {
       )}
 
       {/* The Poker Table Rendering */}
-      <div className="flex-1 flex items-center justify-center p-4 md:p-12">
-        <div className="poker-table relative w-full max-w-5xl aspect-[2/1] bg-emerald-900 border-8 md:border-[16px] border-[#3a2a1a] flex flex-col items-center justify-center shadow-2xl">
+      <div className="flex-1 flex items-center justify-center p-2 md:p-12">
+        <div className="poker-table relative w-full h-full max-h-[45vh] md:max-h-none md:max-w-5xl md:aspect-[2/1] bg-emerald-900 border-4 md:border-[16px] border-[#3a2a1a] flex flex-col items-center justify-center shadow-2xl rounded-[2rem] md:rounded-none">
 
           {/* Table Center: Pot & Cards */}
           <div className="flex flex-col items-center gap-6">
@@ -532,9 +539,10 @@ const GameTable: React.FC = () => {
         </div>
       </div>
 
-      <footer className="p-2 md:p-8 flex flex-col md:grid md:grid-cols-12 items-end gap-3 md:gap-8 bg-gradient-to-t from-background to-transparent z-20">
-        {/* Chat - Hidden on very small screens or made compact */}
-        <div className="hidden xs:block md:col-span-3 w-full">
+      {/* Action Footer - Optimized for Mobile */}
+      <footer className="p-3 md:p-8 flex flex-col md:grid md:grid-cols-12 items-center md:items-end gap-3 md:gap-8 bg-gradient-to-t from-background to-transparent z-20 pb-safe">
+        {/* Chat - Hidden on mobile to save space, but accessible via settings */}
+        <div className="hidden lg:block md:col-span-3 w-full">
           <div className="bg-background/80 backdrop-blur-lg border border-slate-700 rounded-xl overflow-hidden flex flex-col h-28 md:h-40 shadow-lg">
             <div className="p-2 border-b border-slate-700 flex justify-between cursor-pointer hover:bg-white/5 transition" onClick={() => setShowSettings(true)}>
               <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase">Chat da Mesa</span>
@@ -554,18 +562,18 @@ const GameTable: React.FC = () => {
         {!isObserver && (
           <div className="flex items-center gap-4 md:gap-6">
             {/* User Avatar */}
-            <div className="flex flex-col items-center gap-1 md:gap-2">
-              <div className={`relative size-12 md:size-20 rounded-full border-2 md:border-4 ${currentTurn === 0 ? 'border-gold ring-2 md:ring-4 ring-gold/30' : 'border-primary'} bg-slate-700 overflow-hidden shadow-2xl transition-all duration-300`}>
+            <div className="flex flex-col items-center gap-1 md:gap-2 scale-90 md:scale-100">
+              <div className={`relative size-14 md:size-20 rounded-full border-2 md:border-4 ${currentTurn === 0 ? 'border-amber-400 ring-2 md:ring-8 ring-amber-400/20' : 'border-primary'} bg-slate-700 overflow-hidden shadow-2xl transition-all duration-300`}>
                 {currentTurn === 0 && (
                   <svg className="absolute inset-0 size-full -rotate-90 pointer-events-none" viewBox="0 0 100 100">
                     <circle
                       cx="50" cy="50" r="46"
                       fill="none"
                       stroke="#fbbf24"
-                      strokeWidth="6"
+                      strokeWidth="8"
                       strokeDasharray="289"
                       strokeDashoffset={289 - (289 * turnTimeLeft) / totalTurnTime}
-                      className="transition-all duration-1000 linear"
+                      className="transition-all duration-[30ms] linear"
                     />
                   </svg>
                 )}
@@ -575,8 +583,8 @@ const GameTable: React.FC = () => {
                   alt={user?.name || 'You'}
                 />
               </div>
-              <div className="bg-background/90 backdrop-blur-sm px-2 py-0.5 md:px-3 md:py-1 rounded-lg border border-primary">
-                <p className="text-[10px] md:text-xs font-bold text-white">{user?.name || 'You'}</p>
+              <div className="bg-background/90 backdrop-blur-sm px-3 py-1 rounded-lg border border-primary/30 shadow-xl">
+                <p className="text-[10px] md:text-xs font-black text-white tracking-widest uppercase">{user?.name || 'You'}</p>
               </div>
             </div>
 
@@ -592,10 +600,10 @@ const GameTable: React.FC = () => {
 
         {/* Player Balance and Turn Indicator - Hide if observing */}
         {!isObserver && activeUser && (
-          <div className={`relative bg-primary/10 border-2 ${currentTurn === 0 ? 'border-gold animate-pulse' : 'border-primary'} backdrop-blur-md px-6 md:px-10 py-2 md:py-3 rounded-xl flex flex-col items-center shadow-lg shadow-primary/20`}>
-            <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-primary">{currentTurn === 0 ? 'SUA VEZ' : `VEZ DE ${players[currentTurn]?.name}`}</span>
+          <div className={`relative bg-primary/10 border-2 ${currentTurn === 0 ? 'border-amber-400 animate-pulse ring-4 ring-amber-400/10' : 'border-primary'} backdrop-blur-md px-4 md:px-10 py-1.5 md:py-3 rounded-2xl flex flex-col items-center shadow-lg shadow-primary/20`}>
+            <span className="text-[7px] md:text-[10px] font-black uppercase tracking-widest text-primary/70">{currentTurn === 0 ? 'SUA VEZ' : `VEZ DE ${players[currentTurn]?.name}`}</span>
             <div className="flex items-center gap-2">
-              <span className="text-sm md:text-2xl font-black text-white">${activeUser?.balance.toLocaleString()}</span>
+              <span className="text-sm md:text-2xl font-black text-white font-mono">${activeUser?.balance.toLocaleString()}</span>
             </div>
           </div>
         )}
@@ -711,28 +719,28 @@ const ChipStack = ({ amount, size = 'md' }: { amount: number, size?: 'sm' | 'md'
 
 const PlayerSeat = ({ position, name, balance, active, inactive, dealer, currentBet, timeLeft, totalTime }: any) => {
   const positions: any = {
-    'top': '-top-12 left-1/2 -translate-x-1/2',
-    'top-left': 'top-4 left-[15%]',
-    'top-right': 'top-4 right-[15%]',
-    'mid-left': 'top-1/2 -translate-y-1/2 -left-12',
-    'mid-right': 'top-1/2 -translate-y-1/2 -right-12',
-    'bottom-left': 'bottom-12 left-[15%]',
-    'bottom-right': 'bottom-12 right-[15%]',
+    'top': '-top-8 md:-top-12 left-1/2 -translate-x-1/2',
+    'top-left': 'top-2 md:top-4 left-[5%] md:left-[15%]',
+    'top-right': 'top-2 md:top-4 right-[5%] md:right-[15%]',
+    'mid-left': 'top-[15%] md:top-1/2 -translate-y-1/2 -left-6 md:-left-12',
+    'mid-right': 'top-[15%] md:top-1/2 -translate-y-1/2 -right-6 md:-right-12',
+    'bottom-left': 'bottom-2 md:bottom-12 left-[5%] md:left-[15%]',
+    'bottom-right': 'bottom-2 md:bottom-12 right-[5%] md:right-[15%]',
   };
 
   return (
-    <div className={`absolute ${positions[position]} flex flex-col items-center gap-2 z-10 transition-all duration-500`}>
-      <div className={`relative size-20 rounded-full border-4 ${active ? 'border-primary ring-4 ring-primary/20 scale-110' : 'border-slate-800'} bg-slate-700 overflow-hidden ${inactive ? 'grayscale opacity-50' : ''} transition-all duration-300 shadow-xl`}>
+    <div className={`absolute ${positions[position]} flex flex-col items-center gap-1 md:gap-2 z-10 transition-all duration-500 scale-75 md:scale-100`}>
+      <div className={`relative size-16 md:size-24 rounded-full border-2 md:border-4 ${active ? 'border-amber-400 ring-4 md:ring-8 ring-amber-400/20 scale-110' : 'border-slate-800'} bg-slate-700 overflow-hidden ${inactive ? 'grayscale opacity-50' : ''} transition-all duration-300 shadow-xl`}>
         {active && timeLeft > 0 && (
           <svg className="absolute inset-0 size-full -rotate-90 pointer-events-none" viewBox="0 0 100 100">
             <circle
               cx="50" cy="50" r="46"
               fill="none"
               stroke="#fbbf24" // Amber-400 / Gold
-              strokeWidth="6"
+              strokeWidth="8"
               strokeDasharray="289"
               strokeDashoffset={289 - (289 * timeLeft) / totalTime}
-              className="transition-all duration-1000 linear"
+              className="transition-all duration-[30ms] linear"
             />
           </svg>
         )}

@@ -26,6 +26,9 @@ interface GameContextType {
   withdraw: (amount: number, method?: string) => Promise<void>;
   updateBalance: (amount: number) => Promise<void>;
   updateUser: (updates: Partial<UserState>) => Promise<void>;
+  activeGames: string[];
+  addActiveGame: (id: string) => void;
+  removeActiveGame: (id: string) => void;
 }
 
 const defaultUser: UserState = {
@@ -42,6 +45,14 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const { user: authUser } = useAuth();
   const [user, setUser] = useState<UserState>(defaultUser);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [activeGames, setActiveGames] = useState<string[]>(() => {
+    const saved = localStorage.getItem('poker_active_games');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('poker_active_games', JSON.stringify(activeGames));
+  }, [activeGames]);
 
   // Fetch transactions
   const fetchTransactions = async () => {
@@ -127,8 +138,26 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(prev => ({ ...prev, ...updates }));
   };
 
+  const addActiveGame = (id: string) => {
+    setActiveGames(prev => prev.includes(id) ? prev : [...prev, id]);
+  };
+
+  const removeActiveGame = (id: string) => {
+    setActiveGames(prev => prev.filter(gameId => gameId !== id));
+  };
+
   return (
-    <GameContext.Provider value={{ user, transactions, deposit, withdraw, updateBalance, updateUser }}>
+    <GameContext.Provider value={{
+      user,
+      transactions,
+      deposit,
+      withdraw,
+      updateBalance,
+      updateUser,
+      activeGames,
+      addActiveGame,
+      removeActiveGame
+    }}>
       {children}
     </GameContext.Provider>
   );
