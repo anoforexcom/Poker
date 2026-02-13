@@ -24,7 +24,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(true); // Initial boot loading
+    const [isProcessing, setIsProcessing] = useState(false); // Action loading (login/register)
 
     const fetchProfile = async (userId: string, email: string, retries = 3) => {
         console.log(`[AUTH_CONTEXT] Fetching profile for: ${userId} (Attempts left: ${retries})`);
@@ -127,7 +128,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, []);
 
     const login = async (email: string, password: string) => {
-        setIsLoading(true);
+        setIsProcessing(true);
         try {
             const { error } = await supabase.auth.signInWithPassword({
                 email,
@@ -135,13 +136,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             });
             if (error) throw error;
         } catch (err) {
-            setIsLoading(false);
             throw err;
+        } finally {
+            setIsProcessing(false);
         }
     };
 
     const register = async (name: string, email: string, password: string) => {
-        setIsLoading(true);
+        setIsProcessing(true);
         try {
             const { data, error } = await supabase.auth.signUp({
                 email,
@@ -157,26 +159,34 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             console.log('[AUTH_CONTEXT] SignUp successful, ensuring profile exists...');
 
-            // Proactively ensure profile exists to assist the trigger
             if (data.user) {
+                const profileData = {
+                    id: data.user.id,
+                    name: name,
+                    avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user.id}`,
+                    balance: 10000,
+                    rank: 'Bronze'
+                };
+
                 const { error: profileError } = await supabase
                     .from('profiles')
-                    .upsert({
-                        id: data.user.id,
-                        name: name,
-                        avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user.id}`,
-                        balance: 10000,
-                        rank: 'Bronze'
-                    });
+                    .upsert(profileData);
 
                 if (profileError) {
-                    console.warn('[AUTH_CONTEXT] Manual profile upsert warning (might be RLS or already done):', profileError);
+                    console.warn('[AUTH_CONTEXT] Manual profile upsert warning:', profileError);
                 }
+
+                // Immediately set user locally to trigger navigation
+                setUser({
+                    ...profileData,
+                    email: email,
+                    avatar: profileData.avatar_url,
+                });
             }
-            // Note: onAuthStateChange will handle setting the user and setIsLoading(false)
         } catch (err) {
-            setIsLoading(false);
             throw err;
+        } finally {
+            setIsProcessing(false);
         }
     };
 

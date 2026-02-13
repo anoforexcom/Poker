@@ -251,21 +251,7 @@ const ProtectedLayout = ({ children }: { children: React.ReactNode }) => {
 };
 
 const AppRoutes = () => {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  console.log('[APP_ROUTES] isAuthenticated:', isAuthenticated, 'isLoading:', isLoading);
-
-  if (isLoading) {
-    console.log('[APP_ROUTES] Showing global loading state');
-    return (
-      <div className="h-screen w-full bg-[#101922] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <span className="size-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></span>
-          <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">Loading BestPoker.Cash...</p>
-        </div>
-      </div>
-    );
-  }
+  const { isAuthenticated } = useAuth();
 
   return (
     <Routes>
