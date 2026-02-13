@@ -81,7 +81,7 @@ const GameTable: React.FC = () => {
     isTournamentMode,
     turnTimeLeft,
     totalTurnTime
-  } = usePokerGame(gameConfig?.startingStack || 0, updateBalance, gameConfig);
+  } = usePokerGame(gameConfig?.startingStack || 0, updateBalance, gameConfig, id, user.id);
 
   const { addActiveGame } = useGame();
 
@@ -473,8 +473,8 @@ const GameTable: React.FC = () => {
       )}
 
       {/* The Poker Table Rendering */}
-      <div className="flex-1 flex items-center justify-center p-2 md:p-12">
-        <div className="poker-table relative w-full h-full max-h-[50vh] md:max-h-[65vh] max-w-5xl aspect-[2/1] bg-emerald-900 border-4 md:border-[16px] border-[#3a2a1a] flex flex-col items-center justify-center shadow-2xl rounded-[100px] md:rounded-[200px]">
+      <div className="flex-1 flex items-center justify-center p-1 md:p-12 overflow-hidden">
+        <div className="poker-table relative w-full h-full max-h-[45vh] md:max-h-[65vh] max-w-5xl aspect-[2/1] bg-emerald-900 border-2 md:border-[16px] border-[#3a2a1a] flex flex-col items-center justify-center shadow-2xl rounded-[60px] md:rounded-[200px]">
 
           {/* Table Center: Pot & Cards */}
           <div className="flex flex-col items-center gap-6">
@@ -497,13 +497,13 @@ const GameTable: React.FC = () => {
               )}
             </div>
 
-            <div className="flex gap-2 md:gap-3 h-20 md:h-28 items-center">
+            <div className="flex gap-1 md:gap-3 h-16 md:h-28 items-center">
               {communityCards.map((card, i) => (
                 <HeroCard key={i} suit={card.suit} value={card.rank} />
               ))}
               {Array.from({ length: 5 - communityCards.length }).map((_, i) => (
-                <div key={`empty-${i}`} className="w-14 h-20 md:w-20 md:h-28 bg-slate-100/10 border-2 border-dashed border-white/20 rounded-lg flex items-center justify-center">
-                  <span className="material-symbols-outlined text-white/20">help</span>
+                <div key={`empty-${i}`} className="w-10 h-14 md:w-20 md:h-28 bg-slate-100/10 border-2 border-dashed border-white/20 rounded-lg flex items-center justify-center">
+                  <span className="material-symbols-outlined text-white/20 text-sm">help</span>
                 </div>
               ))}
             </div>
@@ -577,7 +577,7 @@ const GameTable: React.FC = () => {
       </div>
 
       {/* Action Footer - Optimized for Mobile */}
-      <footer className="p-2 md:p-8 flex flex-col md:grid md:grid-cols-12 items-center md:items-end gap-2 md:gap-8 bg-gradient-to-t from-background to-transparent z-20 pb-safe w-full">
+      <footer className="p-2 md:p-8 flex flex-col md:grid md:grid-cols-12 items-center md:items-end gap-2 md:gap-8 bg-gradient-to-t from-background via-background/80 to-transparent z-20 pb-safe w-full">
         {/* Chat - Hidden on mobile to save space, but accessible via settings */}
         <div className="hidden lg:block md:col-span-3 w-full">
           <div className="bg-background/80 backdrop-blur-lg border border-slate-700 rounded-xl overflow-hidden flex flex-col h-28 md:h-40 shadow-lg">
@@ -597,10 +597,10 @@ const GameTable: React.FC = () => {
 
         {/* Player Cards with Avatar - Hide if observing */}
         {!isObserver && (
-          <div className="flex items-center gap-4 md:gap-6">
+          <div className="flex items-center gap-3 md:gap-6">
             {/* User Avatar */}
-            <div className="flex flex-col items-center gap-1 md:gap-2 scale-90 md:scale-100">
-              <div className={`relative size-14 md:size-20 rounded-full border-2 md:border-4 ${currentTurn === 0 ? 'border-amber-400 ring-2 md:ring-8 ring-amber-400/20' : 'border-primary'} bg-slate-700 overflow-hidden shadow-2xl transition-all duration-300`}>
+            <div className="flex flex-col items-center gap-1 md:gap-2 scale-75 md:scale-100 origin-bottom">
+              <div className={`relative size-12 md:size-20 rounded-full border-2 md:border-4 ${currentTurn === 0 ? 'border-amber-400 ring-2 md:ring-8 ring-amber-400/20' : 'border-primary'} bg-slate-700 overflow-hidden shadow-2xl transition-all duration-300`}>
                 {currentTurn === 0 && (
                   <svg className="absolute inset-0 size-full -rotate-90 pointer-events-none" viewBox="0 0 100 100">
                     <circle
@@ -637,10 +637,10 @@ const GameTable: React.FC = () => {
 
         {/* Player Balance and Turn Indicator - Hide if observing */}
         {!isObserver && activeUser && (
-          <div className={`relative bg-primary/10 border-2 ${currentTurn === 0 ? 'border-amber-400 animate-pulse ring-4 ring-amber-400/10' : 'border-primary'} backdrop-blur-md px-4 md:px-10 py-1.5 md:py-3 rounded-2xl flex flex-col items-center shadow-lg shadow-primary/20`}>
+          <div className={`relative bg-primary/10 border-2 ${currentTurn === 0 ? 'border-amber-400 animate-pulse ring-2 md:ring-4 ring-amber-400/10' : 'border-primary'} backdrop-blur-md px-3 md:px-10 py-1 md:py-3 rounded-2xl flex flex-col items-center shadow-lg shadow-primary/20`}>
             <span className="text-[7px] md:text-[10px] font-black uppercase tracking-widest text-primary/70">{currentTurn === 0 ? 'SUA VEZ' : `VEZ DE ${players[currentTurn]?.name}`}</span>
             <div className="flex items-center gap-2">
-              <span className="text-sm md:text-2xl font-black text-white font-mono">${activeUser?.balance.toLocaleString()}</span>
+              <span className="text-xs md:text-2xl font-black text-white font-mono">${activeUser?.balance.toLocaleString()}</span>
             </div>
           </div>
         )}
@@ -764,13 +764,13 @@ const ChipStack = ({ amount, size = 'md' }: { amount: number, size?: 'sm' | 'md'
 
 const PlayerSeat = ({ position, name, balance, active, inactive, dealer, currentBet, timeLeft, totalTime }: any) => {
   const positions: any = {
-    'top': '-top-8 md:-top-12 left-1/2 -translate-x-1/2',
-    'top-left': 'top-2 md:top-4 left-[5%] md:left-[15%]',
-    'top-right': 'top-2 md:top-4 right-[5%] md:right-[15%]',
-    'mid-left': 'top-[15%] md:top-1/2 -translate-y-1/2 -left-6 md:-left-12',
-    'mid-right': 'top-[15%] md:top-1/2 -translate-y-1/2 -right-6 md:-right-12',
-    'bottom-left': 'bottom-2 md:bottom-12 left-[5%] md:left-[15%]',
-    'bottom-right': 'bottom-2 md:bottom-12 right-[5%] md:right-[15%]',
+    'top': '-top-6 md:-top-12 left-1/2 -translate-x-1/2',
+    'top-left': 'top-0 md:top-4 left-[2%] md:left-[15%]',
+    'top-right': 'top-0 md:top-4 right-[2%] md:right-[15%]',
+    'mid-left': 'top-[25%] md:top-1/2 -translate-y-1/2 -left-4 md:-left-12',
+    'mid-right': 'top-[25%] md:top-1/2 -translate-y-1/2 -right-4 md:-right-12',
+    'bottom-left': 'bottom-0 md:bottom-12 left-[2%] md:left-[15%]',
+    'bottom-right': 'bottom-0 md:bottom-12 right-[2%] md:right-[15%]',
   };
 
   return (
@@ -853,10 +853,10 @@ const HeroCard = ({ suit, value, rotate }: any) => {
   }
 
   return (
-    <div className={`w-14 h-20 md:w-20 md:h-28 bg-white rounded-lg md:rounded-xl border-2 border-primary flex flex-col p-1 md:p-2 items-center justify-between shadow-2xl transform transition-transform hover:-translate-y-2 cursor-pointer ${rotate} ${getSuitColor(suit)}`}>
-      <span className="text-lg md:text-2xl font-black self-start leading-none tracking-tighter">{value}{getSuitSymbol(suit)}</span>
-      <span className="text-2xl md:text-4xl">{getSuitSymbol(suit)}</span>
-      <span className="text-lg md:text-2xl font-black self-end leading-none tracking-tighter rotate-180">{value}{getSuitSymbol(suit)}</span>
+    <div className={`w-11 h-16 md:w-20 md:h-28 bg-white rounded-lg md:rounded-xl border-2 border-primary flex flex-col p-1 md:p-2 items-center justify-between shadow-2xl transform transition-transform md:hover:-translate-y-2 cursor-pointer ${rotate} ${getSuitColor(suit)}`}>
+      <span className="text-base md:text-2xl font-black self-start leading-none tracking-tighter">{value}{getSuitSymbol(suit)}</span>
+      <span className="text-xl md:text-4xl">{getSuitSymbol(suit)}</span>
+      <span className="text-base md:text-2xl font-black self-end leading-none tracking-tighter rotate-180">{value}{getSuitSymbol(suit)}</span>
     </div>
   );
 };

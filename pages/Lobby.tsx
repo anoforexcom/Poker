@@ -164,7 +164,7 @@ const Lobby: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div>
               <h2 className="text-xl md:text-3xl font-black text-white tracking-tighter font-display uppercase italic">Lobby</h2>
-              <p className="text-slate-500 text-[10px] md:text-sm font-bold uppercase tracking-widest mt-0.5">Explore as mesas ativas</p>
+              <p className="text-slate-500 text-[9px] md:text-sm font-bold uppercase tracking-widest mt-0.5">Explore as mesas ativas</p>
             </div>
             <div className="flex flex-wrap gap-1.5 sm:gap-2">
               <div className="bg-emerald-500/10 text-emerald-400 text-[9px] font-black px-2 py-1 rounded-lg border border-emerald-500/20 flex items-center gap-1.5 shadow-sm">
@@ -179,7 +179,7 @@ const Lobby: React.FC = () => {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-1.5 mt-4 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
+          <div className="flex gap-1 mt-4 overflow-x-auto pb-2 scrollbar-hide snap-x -mx-1 px-1">
             {[
               { id: 'tournaments', label: 'Torneios', icon: 'emoji_events' },
               { id: 'cash', label: 'Cash', icon: 'payments' },
@@ -189,12 +189,12 @@ const Lobby: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as LobbyTab)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs whitespace-nowrap transition-all border ${activeTab === tab.id
-                  ? 'bg-primary border-primary text-white shadow-xl shadow-primary/20 scale-95'
+                className={`flex items-center gap-1.5 px-3 py-2 md:px-4 md:py-2.5 rounded-xl font-black text-[10px] md:text-xs whitespace-nowrap transition-all border snap-start ${activeTab === tab.id
+                  ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20'
                   : 'bg-white/5 border-transparent text-slate-400 hover:text-white hover:bg-white/10'
                   }`}
               >
-                <span className="material-symbols-outlined text-base">{tab.icon}</span>
+                <span className="material-symbols-outlined text-sm md:text-base">{tab.icon}</span>
                 {tab.label}
               </button>
             ))}
@@ -282,7 +282,7 @@ const Lobby: React.FC = () => {
               {filteredTournaments.map(t => (
                 <div
                   key={t.id}
-                  className="bg-surface/40 backdrop-blur-sm rounded-2xl border border-white/5 p-3.5 md:p-5 hover:bg-white/5 transition-all cursor-pointer group shadow-lg"
+                  className="bg-surface/40 backdrop-blur-sm rounded-xl border border-white/5 p-3 md:p-5 hover:bg-white/5 transition-all cursor-pointer group shadow-lg"
                   onClick={() => handleJoinGame(t)}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 md:gap-4">
@@ -295,10 +295,10 @@ const Lobby: React.FC = () => {
                         </span>
                         {t.type === 'spingo' && <span className="text-[8px] md:text-[9px] bg-gold/20 text-gold px-1.5 py-0.5 rounded font-black border border-gold/10">SPIN</span>}
                       </div>
-                      <div className="flex flex-wrap items-center gap-4 text-[10px] md:text-xs text-slate-400">
-                        <span className="flex items-center gap-1.5">
-                          <span className="material-symbols-outlined text-base text-slate-500">payments</span>
-                          <span className="font-bold text-slate-300">{t.type === 'cash' ? `Blinds ${t.buyIn}/${t.buyIn * 2}` : `$${t.buyIn.toFixed(2)}`}</span>
+                      <div className="flex flex-wrap items-center gap-2 md:gap-4 text-[9px] md:text-xs text-slate-400">
+                        <span className="flex items-center gap-1">
+                          <span className="material-symbols-outlined text-xs md:text-base text-slate-500">payments</span>
+                          <span className="font-bold text-slate-300">{t.type === 'cash' ? `${t.buyIn}/${t.buyIn * 2}` : `$${t.buyIn.toFixed(2)}`}</span>
                         </span>
                         <span className="flex items-center gap-1.5">
                           <span className="material-symbols-outlined text-base text-slate-500">group</span>

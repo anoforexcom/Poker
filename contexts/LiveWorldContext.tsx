@@ -144,17 +144,30 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
             return;
         }
 
+        // Check if already registered
+        const { data: existing } = await supabase
+            .from('tournament_participants')
+            .select('id')
+            .eq('tournament_id', tournamentId)
+            .eq('user_id', userId)
+            .maybeSingle();
+
+        if (existing) {
+            console.log('[LIVE_WORLD] User already registered');
+            return;
+        }
+
         // 1. Join the tournament participants
         const { error: joinError } = await supabase
             .from('tournament_participants')
-            .insert({ tournament_id: tournamentId, user_id: userId });
+            .insert({ tournament_id: tournamentId, user_id: userId, status: 'active' });
 
         if (joinError) throw joinError;
 
         // 2. Increment player count in tournament table
         await supabase
             .from('tournaments')
-            .update({ players_count: tournament.players + 1 })
+            .update({ players_count: (tournament.players || 0) + 1 })
             .eq('id', tournamentId);
     };
 

@@ -1,10 +1,21 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { TournamentSimulator, getTournamentSimulator } from '../utils/tournamentSimulator';
+import { supabase } from '../utils/supabase';
 
 interface SimulationContextType {
     isRunning: boolean;
     startSimulation: () => void;
     stopSimulation: () => void;
+    stats: {
+        totalBots: number;
+        totalTournaments: number;
+        registeringTournaments: number;
+        runningTournaments: number;
+        finishedTournaments: number;
+        totalPlayersInTournaments: number;
+    };
+    tournaments: any[];
+    topBots: any[];
 }
 
 const SimulationContext = createContext<SimulationContextType | undefined>(undefined);
@@ -12,6 +23,64 @@ const SimulationContext = createContext<SimulationContextType | undefined>(undef
 export const SimulationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [simulator] = useState<TournamentSimulator>(() => getTournamentSimulator());
     const [isRunning, setIsRunning] = useState(false);
+    const [stats, setStats] = useState({
+        totalBots: 0,
+        totalTournaments: 0,
+        registeringTournaments: 0,
+        runningTournaments: 0,
+        finishedTournaments: 0,
+        totalPlayersInTournaments: 0
+    });
+    const [tournaments, setTournaments] = useState<any[]>([]);
+    const [topBots, setTopBots] = useState<any[]>([]);
+
+    const fetchData = async () => {
+        try {
+            // Fetch Stats
+            const { count: totalBots } = await supabase.from('bots').select('*', { count: 'exact', head: true });
+            const { data: allTournaments } = await supabase.from('tournaments').select('*');
+
+            if (allTournaments) {
+                const regs = allTournaments.filter(t => t.status === 'registering').length;
+                const runs = allTournaments.filter(t => t.status === 'running').length;
+                const fins = allTournaments.filter(t => t.status === 'finished').length;
+                const totalPlayers = allTournaments.reduce((acc, t) => acc + (t.players_count || 0), 0);
+
+                setStats({
+                    totalBots: totalBots || 0,
+                    totalTournaments: allTournaments.length,
+                    registeringTournaments: regs,
+                    runningTournaments: runs,
+                    finishedTournaments: fins,
+                    totalPlayersInTournaments: totalPlayers
+                });
+
+                // Set tournaments for list (most recent active)
+                setTournaments(allTournaments
+                    .filter(t => t.status !== 'finished')
+                    .sort((a, b) => b.players_count - a.players_count)
+                );
+            }
+
+            // Fetch Top Bots
+            const { data: top } = await supabase
+                .from('bots')
+                .select('*')
+                .order('balance', { ascending: false })
+                .limit(20);
+
+            if (top) {
+                setTopBots(top.map(b => ({
+                    ...b,
+                    winRate: b.games_played > 0 ? b.tournaments_won / b.games_played : 0,
+                    gamesPlayed: b.games_played,
+                    tournamentsWon: b.tournaments_won
+                })));
+            }
+        } catch (err) {
+            console.error('[SIMULATION] Fetch Error:', err);
+        }
+    };
 
     const startSimulation = async () => {
         setIsRunning(true);
@@ -19,6 +88,7 @@ export const SimulationProvider: React.FC<{ children: ReactNode }> = ({ children
         await simulator.seedInitialData();
         await simulator.start();
         console.log('[SIMULATION] Real-time Database Sync Active!');
+        fetchData(); // Initial fetch
     };
 
     const stopSimulation = () => {
@@ -27,11 +97,17 @@ export const SimulationProvider: React.FC<{ children: ReactNode }> = ({ children
         console.log('[SIMULATION] Simulation Paused.');
     };
 
-    // Auto-start on mount (Production sync mode)
+    // Auto-start and Periodic Sync
     useEffect(() => {
         startSimulation();
+
+        const interval = setInterval(() => {
+            fetchData();
+        }, 3000);
+
         return () => {
             simulator.stop();
+            clearInterval(interval);
         };
     }, []);
 
@@ -40,6 +116,9 @@ export const SimulationProvider: React.FC<{ children: ReactNode }> = ({ children
             isRunning,
             startSimulation,
             stopSimulation,
+            stats,
+            tournaments,
+            topBots
         }}>
             {children}
         </SimulationContext.Provider>

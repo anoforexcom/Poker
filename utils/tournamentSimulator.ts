@@ -128,24 +128,43 @@ export class TournamentSimulator {
             if (!activeTournaments) return;
 
             for (const t of activeTournaments) {
-                // Registering tournaments fill up
+                // Registering tournaments fill up with BOTS
                 if (t.status === 'registering') {
                     if (t.players_count < t.max_players && Math.random() > 0.4) {
-                        const newCount = Math.min(t.players_count + Math.floor(Math.random() * 3) + 1, t.max_players);
+                        const botsToRegisterCount = Math.min(Math.floor(Math.random() * 3) + 1, t.max_players - t.players_count);
 
-                        // For Spins, the prize pool is set once at start (multiplier)
-                        // For others, it grows with buy-ins
-                        const newPrizePool = t.type === 'spingo'
-                            ? (newCount === t.max_players ? t.buy_in * (Math.random() > 0.9 ? 10 : 3) : 0)
-                            : (newCount * t.buy_in * 0.9);
+                        // Fetch random bots that are not already in this tournament
+                        const { data: availableBots } = await supabase
+                            .from('bots')
+                            .select('id')
+                            .limit(100); // Sample pool
 
-                        await supabase
-                            .from('tournaments')
-                            .update({
-                                players_count: newCount,
-                                prize_pool: newPrizePool
-                            })
-                            .eq('id', t.id);
+                        if (availableBots && availableBots.length > 0) {
+                            const selectedBots = availableBots
+                                .sort(() => Math.random() - 0.5)
+                                .slice(0, botsToRegisterCount);
+
+                            const registrationRecords = selectedBots.map(bot => ({
+                                tournament_id: t.id,
+                                bot_id: bot.id
+                            }));
+
+                            // Insert participants (handle duplicates silently via upsert or just ignore)
+                            await supabase.from('tournament_participants').upsert(registrationRecords, { onConflict: 'tournament_id, bot_id' });
+
+                            const newCount = Math.min(t.players_count + selectedBots.length, t.max_players);
+                            const newPrizePool = t.type === 'spingo'
+                                ? (newCount === t.max_players ? t.buy_in * (Math.random() > 0.9 ? 10 : 3) : 0)
+                                : (newCount * t.buy_in * 0.9);
+
+                            await supabase
+                                .from('tournaments')
+                                .update({
+                                    players_count: newCount,
+                                    prize_pool: Number(newPrizePool.toFixed(2))
+                                })
+                                .eq('id', t.id);
+                        }
                     } else if (t.players_count >= t.max_players) {
                         await supabase
                             .from('tournaments')
@@ -155,11 +174,33 @@ export class TournamentSimulator {
                 }
 
                 // Running tournaments slowly finish
-                if (t.status === 'running' && Math.random() > 0.9) {
-                    await supabase
-                        .from('tournaments')
-                        .update({ status: 'finished' })
-                        .eq('id', t.id);
+                if (t.status === 'running' && Math.random() > 0.8) {
+                    // Pick a random bot as winner
+                    const { data: winnerBot } = await supabase
+                        .from('bots')
+                        .select('*')
+                        .limit(1)
+                        .single();
+
+                    if (winnerBot) {
+                        await supabase
+                            .from('tournaments')
+                            .update({
+                                status: 'finished',
+                                // Note: Schema doesn't have winner_id, but we could add it or just log it
+                            })
+                            .eq('id', t.id);
+
+                        // Update bot stats
+                        await supabase
+                            .from('bots')
+                            .update({
+                                balance: Number(winnerBot.balance) + Number(t.prize_pool),
+                                tournaments_won: winnerBot.tournaments_won + 1,
+                                games_played: winnerBot.games_played + 1
+                            })
+                            .eq('id', winnerBot.id);
+                    }
                 }
             }
 

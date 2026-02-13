@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Card, createDeck, shuffleDeck, dealCards, evaluateHand, compareHands, HandRank } from '../utils/pokerLogic';
 import { generateBotName } from '../utils/nameGenerator';
 import { BlindLevel, BlindStructureType, TOURNAMENT_BLIND_STRUCTURES, getCurrentBlinds } from '../utils/blindStructure';
+import { supabase } from '../utils/supabase';
 
 export type GamePhase = 'pre-flop' | 'flop' | 'turn' | 'river' | 'showdown';
 
@@ -49,7 +50,9 @@ const DEFAULT_CONFIG: GameConfig = {
 export const usePokerGame = (
     initialUserBalance: number,
     updateGlobalBalance: (amount: number) => void,
-    config: GameConfig = DEFAULT_CONFIG
+    config: GameConfig = DEFAULT_CONFIG,
+    tournamentId?: string,
+    currentUserId?: string
 ) => {
     const { mode, smallBlind: initialSB, bigBlind: initialBB, ante: initialAnte, maxPlayers, blindStructureType: initialBlindStructure, isObserver = false } = config;
 
@@ -77,34 +80,66 @@ export const usePokerGame = (
     const [turnTimeLeft, setTurnTimeLeft] = useState(30);
     const [totalTurnTime] = useState(30);
 
-    // Initialize Players 
-    const [players, setPlayers] = useState<Player[]>(() => {
-        const initialPlayers: Player[] = [];
+    // Initialize Players (Start with empty, then sync with DB)
+    const [players, setPlayers] = useState<Player[]>([]);
 
-        if (!isObserver) {
-            initialPlayers.push({ id: 'user', name: 'You', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=hero', balance: initialUserBalance, hand: [], isFolded: false, currentBet: 0, isHuman: true, isActive: true, hasActed: false, totalContribution: 0 });
-        }
+    const fetchParticipants = useCallback(async () => {
+        if (!tournamentId) return;
 
-        // Add Bots up to maxPlayers
-        const botCount = isObserver ? maxPlayers : maxPlayers - 1;
-        for (let i = 0; i < botCount; i++) {
-            initialPlayers.push({
-                id: `bot${i}`,
-                name: generateBotName(),
-                avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=bot${i}`,
-                balance: config.startingStack,
-                hand: [],
-                isFolded: false,
-                currentBet: 0,
-                isHuman: false,
-                isActive: true,
-                hasActed: false,
-                isDealer: i === maxPlayers - 1,
-                totalContribution: 0
-            });
+        try {
+            console.log('[POKER_GAME] Syncing participants for Tournament:', tournamentId);
+            const { data: participants, error: pError } = await supabase
+                .from('tournament_participants')
+                .select(`
+                    id,
+                    user_id,
+                    bot_id,
+                    status,
+                    bots (id, name, avatar, balance),
+                    profiles:user_id (id, name, avatar_url, balance)
+                `)
+                .eq('tournament_id', tournamentId)
+                .eq('status', 'active');
+
+            if (pError) throw pError;
+
+            if (participants) {
+                const mappedPlayers: Player[] = participants.map((p, index) => {
+                    const isBot = !!p.bot_id;
+                    // Supabase joins can return arrays even for 1:1, handle both cases
+                    const rawProfile = isBot ? p.bots : p.profiles;
+                    const profile = Array.isArray(rawProfile) ? rawProfile[0] : rawProfile;
+
+                    const isHero = p.user_id === currentUserId;
+
+                    return {
+                        id: p.bot_id || p.user_id || `player-${index}`,
+                        name: isHero ? 'You' : (profile?.name || (isBot ? 'Bot' : 'Player')),
+                        avatar: (profile as any)?.avatar || (profile as any)?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${index}`,
+                        balance: Number((profile as any)?.balance) || config.startingStack,
+                        hand: [],
+                        isFolded: false,
+                        currentBet: 0,
+                        isHuman: !isBot,
+                        isActive: true,
+                        totalContribution: 0
+                    };
+                });
+
+                // Sort so Hero is always at the bottom center or first in array if needed
+                // For simplicity, we just set them. UI handles positioning.
+                setPlayers(mappedPlayers);
+            }
+        } catch (err) {
+            console.error('[POKER_GAME] Error fetching participants:', err);
         }
-        return initialPlayers;
-    });
+    }, [tournamentId, currentUserId, config.startingStack]);
+
+    useEffect(() => {
+        if (tournamentId) {
+            fetchParticipants();
+        }
+    }, [tournamentId, fetchParticipants]);
 
     // Smart sync external user balance
     // Only updates if the human player has 0 chips and the game is at the very start
