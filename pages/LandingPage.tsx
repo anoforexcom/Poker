@@ -112,7 +112,7 @@ const HeroSection = () => {
                             <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
                         </Link>
                         <Link
-                            to="/dashboard"
+                            to="/play"
                             className="px-8 py-4 rounded-full font-bold text-lg text-white border border-white/10 hover:bg-white/5 transition-all"
                         >
                             Enter App
