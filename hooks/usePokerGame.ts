@@ -196,6 +196,43 @@ export const usePokerGame = (
         }
     }, [currentTurn, players, phase]);
 
+    // Force Start / Auto-Fill Logic
+    useEffect(() => {
+        if (tournamentId && players.length < 2 && config.status !== 'Finished') {
+            const timer = setTimeout(async () => {
+                console.log('[POKER_GAME] Force-filling table with bots...');
+                // 1. Fetch 5 random bots from DB
+                const { data: bots } = await supabase.from('bots').select('*').limit(5);
+
+                if (bots) {
+                    const newParticipants = bots.map(bot => ({
+                        tournament_id: tournamentId,
+                        bot_id: bot.id,
+                        status: 'active'
+                    }));
+
+                    // 2. Insert into tournament_participants (upsert to avoid dupes)
+                    await supabase.from('tournament_participants').upsert(newParticipants, { onConflict: 'tournament_id, bot_id' });
+
+                    // 3. Update tournament player count
+                    await supabase.rpc('increment_tournament_players', {
+                        tournament_id_param: tournamentId,
+                        count_param: bots.length
+                    }).catch(() => {
+                        // Fallback manual update if RPC missing
+                        supabase.from('tournaments')
+                            .update({ players_count: bots.length + 1, status: 'running' }) // +1 for hero
+                            .eq('id', tournamentId);
+                    });
+
+                    fetchParticipants();
+                }
+            }, 5000); // Wait 5s before forcing
+
+            return () => clearTimeout(timer);
+        }
+    }, [tournamentId, players.length, config.status]);
+
     useEffect(() => {
         if (tournamentId) {
             fetchParticipants();

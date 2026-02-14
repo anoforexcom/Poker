@@ -136,6 +136,7 @@ const Community: React.FC = () => {
 
   // --- STATE ---
   const [view, setView] = useState<'list' | 'detail'>('list');
+  const [filter, setFilter] = useState<'recents' | 'trending' | 'analysis'>('recents');
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
   const [showNewTopicModal, setShowNewTopicModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -143,6 +144,16 @@ const Community: React.FC = () => {
   const [topics, setTopics] = useState(INITIAL_TOPICS);
   const [userHelpfulPosts, setUserHelpfulPosts] = useState<number[]>([]);
   const [userCommentVotes, setUserCommentVotes] = useState<Record<number, boolean>>({});
+
+  // Filter Logic
+  const filteredTopics = topics.filter(t => {
+    if (filter === 'trending') return t.votes > 100 || t.comments > 5;
+    if (filter === 'analysis') return t.tag === 'Strategy' || t.tag === 'Hand Analysis';
+    return true; // recents (default)
+  }).sort((a, b) => {
+    if (filter === 'trending') return b.votes - a.votes;
+    return 0; // Keep default order (time)
+  });
 
   // Side Chat Data
   const [chatMessage, setChatMessage] = useState('');
@@ -267,13 +278,28 @@ const Community: React.FC = () => {
           {view === 'list' && (
             <>
               <div className="flex gap-4 border-b border-border-dark">
-                <button className="pb-4 text-sm font-bold border-b-2 border-primary text-primary px-2">Recents (50+)</button>
-                <button className="pb-4 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-white px-2">Trending</button>
-                <button className="pb-4 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-white px-2">Hands Analysis</button>
+                <button
+                  onClick={() => setFilter('recents')}
+                  className={`pb-4 text-sm font-bold border-b-2 px-2 transition-colors ${filter === 'recents' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-white'}`}
+                >
+                  Recents (50+)
+                </button>
+                <button
+                  onClick={() => setFilter('trending')}
+                  className={`pb-4 text-sm font-bold border-b-2 px-2 transition-colors ${filter === 'trending' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-white'}`}
+                >
+                  Trending
+                </button>
+                <button
+                  onClick={() => setFilter('analysis')}
+                  className={`pb-4 text-sm font-bold border-b-2 px-2 transition-colors ${filter === 'analysis' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-white'}`}
+                >
+                  Hands Analysis
+                </button>
               </div>
 
               <div className="space-y-4">
-                {topics.map(topic => (
+                {filteredTopics.map(topic => (
                   <div key={topic.id} onClick={() => openTopic(topic.id)} className={`bg-surface border p-6 rounded-xl transition-all cursor-pointer hover:shadow-lg hover:border-slate-600 group ${topic.pinned ? 'border-primary/30 shadow-primary/5' : 'border-border-dark'}`}>
                     <div className="flex gap-6">
                       {/* Votes */}

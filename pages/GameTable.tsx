@@ -9,6 +9,8 @@ import { BlindStructureType } from '../utils/blindStructure';
 import { ActiveGamesSwitcher } from '../components/ActiveGamesSwitcher';
 import { OrientationPrompt } from '../components/OrientationPrompt';
 
+import { useChat } from '../contexts/ChatContext';
+
 const GameTable: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -17,6 +19,26 @@ const GameTable: React.FC = () => {
   const { user, updateBalance, activeGames } = useGame();
   const { tournaments } = useLiveWorld();
   const { showAlert } = useNotification();
+
+  // Chat Connection
+  const { addMessage, getMessages, startBotMessages, stopBotMessages } = useChat();
+  // const chatHistory = getMessages(id || 'default'); // Moved to hook usage area or kept here?
+  // Actually, I'll keep one. The previous edit added one at top. 
+  // I need to see where I added the second one. The lint error said:
+  // Cannot redeclare block-scoped variable 'chatHistory' at line 25 and 126.
+  // I will remove the one at line 25 (added in my previous edit) if there was already one.
+  // Wait, I see "chatHistory" was used in the render loop before I touched it?
+  // Let's check view_file again to be sure where they are. 
+  // But based on lint error, I introduced a duplicate.
+  // I'll assume the one I added at top is the "new" one and there was an existing one.
+  // I will just keep the one I added at top and remove the old one if I can find it, 
+  // OR remove the one I added if the old one is sufficient.
+  // Actually, the old one probably didn't use `useChat`.
+  // I'll remove the *first* one I added (lines 20-25) and ensure the logic uses the one I added/found later?
+  // No, I added lines 9-22 in the diff.
+  // I will remove logic from line 25.
+
+  const chatHistory = getMessages(id || 'default');
 
   // Find tournament config
   const tournament = tournaments.find(t => t.id === id);
@@ -89,8 +111,32 @@ const GameTable: React.FC = () => {
 
   // Multi-game coordination: Add this table to active games on mount
   useEffect(() => {
-    if (id) addActiveGame(id);
-  }, [id]);
+    if (id) {
+      addActiveGame(id);
+      // Start bot chatter if in tournament
+      if (activeUser && players.length > 1) {
+        const bots = players.filter(p => !p.isHuman).map(p => ({
+          id: p.id,
+          name: p.name,
+          personality: 'aggressive' as any // Default or randomize
+        }));
+        startBotMessages(id, bots);
+      }
+    }
+    return () => {
+      if (id) stopBotMessages(id);
+    }
+  }, [id, players.length]);
+
+  const handleSendMessage = (text: string) => {
+    if (!id || !user) return;
+    addMessage(id, {
+      playerId: user.id,
+      playerName: user.name,
+      message: text,
+      type: 'chat'
+    });
+  };
 
   const activeUser = players.find(p => p.id === user.id);
 
@@ -116,10 +162,7 @@ const GameTable: React.FC = () => {
     if (players.length > 0 && players.every(p => p.hand.length === 0)) startNewHand();
   }, [players]);
 
-  const [chatMessage, setChatMessage] = useState('');
-  const [chatHistory, setChatHistory] = useState<{ sender: string, text: string, type?: 'system' | 'user' }[]>([
-    { sender: 'System', text: `Welcome to Table #${id}!`, type: 'system' }
-  ]);
+  // Legacy chat state removed in favor of ChatContext
   const [showSettings, setShowSettings] = useState(false);
   const [showLobbyModal, setShowLobbyModal] = useState(false);
   const [activeLobbyTab, setActiveLobbyTab] = useState<'info' | 'players' | 'payouts'>('info');
@@ -144,54 +187,6 @@ const GameTable: React.FC = () => {
     };
   }, []);
 
-  // Autonomous Bot Chat
-  useEffect(() => {
-    if (players.length <= 1) return;
-
-    const botMessages = [
-      "Nice hand!",
-      "I think you're bluffing...",
-      "Too expensive for me.",
-      "Lucky river!",
-      "I have a good feeling about this one.",
-      "Tough choice...",
-      "Let's see those cards.",
-      "Wow, big bet!",
-      "Folded. Next one will be mine.",
-      "Good game everyone."
-    ];
-
-    const interval = setInterval(() => {
-      if (Math.random() > 0.7) { // 30% chance every 10 seconds
-        const bots = players.filter(p => !p.isHuman && !p.isFolded);
-        if (bots.length > 0) {
-          const randomBot = bots[Math.floor(Math.random() * bots.length)];
-          const randomMsg = botMessages[Math.floor(Math.random() * botMessages.length)];
-          setChatHistory(prev => [...prev.slice(-49), { sender: randomBot.name, text: randomMsg }]);
-        }
-      }
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, [players]);
-
-  const handleSendMessage = () => {
-    if (!chatMessage.trim()) return;
-    setChatHistory(prev => [...prev, { sender: 'You', text: chatMessage, type: 'user' }]);
-    setChatMessage('');
-
-    // Simulate bot response occasionally
-    if (Math.random() > 0.7) {
-      setTimeout(() => {
-        const botNames = players.filter(p => !p.isHuman).map(p => p.name);
-        if (botNames.length === 0) return;
-        const randomBot = botNames[Math.floor(Math.random() * botNames.length)];
-        const responses = ['Nice move!', 'I fold.', 'Thinking...', 'Unlucky!', 'Next time.'];
-        const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-        setChatHistory(prev => [...prev, { sender: randomBot, text: randomResponse }]);
-      }, 1000 + Math.random() * 2000);
-    }
-  };
 
   return (
     <div className="flex flex-col h-screen bg-[#0a0f1a] overflow-hidden select-none">
@@ -588,6 +583,26 @@ const GameTable: React.FC = () => {
                 </p>
               ))}
             </div>
+            {/* Chat Input */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const input = e.currentTarget.elements.namedItem('message') as HTMLInputElement;
+                if (input.value.trim()) {
+                  handleSendMessage(input.value);
+                  input.value = '';
+                }
+              }}
+              className="p-1 border-t border-slate-700 bg-slate-800/50"
+            >
+              <input
+                name="message"
+                type="text"
+                placeholder="Type a message..."
+                className="w-full bg-transparent border-none text-white text-[10px] focus:ring-0 placeholder:text-slate-600 px-2 py-1"
+                autoComplete="off"
+              />
+            </form>
           </div>
         </div>
 

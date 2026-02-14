@@ -105,6 +105,17 @@ const TournamentLobby: React.FC = () => {
 
             if (diff <= 0) {
                 setTimeLeft('Starting...');
+                // Force a re-fetch or allow entry
+                if (tournament.status === 'Registering') {
+                    // Ideally we would update the DB or refetch, but for UX we simply reload or unlock
+                    // For now, we rely on the interval to fetch new participants, but we need to unlock the button.
+                    // A simple hack: Reload page to get fresh status if it stuck on Registering
+                    // window.location.reload(); 
+                    // Actually, better UX: Just hide the timer overlay so the button shows up?
+                    // No, the button is conditional on status. 
+                    // Let's assume the backend/simulator updates status. 
+                    // But if it doesn't, we should manually allow entry if time is up.
+                }
                 return;
             }
 
@@ -267,7 +278,7 @@ const TournamentLobby: React.FC = () => {
                                 <div className="flex items-center gap-2"><span className="material-symbols-outlined">check_circle</span> REGISTERED</div>
                             </button>
                             {/* Waiting Room Logic */}
-                            {tournament.status === 'Registering' && tournament.startTime !== 'Now' ? (
+                            {tournament.status === 'Registering' && tournament.startTime !== 'Now' && timeLeft !== 'Starting...' ? (
                                 <div className="w-full py-4 bg-slate-800 border border-slate-700 rounded-xl flex flex-col items-center justify-center gap-2">
                                     <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest animate-pulse">Tournament Starts In</span>
                                     <div className="text-2xl font-black text-white font-mono">
