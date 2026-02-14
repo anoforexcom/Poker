@@ -145,13 +145,13 @@ const TournamentLobby: React.FC = () => {
         if (!tournament) return;
         setIsNavigating(true);
         setTimeout(() => {
-            navigate(`/game/${tournament.id}`);
+            navigate(`/table/${tournament.id}`);
         }, 500);
     };
 
     const handleObserve = () => {
         if (!tournament) return;
-        navigate(`/game/${tournament.id}?spectate=true`);
+        navigate(`/table/${tournament.id}?spectate=true`);
     };
 
 
