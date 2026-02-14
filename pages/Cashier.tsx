@@ -7,13 +7,18 @@ const Cashier: React.FC = () => {
   const { showAlert } = useNotification();
   const [amount, setAmount] = useState<string>('');
   const [method, setMethod] = useState<string>('Visa');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const presets = [10, 50, 100, 500, 1000];
 
   const handleDeposit = async () => {
     const val = parseFloat(amount);
     if (!isNaN(val) && val > 0) {
+      setIsProcessing(true);
+      // Simulate network delay for realism
+      await new Promise(resolve => setTimeout(resolve, 1500));
       await deposit(val, method);
+      setIsProcessing(false);
       setAmount('');
       await showAlert(`Deposited $${val.toLocaleString()} via ${method} successfully!`, 'success', { title: 'Transaction Complete' });
     }
@@ -22,11 +27,15 @@ const Cashier: React.FC = () => {
   const handleWithdraw = async () => {
     const val = parseFloat(amount);
     if (!isNaN(val) && val > 0) {
+      setIsProcessing(true);
+      await new Promise(resolve => setTimeout(resolve, 1500));
       try {
         await withdraw(val, method);
+        setIsProcessing(false);
         setAmount('');
         await showAlert(`Withdrawn $${val.toLocaleString()} to ${method} successfully!`, 'success', { title: 'Transaction Complete' });
       } catch (err: any) {
+        setIsProcessing(false);
         await showAlert('Insufficient funds for this withdrawal.', 'error', { title: 'Transaction Failed' });
       }
     }
@@ -78,15 +87,19 @@ const Cashier: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <button
                   onClick={handleDeposit}
-                  className="bg-primary text-background font-black py-4 rounded-xl hover:brightness-110 flex items-center justify-center gap-2 shadow-lg shadow-primary/10 transition-all active:scale-95"
+                  disabled={isProcessing}
+                  className="bg-primary text-background font-black py-4 rounded-xl hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-primary/10 transition-all active:scale-95"
                 >
-                  <span className="material-symbols-outlined">add_circle</span> DEPOSIT
+                  <span className={`material-symbols-outlined ${isProcessing ? 'animate-spin' : ''}`}>{isProcessing ? 'sync' : 'add_circle'}</span>
+                  {isProcessing ? 'PROCESSING...' : 'DEPOSIT'}
                 </button>
                 <button
                   onClick={handleWithdraw}
-                  className="bg-surface border border-border-dark text-white font-black py-4 rounded-xl hover:bg-white/5 flex items-center justify-center gap-2 transition-all active:scale-95"
+                  disabled={isProcessing}
+                  className="bg-surface border border-border-dark text-white font-black py-4 rounded-xl hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all active:scale-95"
                 >
-                  <span className="material-symbols-outlined">payments</span> WITHDRAW
+                  <span className={`material-symbols-outlined ${isProcessing ? 'animate-spin' : ''}`}>{isProcessing ? 'sync' : 'payments'}</span>
+                  {isProcessing ? 'PROCESSING...' : 'WITHDRAW'}
                 </button>
               </div>
             </div>

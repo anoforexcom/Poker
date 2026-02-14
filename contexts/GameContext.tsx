@@ -56,7 +56,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Fetch transactions
   const fetchTransactions = async () => {
-    if (!authUser || authUser.id === 'demo-guest-id') return;
+    if (!authUser || !authUser.id) return;
     const { data, error } = await supabase
       .from('transactions')
       .select('*')
@@ -82,7 +82,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [authUser]);
 
   const updateProfileInDB = async (updates: any) => {
-    if (!authUser || authUser.id === 'demo-guest-id' || !authUser.id) return;
+    if (!authUser || !authUser.id) return;
     const { error } = await supabase.from('profiles').update(updates).eq('id', authUser.id);
     if (error) throw error;
   };
@@ -91,7 +91,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const newBalance = user.balance + amount;
     await updateProfileInDB({ balance: newBalance });
 
-    if (authUser && authUser.id !== 'demo-guest-id') {
+    if (authUser && authUser.id) {
       await supabase.from('transactions').insert({
         user_id: authUser.id,
         type: 'deposit',
@@ -110,7 +110,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const newBalance = user.balance - amount;
       await updateProfileInDB({ balance: newBalance });
 
-      if (authUser && authUser.id !== 'demo-guest-id') {
+      if (authUser && authUser.id) {
         await supabase.from('transactions').insert({
           user_id: authUser.id,
           type: 'withdrawal',

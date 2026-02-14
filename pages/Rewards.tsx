@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useGame } from '../contexts/GameContext';
 
 const Rewards: React.FC = () => {
-    const { user } = useGame();
+    const { user, updateBalance } = useGame();
 
     // Mock Data for Challenges
     const [challenges, setChallenges] = useState([
@@ -17,18 +17,26 @@ const Rewards: React.FC = () => {
         { id: 3, type: 'Gold', status: 'locked', reward: '$1,000 - $10,000' },
     ]);
 
-    const handleClaim = (id: number) => {
+    const handleClaim = (id: number, reward: number) => {
         setChallenges(prev => prev.map(c => c.id === id ? { ...c, claimed: true } : c));
-        // In a real app, this would trigger a balance update via context
-        // updateBalance(reward);
+        updateBalance(reward);
     };
 
     const [openedChest, setOpenedChest] = useState<number | null>(null);
 
     const handleOpenChest = (id: number) => {
         setOpenedChest(id);
-        // Animation simulation would go here
-        setChests(prev => prev.map(c => c.id === id ? { ...c, status: 'opened' } : c));
+        const chest = chests.find(c => c.id === id);
+        if (chest) {
+            // Random reward based on type
+            let rewardAmount = 0;
+            if (chest.type === 'Bronze') rewardAmount = Math.floor(Math.random() * 150) + 50;
+            if (chest.type === 'Silver') rewardAmount = Math.floor(Math.random() * 800) + 200;
+            if (chest.type === 'Gold') rewardAmount = Math.floor(Math.random() * 9000) + 1000;
+
+            updateBalance(rewardAmount);
+            setChests(prev => prev.map(c => c.id === id ? { ...c, status: 'opened', reward: `WON $${rewardAmount}` } : c));
+        }
     };
 
     return (
@@ -109,7 +117,7 @@ const Rewards: React.FC = () => {
                                             </button>
                                         ) : challenge.progress >= challenge.target ? (
                                             <button
-                                                onClick={() => handleClaim(challenge.id)}
+                                                onClick={() => handleClaim(challenge.id, challenge.reward)}
                                                 className="px-4 py-2 bg-poker-green hover:bg-green-600 text-white font-bold rounded-lg text-xs shadow-lg shadow-green-900/20 animate-bounce-short"
                                             >
                                                 CLAIM {challenge.reward}
@@ -137,15 +145,15 @@ const Rewards: React.FC = () => {
                         <div className="grid grid-cols-3 gap-4">
                             {chests.map(chest => (
                                 <div key={chest.id} className={`relative p-4 rounded-xl border-2 flex flex-col items-center gap-3 text-center transition-all ${chest.status === 'locked' ? 'border-slate-700 bg-slate-800/50 opacity-60' :
-                                        chest.status === 'opened' ? 'border-slate-700 bg-slate-800/50' :
-                                            'border-gold/50 bg-gold/10 hover:bg-gold/20 cursor-pointer hover:scale-105'
+                                    chest.status === 'opened' ? 'border-slate-700 bg-slate-800/50' :
+                                        'border-gold/50 bg-gold/10 hover:bg-gold/20 cursor-pointer hover:scale-105'
                                     }`}>
                                     {chest.status === 'ready' && <div className="absolute -top-2 -right-2 size-4 bg-red-500 rounded-full animate-ping"></div>}
 
                                     <div className={`p-4 rounded-full bg-slate-900 shadow-inner ${chest.status === 'ready' ? 'animate-wiggle' : ''}`}>
                                         <span className={`material-symbols-outlined text-4xl ${chest.type === 'Bronze' ? 'text-orange-400' :
-                                                chest.type === 'Silver' ? 'text-slate-300' :
-                                                    'text-yellow-400'
+                                            chest.type === 'Silver' ? 'text-slate-300' :
+                                                'text-yellow-400'
                                             }`}>
                                             {chest.status === 'opened' ? 'drafts' : 'lock'}
                                         </span>
@@ -153,8 +161,8 @@ const Rewards: React.FC = () => {
 
                                     <div>
                                         <h4 className={`font-bold text-sm ${chest.type === 'Bronze' ? 'text-orange-400' :
-                                                chest.type === 'Silver' ? 'text-slate-300' :
-                                                    'text-yellow-400'
+                                            chest.type === 'Silver' ? 'text-slate-300' :
+                                                'text-yellow-400'
                                             }`}>{chest.type} Chest</h4>
                                         <p className="text-[10px] text-slate-400 mt-1">{chest.reward}</p>
                                     </div>

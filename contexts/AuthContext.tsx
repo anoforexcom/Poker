@@ -212,8 +212,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const continueAsGuest = async () => {
+        const guestId = '00000000-0000-0000-0000-000000000002'; // Valid UUID for Guest
         const guestUser: User = {
-            id: 'demo-guest-id',
+            id: guestId,
             name: 'Demo Guest',
             email: 'demo@guest.com',
             avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Guest',
