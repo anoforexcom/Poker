@@ -4,6 +4,8 @@ import { supabase } from '../utils/supabase';
 interface LiveWorldContextType {
     tournaments: any[];
     onlinePlayers: number;
+    smoothedOnlinePlayers: number;
+    activeTables: number;
     registerForTournament: (tournamentId: string) => Promise<void>;
 }
 
@@ -12,6 +14,7 @@ const LiveWorldContext = createContext<LiveWorldContextType | undefined>(undefin
 export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [tournaments, setTournaments] = useState<any[]>([]);
     const [onlinePlayers, setOnlinePlayers] = useState(0);
+    const [activeTables, setActiveTables] = useState(0);
 
     const fetchTournaments = async () => {
         try {
@@ -20,7 +23,12 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
                 console.error('Error fetching tournaments:', error);
                 return;
             }
-            if (data) setTournaments(data);
+            if (data) {
+                setTournaments(data);
+                // Simple estimation for active tables based on player count
+                const totalPlayers = data.reduce((acc: number, t: any) => acc + (t.players_count || 0), 0);
+                setActiveTables(Math.ceil(totalPlayers / 6) || 0);
+            }
         } catch (err) {
             console.error('Unexpected error fetching tournaments:', err);
         }
@@ -76,7 +84,13 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
     }, []);
 
     return (
-        <LiveWorldContext.Provider value={{ tournaments, onlinePlayers, registerForTournament }}>
+        <LiveWorldContext.Provider value={{
+            tournaments,
+            onlinePlayers,
+            registerForTournament,
+            activeTables,
+            smoothedOnlinePlayers: onlinePlayers // Alias for compatibility
+        }}>
             {children}
         </LiveWorldContext.Provider>
     );
