@@ -215,15 +215,18 @@ export const usePokerGame = (
                     await supabase.from('tournament_participants').upsert(newParticipants, { onConflict: 'tournament_id, bot_id' });
 
                     // 3. Update tournament player count
-                    await supabase.rpc('increment_tournament_players', {
+                    // 3. Update tournament player count
+                    const { error } = await supabase.rpc('increment_tournament_players', {
                         tournament_id_param: tournamentId,
                         count_param: bots.length
-                    }).catch(() => {
+                    });
+
+                    if (error) {
                         // Fallback manual update if RPC missing
-                        supabase.from('tournaments')
+                        await supabase.from('tournaments')
                             .update({ players_count: bots.length + 1, status: 'running' }) // +1 for hero
                             .eq('id', tournamentId);
-                    });
+                    }
 
                     fetchParticipants();
                 }
