@@ -14,7 +14,7 @@ interface UserState {
 
 interface Transaction {
   id: string;
-  type: 'deposit' | 'withdrawal';
+  type: 'deposit' | 'withdrawal' | 'poker_buyin' | 'poker_win' | 'reward';
   amount: number;
   method: string;
   status: string;
@@ -41,7 +41,7 @@ const defaultUser: UserState = {
   balance: 0,
   rank: 'Bronze',
   xp: 0,
-  level: 1,
+  level: 1
 };
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -59,12 +59,12 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem('poker_active_games', JSON.stringify(activeGames));
   }, [activeGames]);
 
-  // Fetch transactions
   const fetchTransactions = async () => {
-    if (!authUser || !authUser.id) return;
-    const { data, error } = await supabase
+    if (!authUser?.id) return;
+    const { data } = await supabase
       .from('transactions')
       .select('*')
+      .eq('user_id', authUser.id)
       .order('created_at', { ascending: false });
 
     if (data) setTransactions(data);
