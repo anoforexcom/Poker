@@ -42,13 +42,15 @@ export class TournamentSimulator {
 
     async seedInitialData() {
         console.log('[SIMULATOR] Checking for existing data...');
-        const { count } = await supabase.from('tournaments').select('*', { count: 'exact', head: true });
+        console.log('[SIMULATOR] Checking for existing data...');
+        const { count: tournCount } = await supabase.from('tournaments').select('*', { count: 'exact', head: true });
+        const { count: botCount } = await supabase.from('bots').select('*', { count: 'exact', head: true });
 
-        if (count === 0) {
-            console.log('[SIMULATOR] Seeding initial population (5000 bots)...');
-
-            const totalBots = 5000;
-            const batchSize = 500;
+        // Seed Bots if missing
+        if (botCount === 0) {
+            console.log('[SIMULATOR] Seeding initial population (500 bots)...');
+            const totalBots = 500;
+            const batchSize = 100;
 
             for (let i = 0; i < totalBots; i += batchSize) {
                 const bots = Array.from({ length: batchSize }).map((_, j) => {
@@ -63,7 +65,10 @@ export class TournamentSimulator {
                 });
                 await supabase.from('bots').upsert(bots);
             }
+        }
 
+        // Seed Tournaments if missing
+        if (tournCount === 0) {
             // Create 24h schedule
             await this.generateFixedSchedule();
         }

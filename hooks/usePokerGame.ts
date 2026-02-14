@@ -202,9 +202,26 @@ export const usePokerGame = (
             const timer = setTimeout(async () => {
                 console.log('[POKER_GAME] Force-filling table with bots...');
                 // 1. Fetch 5 random bots from DB
-                const { data: bots } = await supabase.from('bots').select('*').limit(5);
+                let { data: bots } = await supabase.from('bots').select('*').limit(5);
 
-                if (bots) {
+                // FALLBACK: If no bots exist in DB, create temporary ones
+                if (!bots || bots.length === 0) {
+                    console.warn('[POKER_GAME] No bots found in DB. Generating temporary bots...');
+                    const generatedBots = Array.from({ length: 5 }).map((_, i) => ({
+                        id: `gen-bot-${Date.now()}-${i}`,
+                        name: `Bot ${generateBotName()}`,
+                        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=gen${i}`,
+                        balance: 10000,
+                        skill: 50
+                    }));
+
+                    // Try to insert them for future use (optional, purely for resilience)
+                    const { error: genError } = await supabase.from('bots').upsert(generatedBots);
+                    if (genError) console.error('Bot gen error', genError);
+                    bots = generatedBots as any;
+                }
+
+                if (bots && bots.length > 0) {
                     const newParticipants = bots.map(bot => ({
                         tournament_id: tournamentId,
                         bot_id: bot.id,
@@ -214,7 +231,6 @@ export const usePokerGame = (
                     // 2. Insert into tournament_participants (upsert to avoid dupes)
                     await supabase.from('tournament_participants').upsert(newParticipants, { onConflict: 'tournament_id, bot_id' });
 
-                    // 3. Update tournament player count
                     // 3. Update tournament player count
                     const { error } = await supabase.rpc('increment_tournament_players', {
                         tournament_id_param: tournamentId,
