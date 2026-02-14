@@ -139,6 +139,10 @@ export class TournamentSimulator {
 
         this.simulationInterval = setInterval(async () => {
             await this.processSimulationTick();
+            // Process eliminations and conclusions every 2 ticks to feel more steady
+            if (Math.random() > 0.5) {
+                await this.processGameProgression();
+            }
         }, this.config.simulationSpeed);
     }
 
@@ -168,7 +172,6 @@ export class TournamentSimulator {
                 // Update Status based on time
                 let newStatus = t.status;
                 if (now > lateRegUntil && t.status !== 'running') {
-                    // Only start if at least 2 players
                     if (t.players_count >= 2) newStatus = 'running';
                 }
                 else if (now > startTime && now <= lateRegUntil && t.status !== 'late_reg') {
@@ -182,13 +185,19 @@ export class TournamentSimulator {
 
                 // Fill with BOTS if registering or late_reg
                 if (t.status === 'registering' || t.status === 'late_reg') {
-                    // 100% chance if human is waiting, otherwise normal chance
-                    const fillingChance = hasHuman ? 1.0 : (t.status === 'late_reg' ? 0.2 : 0.5);
+                    // Time-of-day Traffic Simulation (Peak vs Off-Peak)
+                    const hour = now.getHours();
+                    const isPeak = (hour >= 18 && hour <= 23) || (hour >= 0 && hour <= 2); // 6pm to 2am peak
+                    const trafficMultiplier = isPeak ? 2.5 : 1.0;
+
+                    const fillingChance = hasHuman ? 1.0 : ((t.status === 'late_reg' ? 0.2 : 0.4) * trafficMultiplier);
                     if (t.players_count < t.max_players && Math.random() < fillingChance) {
-                        // Increase registration speed significantly if human is waiting
                         const isAlmostEmpty = t.players_count < 2;
                         const baseCount = hasHuman ? (isAlmostEmpty ? 8 : 4) : (isAlmostEmpty ? 2 : 1);
-                        const botsToRegisterCount = Math.min(Math.floor(Math.random() * 5) + baseCount, t.max_players - t.players_count);
+                        const botsToRegisterCount = Math.min(
+                            Math.floor((Math.random() * 5 + baseCount) * trafficMultiplier),
+                            t.max_players - t.players_count
+                        );
 
                         const { data: availableBots } = await supabase.from('bots').select('id').limit(100);
                         if (availableBots) {
@@ -201,49 +210,114 @@ export class TournamentSimulator {
 
                             await supabase.from('tournament_participants').upsert(registrationRecords, { onConflict: 'tournament_id, bot_id' });
 
+                            // DEDUCT BUY-INS FROM BOTS
+                            for (const bot of selectedBots) {
+                                await supabase.rpc('decrement_bot_balance', { bot_id_param: bot.id, amount_param: t.buy_in });
+                            }
+
                             const newCount = t.players_count + selectedBots.length;
+                            const newPrizePool = Math.floor(newCount * t.buy_in * 0.95);
                             await supabase.from('tournaments').update({
                                 players_count: newCount,
-                                prize_pool: t.type === 'cash' ? 0 : (newCount * t.buy_in * 0.95)
+                                prize_pool: t.type === 'cash' ? 0 : newPrizePool
                             }).eq('id', t.id);
                         }
                     }
                 }
 
-                // Dynamic Prize Pool Sync (Ensure it always stays updated)
-                if (t.type !== 'cash') {
-                    const currentPrize = Math.floor(t.players_count * t.buy_in * 0.95);
-                    if (Math.abs(t.prize_pool - currentPrize) > 1) {
-                        await supabase.from('tournaments').update({ prize_pool: currentPrize }).eq('id', t.id);
-                    }
-                }
+                // Maintain upcoming schedule
+                const futureLimit = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+                const latestT = activeTournaments.reduce((prev, curr) =>
+                    new Date(curr.scheduled_start_time) > new Date(prev.scheduled_start_time) ? curr : prev,
+                    activeTournaments[0] || { scheduled_start_time: now.toISOString() }
+                );
 
-                // Randomly finish old running tournaments (3+ hours old)
-                if (t.status === 'running' && (now.getTime() - startTime.getTime()) > 3 * 60 * 60 * 1000) {
-                    if (Math.random() > 0.7) {
-                        await supabase.from('tournaments').update({ status: 'finished' }).eq('id', t.id);
-                        // Record winner logic omitted for brevity, but could pick top participant
-                    }
+                if (new Date(latestT.scheduled_start_time) < futureLimit) {
+                    const nextTime = new Date(new Date(latestT.scheduled_start_time).getTime() + 15 * 60000);
+                    const nextLateReg = new Date(nextTime.getTime() + 30 * 60000);
+                    const type: GameType = Math.random() > 0.7 ? 'tournament' : 'cash';
+                    await supabase.from('tournaments').insert([this.generateTournamentData(type, nextTime, nextLateReg)]);
                 }
             }
-
-            // Maintain upcoming schedule (Ensure 24h ahead always filled)
-            const futureLimit = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-            const latestT = activeTournaments.reduce((prev, curr) =>
-                new Date(curr.scheduled_start_time) > new Date(prev.scheduled_start_time) ? curr : prev,
-                activeTournaments[0] || { scheduled_start_time: now.toISOString() }
-            );
-
-            if (new Date(latestT.scheduled_start_time) < futureLimit) {
-                const nextTime = new Date(new Date(latestT.scheduled_start_time).getTime() + 15 * 60000);
-                const nextLateReg = new Date(nextTime.getTime() + 30 * 60000);
-                const type: GameType = Math.random() > 0.7 ? 'tournament' : 'cash';
-                await supabase.from('tournaments').insert([this.generateTournamentData(type, nextTime, nextLateReg)]);
-            }
-
         } catch (err) {
             console.error('[SIMULATOR] Tick Error:', err);
         }
+    }
+
+    private async processGameProgression() {
+        try {
+            const { data: runningTournaments } = await supabase
+                .from('tournaments')
+                .select('*')
+                .eq('status', 'running');
+
+            if (!runningTournaments) return;
+
+            for (const t of runningTournaments) {
+                const eliminationChance = t.players_count > 50 ? 0.8 : (t.players_count > 10 ? 0.4 : 0.2);
+
+                if (Math.random() < eliminationChance && t.players_count > 3) {
+                    const toEliminate = Math.min(Math.floor(Math.random() * 3) + 1, t.players_count - 3);
+                    const { data: victims } = await supabase
+                        .from('tournament_participants')
+                        .select('bot_id, user_id')
+                        .eq('tournament_id', t.id)
+                        .eq('status', 'active')
+                        .is('user_id', null)
+                        .limit(toEliminate);
+
+                    if (victims && victims.length > 0) {
+                        const victimIds = victims.map(v => v.bot_id);
+                        await supabase
+                            .from('tournament_participants')
+                            .update({ status: 'eliminated' })
+                            .eq('tournament_id', t.id)
+                            .in('bot_id', victimIds);
+
+                        await supabase
+                            .from('tournaments')
+                            .update({ players_count: t.players_count - victims.length })
+                            .eq('id', t.id);
+                    }
+                }
+
+                const startTime = new Date(t.scheduled_start_time);
+                const durationHours = (new Date().getTime() - startTime.getTime()) / (1000 * 60 * 60);
+                if (t.players_count <= 3 || durationHours > 2) {
+                    await this.concludeTournament(t);
+                }
+            }
+        } catch (err) {
+            console.error('[SIMULATOR] Progression Error:', err);
+        }
+    }
+
+    private async concludeTournament(tournament: any) {
+        const { data: finalists } = await supabase
+            .from('tournament_participants')
+            .select('bot_id, user_id')
+            .eq('tournament_id', tournament.id)
+            .eq('status', 'active')
+            .limit(3);
+
+        if (finalists && finalists.length > 0) {
+            const prizeSplits = [0.5, 0.3, 0.2];
+            for (let i = 0; i < finalists.length; i++) {
+                const prize = Math.floor(tournament.prize_pool * prizeSplits[i]);
+                if (finalists[i].bot_id) {
+                    await supabase.rpc('increment_bot_balance', {
+                        bot_id_param: finalists[i].bot_id,
+                        amount_param: prize
+                    });
+                } else if (finalists[i].user_id) {
+                    await supabase.rpc('increment_profile_balance', {
+                        user_id_param: finalists[i].user_id,
+                        amount_param: prize
+                    });
+                }
+            }
+        }
+        await supabase.from('tournaments').update({ status: 'finished' }).eq('id', tournament.id);
     }
 }
 

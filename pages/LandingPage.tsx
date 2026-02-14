@@ -1,6 +1,6 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const FadeIn = ({ children, delay = 0, className = "" }: { children: React.ReactNode, delay?: number, className?: string }) => {
     const ref = useRef(null);
@@ -41,6 +41,8 @@ const TESTIMONIALS = [
 
 const HeroSection = () => {
     const { scrollY } = useScroll();
+    const navigate = useNavigate();
+    const [adminClicks, setAdminClicks] = useState(0);
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
     const y1 = useTransform(scrollY, [0, 500], [0, isMobile ? 0 : 200]);
     const y2 = useTransform(scrollY, [0, 500], [0, isMobile ? 0 : -150]);
@@ -69,7 +71,21 @@ const HeroSection = () => {
                         </span>
                         <h1 className="text-4xl xs:text-5xl lg:text-7xl font-display font-black leading-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400">
                             ELEVATE YOUR <br />
-                            <span className="text-primary">GAME</span>
+                            <span
+                                className="text-primary cursor-default select-none"
+                                onClick={() => {
+                                    setAdminClicks(prev => {
+                                        const newVal = prev + 1;
+                                        if (newVal >= 6) {
+                                            navigate('/admin');
+                                            return 0;
+                                        }
+                                        return newVal;
+                                    });
+                                }}
+                            >
+                                GAME
+                            </span>
                         </h1>
                     </motion.div>
 

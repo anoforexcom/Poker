@@ -18,6 +18,11 @@ import TestimonialsPage from './pages/TestimonialsPage';
 import LegalPage from './pages/LegalPage';
 import FeaturesPage from './pages/FeaturesPage';
 import { PublicLayout } from './layouts/PublicLayout';
+import AdminLayout from './layouts/AdminLayout';
+import AdminOverview from './pages/admin/AdminOverview';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminFinances from './pages/admin/AdminFinances';
+import AdminGames from './pages/admin/AdminGames';
 import { GameProvider, useGame } from './contexts/GameContext';
 import { LiveWorldProvider } from './contexts/LiveWorldContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -112,6 +117,19 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
             {item.name}
           </Link>
         ))}
+
+        {user.isAdmin && (
+          <div className="pt-4 mt-2 border-t border-white/5">
+            <Link
+              to="/admin"
+              onClick={() => onClose()}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all shadow-lg shadow-primary/10`}
+            >
+              <span className="material-symbols-outlined text-xl">admin_panel_settings</span>
+              Admin Panel
+            </Link>
+          </div>
+        )}
 
         {/* Active Games Switcher in Sidebar */}
         <div className="mt-8 pt-6 border-t border-white/5">
@@ -281,6 +299,15 @@ const AppRoutes = () => {
           <Route path="/rewards" element={<ProtectedLayout><Rewards /></ProtectedLayout>} />
           <Route path="/profile" element={<ProtectedLayout><Profile /></ProtectedLayout>} />
           <Route path="/simulation" element={<ProtectedLayout><SimulationDashboard /></ProtectedLayout>} />
+
+          {/* Admin Routes */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminOverview />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="finances" element={<AdminFinances />} />
+            <Route path="games" element={<AdminGames />} />
+            <Route path="simulation" element={<SimulationDashboard />} />
+          </Route>
         </>
       ) : (
         // Redirect any other protected route access attempt to login

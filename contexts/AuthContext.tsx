@@ -8,6 +8,7 @@ interface User {
     avatar: string;
     balance: number;
     rank: string;
+    isAdmin: boolean;
 }
 
 interface AuthContextType {
@@ -45,7 +46,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     email: email,
                     avatar: data.avatar_url,
                     balance: data.balance,
-                    rank: data.rank
+                    rank: data.rank,
+                    isAdmin: data.is_admin || false
                 };
             }
 
@@ -69,7 +71,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     name: email.split('@')[0], // Fallback name
                     avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
                     balance: 10000,
-                    rank: 'Bronze'
+                    rank: 'Bronze',
+                    is_admin: false
                 })
                 .select()
                 .maybeSingle();
@@ -81,7 +84,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     email: email,
                     avatar: data.avatar_url,
                     balance: data.balance,
-                    rank: data.rank
+                    rank: data.rank,
+                    isAdmin: data.is_admin || false
                 };
             }
             if (error) throw error;
@@ -139,7 +143,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     email: email,
                     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lucky',
                     balance: 100000,
-                    rank: 'Diamond'
+                    rank: 'Diamond',
+                    isAdmin: true
                 };
                 setUser(testUser);
                 setIsProcessing(false);
@@ -181,7 +186,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     name: name,
                     avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user.id}`,
                     balance: 10000,
-                    rank: 'Bronze'
+                    rank: 'Bronze',
+                    is_admin: false
                 };
 
                 const { error: profileError } = await supabase
@@ -197,6 +203,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     ...profileData,
                     email: email,
                     avatar: profileData.avatar_url,
+                    isAdmin: false
                 });
             }
         } catch (err) {
@@ -219,7 +226,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             email: 'demo@guest.com',
             avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Guest',
             balance: 50000,
-            rank: 'Platinum'
+            rank: 'Platinum',
+            isAdmin: false
         };
 
         try {
