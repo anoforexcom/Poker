@@ -13,7 +13,7 @@ interface SimulationContextType {
         runningTournaments: number;
         finishedTournaments: number;
         totalPlayersInTournaments: number;
-        realRake: number;
+        houseProfit: number;
     };
     tournaments: any[];
     topBots: any[];
@@ -31,7 +31,7 @@ export const SimulationProvider: React.FC<{ children: ReactNode }> = ({ children
         runningTournaments: 0,
         finishedTournaments: 0,
         totalPlayersInTournaments: 0,
-        realRake: 0
+        houseProfit: 0
     });
     const [tournaments, setTournaments] = useState<any[]>([]);
     const [topBots, setTopBots] = useState<any[]>([]);
@@ -55,24 +55,19 @@ export const SimulationProvider: React.FC<{ children: ReactNode }> = ({ children
                     runningTournaments: runs,
                     finishedTournaments: fins,
                     totalPlayersInTournaments: totalPlayers,
-                    realRake: 0 // Will update below
+                    houseProfit: 0 // Will update below
                 });
 
-                // Calculate REAL RAKE (Humans Only)
-                const { data: humanParticipants } = await supabase
-                    .from('tournament_participants')
-                    .select('tournament_id')
-                    .not('user_id', 'is', null);
+                // Calculate HOUSE PROFIT (Human Buyins - Human Wins)
+                const { data: pokerTx } = await supabase
+                    .from('transactions')
+                    .select('type, amount')
+                    .in('type', ['poker_buyin', 'poker_win']);
 
-                if (humanParticipants && humanParticipants.length > 0) {
-                    let totalRealRake = 0;
-                    humanParticipants.forEach(p => {
-                        const tournament = allTournaments.find(t => t.id === p.tournament_id);
-                        if (tournament) {
-                            totalRealRake += (tournament.buy_in * 0.05);
-                        }
-                    });
-                    setStats(prev => ({ ...prev, realRake: totalRealRake }));
+                if (pokerTx) {
+                    const buyins = pokerTx.filter(tx => tx.type === 'poker_buyin').reduce((sum, tx) => sum + Number(tx.amount), 0);
+                    const wins = pokerTx.filter(tx => tx.type === 'poker_win').reduce((sum, tx) => sum + Number(tx.amount), 0);
+                    setStats(prev => ({ ...prev, houseProfit: buyins - wins }));
                 }
 
                 // Set tournaments for list (most recent active)

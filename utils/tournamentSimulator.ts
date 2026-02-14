@@ -210,9 +210,27 @@ export class TournamentSimulator {
 
                             await supabase.from('tournament_participants').upsert(registrationRecords, { onConflict: 'tournament_id, bot_id' });
 
-                            // DEDUCT BUY-INS FROM BOTS
+                            // DEDUCT BUY-INS
+                            const { data: humanParticipants } = await supabase
+                                .from('tournament_participants')
+                                .select('user_id')
+                                .eq('tournament_id', t.id)
+                                .not('user_id', 'is', null);
+
+                            // Bot Dedutions
                             for (const bot of selectedBots) {
                                 await supabase.rpc('decrement_bot_balance', { bot_id_param: bot.id, amount_param: t.buy_in });
+                            }
+
+                            // Human Deductions (If any joined in this tick process)
+                            if (humanParticipants) {
+                                for (const hp of humanParticipants) {
+                                    await supabase.rpc('process_human_buyin', {
+                                        user_id_param: hp.user_id,
+                                        amount_param: t.buy_in,
+                                        tournament_id_param: t.id
+                                    });
+                                }
                             }
 
                             const newCount = t.players_count + selectedBots.length;
@@ -310,9 +328,10 @@ export class TournamentSimulator {
                         amount_param: prize
                     });
                 } else if (finalists[i].user_id) {
-                    await supabase.rpc('increment_profile_balance', {
+                    await supabase.rpc('process_human_win', {
                         user_id_param: finalists[i].user_id,
-                        amount_param: prize
+                        amount_param: prize,
+                        tournament_id_param: tournament.id
                     });
                 }
             }

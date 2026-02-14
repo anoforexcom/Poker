@@ -5,7 +5,7 @@ const AdminOverview: React.FC = () => {
     const { stats } = useSimulation();
 
     const kpis = [
-        { label: 'Platform Revenue (Real Rake)', value: `$${stats.realRake.toLocaleString()}`, icon: 'payments', color: 'text-emerald-400', trend: 'Humans Only' },
+        { label: 'Platform Profit (House)', value: `$${stats.houseProfit.toLocaleString()}`, icon: 'payments', color: 'text-emerald-400', trend: 'Humans Net' },
         { label: 'Total Bots', value: stats.totalBots.toLocaleString(), icon: 'smart_toy', color: 'text-blue-400', trend: 'Active' },
         { label: 'Active Tables', value: stats.runningTournaments, icon: 'casino', color: 'text-primary', trend: 'Live' },
         { label: 'Tournaments Finished', value: stats.finishedTournaments, icon: 'check_circle', color: 'text-gold', trend: 'Total' },
