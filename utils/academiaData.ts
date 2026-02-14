@@ -90,9 +90,10 @@ const generateBasicQuestion = (index: number): Question => {
     ];
     return {
         id: `basics-${index}`,
-        ...templates[index % templates.length],
         text: `${templates[index % templates.length].text} (Var ${index + 1})`,
-        explanation: templates[index % templates.length].expl // Explicitly map struct
+        options: templates[index % templates.length].options,
+        correctIndex: templates[index % templates.length].correct,
+        explanation: templates[index % templates.length].expl
     };
 };
 

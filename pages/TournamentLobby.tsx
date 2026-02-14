@@ -81,178 +81,255 @@ const TournamentLobby: React.FC = () => {
     const [timeLeft, setTimeLeft] = useState('');
 
     React.useEffect(() => {
-        if (!tournament || tournament.status !== 'Registering') return;
+        if (!tournament || tournament.status !== 'Registering') {
+            setTimeLeft('');
+            return;
+        }
+
+        // Helper to parse "HH:MM" (e.g. "14:00") into a future Date object for today/tomorrow
+        const parseScheduleTime = (timeStr: string) => {
+            if (timeStr === 'Now') return new Date();
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            const date = new Date();
+            date.setHours(hours, minutes, 0, 0);
+            if (date < new Date()) {
+                date.setDate(date.getDate() + 1); // Next day if time passed
+            }
+            return date;
+        };
 
         const updateTimer = () => {
             const now = new Date();
-            // Safe parse logic again just in case, though LiveWorld should handle it
-            let start = new Date();
-            if (tournament.startTime !== 'Now') {
-                // Try to parse the original ISODate if we had it, but here we might only have formatted time.
-                // Ideally we pass raw ISO string or we rely on the fact that if it's "Registering", it's in the future.
-                // NOTE: formatted "startTime" in tournament object is HH:MM.
-                // We need the RAW scheduled_start_time. 
-                // Limitation: The 'tournament' object from LiveWorldContext is already formatted.
-                // Fix: We should update LiveWorldContext to pass raw ISO or handle it here.
-                // For now, let's assume if we can't parse, we show "Wait".
-                // Actually, better to fetch the raw row or update LiveWorldContext.
-                // Let's stick to "Starts Soon" if we can't parse, but wait!
-                // The 'tournament' object in LiveWorldContext DOES NOT receive raw ISO.
-                // I will depend on the LiveWorld update I made earlier? 
-                // Wait, I updated LiveWorldContext to return formatted `startTime`.
-                // I should check if I can pass raw timestamp too.
+            const target = parseScheduleTime(tournament.startTime);
+            const diff = target.getTime() - now.getTime();
+
+            if (diff <= 0) {
+                setTimeLeft('Starting...');
+                return;
             }
+
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            setTimeLeft(`Starts in ${minutes}m ${seconds}s`);
         };
-        // For now, simple placeholder or relying on the "Starts In" text if valid.
-    }, [tournament]);
 
-    // ... (rest of component)
+        updateTimer();
+        const interval = setInterval(updateTimer, 1000);
+        return () => clearInterval(interval);
+    }, [tournament?.startTime, tournament?.status]);
 
-    // NOW matching the return for the Players Tab
-    // ...
+    const [isRegistering, setIsRegistering] = useState(false);
 
-    {
-        activeTab === 'players' && (
-            <div className="bg-surface border border-border-dark rounded-xl overflow-hidden max-w-3xl">
-                <table className="w-full text-sm">
-                    <thead className="bg-black/20 text-slate-400 font-bold">
-                        <tr>
-                            <th className="px-6 py-4 text-left">Player</th>
-                            <th className="px-6 py-4 text-left">Country</th>
-                            <th className="px-6 py-4 text-right">Chips</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border-dark/50">
-                        {lobbyPlayers.length === 0 ? (
-                            <tr><td colSpan={3} className="px-6 py-8 text-center text-slate-500">No players registered yet.</td></tr>
-                        ) : (
-                            lobbyPlayers.map((p, i) => (
-                                <tr key={i} className="hover:bg-white/5 transition-colors">
-                                    <td className="px-6 py-3 font-medium text-slate-300 flex items-center gap-2">
-                                        {p.name}
-                                        {!p.isBot && <span className="text-[10px] bg-primary text-white px-1 rounded ml-2">HUMAN</span>}
-                                        {p.id === user.id && <span className="text-[10px] bg-emerald-500 text-white px-1 rounded ml-2">YOU</span>}
-                                    </td>
-                                    <td className="px-6 py-3 text-slate-500 text-lg">{p.country}</td>
-                                    <td className="px-6 py-3 text-right text-gold font-mono font-bold">{p.chips.toLocaleString()}</td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
-        )
-    }
+    // Check if user is already registered in this specific tournament
+    const isRegistered = lobbyPlayers.some(p => p.id === user.id);
 
-    {
-        activeTab === 'tables' && (
-            <div className="flex flex-col items-center justify-center py-20 gap-4">
-                <span className="material-symbols-outlined text-5xl text-blue-500 opacity-50">table_restaurant</span>
-                <div className="text-center">
-                    <h4 className="text-white font-bold mb-1">Table #1</h4>
-                    <p className="text-sm text-slate-500 mb-4">View the action at the feature table.</p>
-                    <button
-                        onClick={handleObserve}
-                        className="px-6 py-2 bg-blue-600/20 border border-blue-500/30 text-blue-400 font-bold rounded-lg hover:bg-blue-600/30 transition-all uppercase tracking-widest text-xs"
-                    >
-                        Observe Table
+    const handleRegister = async () => {
+        if (!tournament) return;
+        setIsRegistering(true);
+        try {
+            if (user.balance < tournament.buyIn) {
+                showAlert('Insufficient funds', 'error');
+                return;
+            }
+            await registerForTournament(tournament.id);
+            showAlert('Successfully registered!', 'success');
+        } catch (error) {
+            console.error(error);
+            showAlert('Failed to register', 'error');
+        } finally {
+            setIsRegistering(false);
+        }
+    };
+
+    const handleGoToTable = () => {
+        if (!tournament) return;
+        setIsNavigating(true);
+        setTimeout(() => {
+            navigate(`/game/${tournament.id}`);
+        }, 500);
+    };
+
+    const handleObserve = () => {
+        if (!tournament) return;
+        navigate(`/game/${tournament.id}?spectate=true`);
+    };
+
+
+
+    return (
+        <div className="flex h-screen bg-background font-sans overflow-hidden">
+            <div className="flex-1 flex flex-col relative overflow-hidden">
+                <div className="p-4 border-b border-white/5 flex items-center justify-between bg-surface/50 backdrop-blur-md z-10">
+                    <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
+                        <span className="material-symbols-outlined">arrow_back</span>
+                        <span className="font-bold uppercase tracking-wider text-xs">Back</span>
                     </button>
+                    <div className="flex gap-1 bg-black/20 p-1 rounded-lg">
+                        {(['home', 'players', 'tables'] as const).map(tab => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all ${activeTab === tab ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'
+                                    }`}
+                            >
+                                {tab}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8 space-y-6">
+                    {activeTab === 'home' && (
+                        <div className="text-center py-12">
+                            <h2 className="text-3xl font-black text-white italic tracking-tighter mb-2">{tournament?.name || 'Tournament Lobby'}</h2>
+                            <p className="text-slate-500 max-w-md mx-auto">
+                                Welcome to the tournament lobby. Check the players list or observe the tables explicitly.
+                            </p>
+                        </div>
+                    )}
+
+                    {activeTab === 'players' && (
+                        <div className="bg-surface border border-border-dark rounded-xl overflow-hidden max-w-3xl">
+                            <table className="w-full text-sm">
+                                <thead className="bg-black/20 text-slate-400 font-bold">
+                                    <tr>
+                                        <th className="px-6 py-4 text-left">Player</th>
+                                        <th className="px-6 py-4 text-left">Country</th>
+                                        <th className="px-6 py-4 text-right">Chips</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-border-dark/50">
+                                    {lobbyPlayers.length === 0 ? (
+                                        <tr><td colSpan={3} className="px-6 py-8 text-center text-slate-500">No players registered yet.</td></tr>
+                                    ) : (
+                                        lobbyPlayers.map((p, i) => (
+                                            <tr key={i} className="hover:bg-white/5 transition-colors">
+                                                <td className="px-6 py-3 font-medium text-slate-300 flex items-center gap-2">
+                                                    {p.name}
+                                                    {!p.isBot && <span className="text-[10px] bg-primary text-white px-1 rounded ml-2">HUMAN</span>}
+                                                    {p.id === user.id && <span className="text-[10px] bg-emerald-500 text-white px-1 rounded ml-2">YOU</span>}
+                                                </td>
+                                                <td className="px-6 py-3 text-slate-500 text-lg">{p.country}</td>
+                                                <td className="px-6 py-3 text-right text-gold font-mono font-bold">{p.chips.toLocaleString()}</td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    )
+                    }
+
+                    {
+                        activeTab === 'tables' && (
+                            <div className="flex flex-col items-center justify-center py-20 gap-4">
+                                <span className="material-symbols-outlined text-5xl text-blue-500 opacity-50">table_restaurant</span>
+                                <div className="text-center">
+                                    <h4 className="text-white font-bold mb-1">Table #1</h4>
+                                    <p className="text-sm text-slate-500 mb-4">View the action at the feature table.</p>
+                                    <button
+                                        onClick={handleObserve}
+                                        className="px-6 py-2 bg-blue-600/20 border border-blue-500/30 text-blue-400 font-bold rounded-lg hover:bg-blue-600/30 transition-all uppercase tracking-widest text-xs"
+                                    >
+                                        Observe Table
+                                    </button>
+                                </div>
+                            </div>
+                        )
+                    }
+
+
                 </div>
             </div>
-        )
-    }
-                </div >
-            </div >
 
-    {/* Sidebar / Action Panel */ }
-    < div className = "w-full md:w-80 border-t md:border-t-0 md:border-l border-white/5 bg-surface/10 p-4 md:p-6 flex flex-col gap-6 md:gap-8 overflow-y-auto custom-scrollbar" >
-        {/* Active Games Switcher inside the tournament lobby panel for easy switching */ }
-        < div className = "md:hidden pt-2" >
+            {/* Sidebar / Action Panel */}
+            <div className="w-full md:w-80 border-t md:border-t-0 md:border-l border-white/5 bg-surface/10 p-4 md:p-6 flex flex-col gap-6 md:gap-8 overflow-y-auto custom-scrollbar" >
+                {/* Active Games Switcher inside the tournament lobby panel for easy switching */}
+                <div className="md:hidden pt-2" >
                     <ActiveGamesSwitcher />
                     <div className="h-px bg-white/5 my-6"></div>
-                </div >
-
-    <div>
-        <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Your Status</h2>
-        <div className="bg-white/5 border border-white/5 rounded-2xl p-6 text-center shadow-inner">
-            <div className={`text-sm font-black uppercase tracking-tighter mb-1 ${isRegistered ? 'text-emerald-400' : 'text-slate-500'}`}>
-                {isRegistered ? 'Registered' : 'Not Registered'}
-            </div>
-            <div className="text-white text-lg font-black font-mono tracking-tighter">${user.balance.toLocaleString()}</div>
-        </div>
-    </div>
-
-{
-    isRegistered ? (
-        <div className="space-y-3">
-            <button className="w-full py-4 bg-green-500/10 border border-green-500 text-green-500 font-black rounded-xl cursor-default flex flex-col items-center justify-center gap-1">
-                <div className="flex items-center gap-2"><span className="material-symbols-outlined">check_circle</span> REGISTERED</div>
-            </button>
-            {/* Waiting Room Logic */}
-            {tournament.status === 'Registering' && tournament.startTime !== 'Now' ? (
-                <div className="w-full py-4 bg-slate-800 border border-slate-700 rounded-xl flex flex-col items-center justify-center gap-2">
-                    <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest animate-pulse">Tournament Starts In</span>
-                    <div className="text-2xl font-black text-white font-mono">
-                        {timeLeft || tournament.startTime}
-                    </div>
-                    <p className="text-[9px] text-slate-500">You are registered. Please wait.</p>
                 </div>
-            ) : (
-                <button
-                    onClick={handleGoToTable}
-                    disabled={isNavigating}
-                    className="w-full py-4 bg-primary hover:bg-blue-600 disabled:bg-primary/50 text-white font-black rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2 animate-pulse"
-                >
-                    {isNavigating ? (
-                        <>
-                            <span className="size-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                            LOADING...
-                        </>
+
+                <div>
+                    <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Your Status</h2>
+                    <div className="bg-white/5 border border-white/5 rounded-2xl p-6 text-center shadow-inner">
+                        <div className={`text-sm font-black uppercase tracking-tighter mb-1 ${isRegistered ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            {isRegistered ? 'Registered' : 'Not Registered'}
+                        </div>
+                        <div className="text-white text-lg font-black font-mono tracking-tighter">${user.balance.toLocaleString()}</div>
+                    </div>
+                </div>
+
+                {
+                    isRegistered ? (
+                        <div className="space-y-3">
+                            <button className="w-full py-4 bg-green-500/10 border border-green-500 text-green-500 font-black rounded-xl cursor-default flex flex-col items-center justify-center gap-1">
+                                <div className="flex items-center gap-2"><span className="material-symbols-outlined">check_circle</span> REGISTERED</div>
+                            </button>
+                            {/* Waiting Room Logic */}
+                            {tournament.status === 'Registering' && tournament.startTime !== 'Now' ? (
+                                <div className="w-full py-4 bg-slate-800 border border-slate-700 rounded-xl flex flex-col items-center justify-center gap-2">
+                                    <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest animate-pulse">Tournament Starts In</span>
+                                    <div className="text-2xl font-black text-white font-mono">
+                                        {timeLeft || tournament.startTime}
+                                    </div>
+                                    <p className="text-[9px] text-slate-500">You are registered. Please wait.</p>
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={handleGoToTable}
+                                    disabled={isNavigating}
+                                    className="w-full py-4 bg-primary hover:bg-blue-600 disabled:bg-primary/50 text-white font-black rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2 animate-pulse"
+                                >
+                                    {isNavigating ? (
+                                        <>
+                                            <span className="size-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                                            LOADING...
+                                        </>
+                                    ) : (
+                                        <>
+                                            GO TO TABLE <span className="material-symbols-outlined">login</span>
+                                        </>
+                                    )}
+                                </button>
+                            )}
+                        </div>
+                    ) : isRegistering ? (
+                        <button
+                            onClick={handleRegister}
+                            className="w-full py-4 bg-poker-green hover:bg-green-500 text-white font-black rounded-xl shadow-lg shadow-poker-green/20 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+                        >
+                            REGISTER NOW <span className="block text-xs font-normal opacity-80 mt-1">${tournament.buyIn} Buy-in</span>
+                        </button>
                     ) : (
-                        <>
-                            GO TO TABLE <span className="material-symbols-outlined">login</span>
-                        </>
-                    )}
-                </button>
-            )}
+                        <button
+                            onClick={handleObserve}
+                            className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl shadow-lg transition-all"
+                        >
+                            OBSERVE TABLES
+                        </button>
+                    )
+                }
+
+                <div className="space-y-4 pt-6 border-t border-border-dark">
+                    <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">Entrants</span>
+                        <span className="text-white font-bold">
+                            {tournament.players}
+                            {tournament.type === 'tournament' ? ' (Unlimited)' : ` / ${tournament.maxPlayers}`}
+                        </span>
+                    </div>
+                    <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div className="bg-poker-green h-full" style={{ width: tournament.type === 'tournament' ? '100%' : `${(tournament.players / tournament.maxPlayers) * 100}%` }}></div>
+                    </div>
+
+                    <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">Start Time</span>
+                        <span className="text-white font-bold">{tournament.startTime}</span>
+                    </div>
+                </div>
+            </div>
         </div>
-    ) : isRegistering ? (
-        <button
-            onClick={handleRegister}
-            className="w-full py-4 bg-poker-green hover:bg-green-500 text-white font-black rounded-xl shadow-lg shadow-poker-green/20 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
-        >
-            REGISTER NOW <span className="block text-xs font-normal opacity-80 mt-1">${tournament.buyIn} Buy-in</span>
-        </button>
-    ) : (
-        <button
-            onClick={handleObserve}
-            className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl shadow-lg transition-all"
-        >
-            OBSERVE TABLES
-        </button>
-    )
-}
-
-<div className="space-y-4 pt-6 border-t border-border-dark">
-    <div className="flex justify-between text-sm">
-        <span className="text-slate-500">Entrants</span>
-        <span className="text-white font-bold">
-            {tournament.players}
-            {tournament.type === 'tournament' ? ' (Unlimited)' : ` / ${tournament.maxPlayers}`}
-        </span>
-    </div>
-    <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-        <div className="bg-poker-green h-full" style={{ width: tournament.type === 'tournament' ? '100%' : `${(tournament.players / tournament.maxPlayers) * 100}%` }}></div>
-    </div>
-
-    <div className="flex justify-between text-sm">
-        <span className="text-slate-500">Start Time</span>
-        <span className="text-white font-bold">{tournament.startTime}</span>
-    </div>
-</div>
-
-            </div >
-        </div >
     );
 };
 

@@ -24,7 +24,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         };
 
         setMessages(prev => {
-            const newMap = new Map(prev);
+            const newMap = new Map<string, ChatMessage[]>(prev);
             const tournamentMessages = newMap.get(tournamentId) || [];
             newMap.set(tournamentId, [...tournamentMessages, newMessage]);
             return newMap;
@@ -37,7 +37,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const clearMessages = useCallback((tournamentId: string) => {
         setMessages(prev => {
-            const newMap = new Map(prev);
+            const newMap = new Map<string, any>(prev);
             newMap.delete(tournamentId);
             return newMap;
         });
@@ -80,7 +80,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         });
 
         setBotTimers(prev => {
-            const newMap = new Map(prev);
+            const newMap = new Map<string, any>(prev);
             newMap.set(tournamentId, newTimers);
             return newMap;
         });
@@ -91,7 +91,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         timers.forEach(timer => clearInterval(timer));
 
         setBotTimers(prev => {
-            const newMap = new Map(prev);
+            const newMap = new Map<string, any>(prev);
             newMap.delete(tournamentId);
             return newMap;
         });
