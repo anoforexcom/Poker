@@ -74,12 +74,14 @@ export class TournamentSimulator {
         const tournaments = [];
         const now = new Date();
 
-        // Create tournaments starting every 15 minutes for the next 24 hours
-        for (let i = -4; i < 96; i++) { // From 1 hour ago to 24 hours ahead
-            const startTime = new Date(now.getTime() + i * 15 * 60000);
-            const lateRegUntil = new Date(startTime.getTime() + 30 * 60000); // 30 mins late reg
+        // Create tournaments starting every 10 minutes for more variety
+        for (let i = -12; i < 144; i++) {
+            const startTime = new Date(now.getTime() + i * 10 * 60000);
+            const lateRegUntil = new Date(startTime.getTime() + 30 * 60000);
 
-            const type: GameType = i % 4 === 0 ? 'tournament' : i % 4 === 1 ? 'cash' : i % 4 === 2 ? 'sitgo' : 'spingo';
+            // Variety distribution
+            const rand = Math.random();
+            const type: GameType = rand > 0.8 ? 'tournament' : rand > 0.6 ? 'spingo' : rand > 0.4 ? 'sitgo' : 'cash';
 
             tournaments.push(this.generateTournamentData(type, startTime, lateRegUntil));
         }
@@ -98,28 +100,35 @@ export class TournamentSimulator {
         if (now > lateRegUntil) status = 'running';
         else if (now > startTime) status = 'late_reg';
 
+        // Massive field for Tournaments
+        const isMajor = type === 'tournament' && Math.random() > 0.7;
+        const maxPlayers = type === 'cash' ? 6 : type === 'spingo' ? 3 : type === 'sitgo' ? 9 : 5000;
+
         return {
             id,
-            name: this.generateRealisticName(type, buyIn, startTime),
+            name: this.generateRealisticName(type, buyIn, startTime, isMajor),
             type,
             status,
             buy_in: buyIn,
-            prize_pool: type === 'cash' ? 0 : (Math.floor(Math.random() * 10 + 5) * buyIn * 0.95),
-            players_count: Math.floor(Math.random() * 10),
-            max_players: type === 'cash' ? 6 : type === 'spingo' ? 3 : 9999, // 9999 = Unlimited for Tournaments
+            prize_pool: 0, // Calculated dynamically by simulator
+            players_count: Math.floor(Math.random() * 5),
+            max_players: maxPlayers,
             scheduled_start_time: startTime.toISOString(),
             late_reg_until: lateRegUntil.toISOString(),
             current_blind_level: 1
         };
     }
 
-    private generateRealisticName(type: GameType, buyIn: number, time: Date): string {
+    private generateRealisticName(type: GameType, buyIn: number, time: Date, isMajor?: boolean): string {
         const hour = time.getHours().toString().padStart(2, '0');
         const min = time.getMinutes().toString().padStart(2, '0');
         const timeStr = `${hour}:${min}`;
 
         if (type === 'spingo') return `Jackpot Spin & Go $${buyIn}`;
         if (type === 'cash') return `High Stakes NLH ($${buyIn / 100}/$${buyIn / 50})`;
+        if (type === 'sitgo') return `Turbo 9-Max Sit & Go $${buyIn}`;
+
+        if (isMajor) return `🏆 THE MEGA MAJOR $${buyIn} [$${(buyIn * 500).toLocaleString()} GTD]`;
 
         const names = [
             `The Daily Big $${buyIn}`,
@@ -185,24 +194,31 @@ export class TournamentSimulator {
 
                 // Fill with BOTS if registering or late_reg
                 if (t.status === 'registering' || t.status === 'late_reg') {
-                    // Time-of-day Traffic Simulation (Peak vs Off-Peak)
                     const hour = now.getHours();
-                    const isPeak = (hour >= 18 && hour <= 23) || (hour >= 0 && hour <= 2); // 6pm to 2am peak
-                    const trafficMultiplier = isPeak ? 2.5 : 1.0;
+                    const isPeak = (hour >= 18 && hour <= 23) || (hour >= 0 && hour <= 2);
+                    const trafficMultiplier = isPeak ? 4.0 : 1.5;
 
-                    const fillingChance = hasHuman ? 1.0 : ((t.status === 'late_reg' ? 0.2 : 0.4) * trafficMultiplier);
-                    if (t.players_count < t.max_players && Math.random() < fillingChance) {
-                        const isAlmostEmpty = t.players_count < 2;
-                        const baseCount = hasHuman ? (isAlmostEmpty ? 8 : 4) : (isAlmostEmpty ? 2 : 1);
-                        const botsToRegisterCount = Math.min(
-                            Math.floor((Math.random() * 5 + baseCount) * trafficMultiplier),
-                            t.max_players - t.players_count
-                        );
+                    // INSTANT START FOR SNG/SPINS IF HUMAN JOINED
+                    let botsToRegisterCount = 0;
+                    if (hasHuman && (t.type === 'sitgo' || t.type === 'spingo')) {
+                        botsToRegisterCount = t.max_players - t.players_count;
+                    } else {
+                        // Massive Waves for Tournaments
+                        const fillingChance = hasHuman ? 1.0 : (t.type === 'tournament' ? 0.8 : 0.4);
+                        if (Math.random() < fillingChance) {
+                            const isMajor = t.name.includes('MAJOR');
+                            const baseCount = isMajor ? 30 : (hasHuman ? 12 : 5);
+                            botsToRegisterCount = Math.min(
+                                Math.floor((Math.random() * baseCount + baseCount) * trafficMultiplier),
+                                t.max_players - t.players_count
+                            );
+                        }
+                    }
 
-                        const { data: availableBots } = await supabase.from('bots').select('id').limit(100);
-                        if (availableBots) {
-                            const selectedBots = availableBots.sort(() => Math.random() - 0.5).slice(0, botsToRegisterCount);
-                            const registrationRecords = selectedBots.map(bot => ({
+                    if (botsToRegisterCount > 0) {
+                        const { data: availableBots } = await supabase.from('bots').select('id').limit(botsToRegisterCount);
+                        if (availableBots && availableBots.length > 0) {
+                            const registrationRecords = availableBots.map(bot => ({
                                 tournament_id: t.id,
                                 bot_id: bot.id,
                                 status: 'active'
@@ -210,30 +226,12 @@ export class TournamentSimulator {
 
                             await supabase.from('tournament_participants').upsert(registrationRecords, { onConflict: 'tournament_id, bot_id' });
 
-                            // DEDUCT BUY-INS
-                            const { data: humanParticipants } = await supabase
-                                .from('tournament_participants')
-                                .select('user_id')
-                                .eq('tournament_id', t.id)
-                                .not('user_id', 'is', null);
-
-                            // Bot Dedutions
-                            for (const bot of selectedBots) {
+                            // Deductions and Prize updates
+                            for (const bot of availableBots) {
                                 await supabase.rpc('decrement_bot_balance', { bot_id_param: bot.id, amount_param: t.buy_in });
                             }
 
-                            // Human Deductions (If any joined in this tick process)
-                            if (humanParticipants) {
-                                for (const hp of humanParticipants) {
-                                    await supabase.rpc('process_human_buyin', {
-                                        user_id_param: hp.user_id,
-                                        amount_param: t.buy_in,
-                                        tournament_id_param: t.id
-                                    });
-                                }
-                            }
-
-                            const newCount = t.players_count + selectedBots.length;
+                            const newCount = t.players_count + availableBots.length;
                             const newPrizePool = Math.floor(newCount * t.buy_in * 0.95);
                             await supabase.from('tournaments').update({
                                 players_count: newCount,
@@ -272,10 +270,18 @@ export class TournamentSimulator {
             if (!runningTournaments) return;
 
             for (const t of runningTournaments) {
-                const eliminationChance = t.players_count > 50 ? 0.8 : (t.players_count > 10 ? 0.4 : 0.2);
+                // Adaptive elimination speed for massive fields
+                let eliminationChance = 0.2;
+                let maxToEliminate = 1;
+
+                if (t.players_count > 1000) { eliminationChance = 0.9; maxToEliminate = 50; }
+                else if (t.players_count > 500) { eliminationChance = 0.8; maxToEliminate = 30; }
+                else if (t.players_count > 100) { eliminationChance = 0.6; maxToEliminate = 15; }
+                else if (t.players_count > 50) { eliminationChance = 0.4; maxToEliminate = 5; }
+                else if (t.players_count > 10) { eliminationChance = 0.3; maxToEliminate = 2; }
 
                 if (Math.random() < eliminationChance && t.players_count > 3) {
-                    const toEliminate = Math.min(Math.floor(Math.random() * 3) + 1, t.players_count - 3);
+                    const toEliminate = Math.min(Math.floor(Math.random() * maxToEliminate) + 1, t.players_count - 3);
                     const { data: victims } = await supabase
                         .from('tournament_participants')
                         .select('bot_id, user_id')
@@ -301,7 +307,7 @@ export class TournamentSimulator {
 
                 const startTime = new Date(t.scheduled_start_time);
                 const durationHours = (new Date().getTime() - startTime.getTime()) / (1000 * 60 * 60);
-                if (t.players_count <= 3 || durationHours > 2) {
+                if (t.players_count <= 3 || durationHours > 3) {
                     await this.concludeTournament(t);
                 }
             }
