@@ -174,7 +174,15 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
             .from('tournament_participants')
             .insert({ tournament_id: tournamentId, user_id: userId, status: 'active' });
 
-        if (joinError) throw joinError;
+        if (joinError) {
+            console.error('[LIVE_WORLD] Registration error:', joinError);
+            // FAIL-SAFE for Demo/Guest accounts if the DB profile doesn't exist or transient error
+            if (userId === '00000000-0000-0000-0000-000000000002') {
+                console.warn('[LIVE_WORLD] Guest registration DB failure - bypassing for demo.');
+            } else {
+                throw joinError;
+            }
+        }
 
         // 2. Increment player count in tournament table
         await supabase

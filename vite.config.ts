@@ -19,22 +19,18 @@ export default defineConfig(({ mode }) => {
         },
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
         manifest: {
-          name: 'Poker Elite 24/7',
-          short_name: 'PokerElite',
-          description: 'Advanced 24/7 Poker Platform',
+          name: 'BestPoker.Cash',
+          short_name: 'BestPoker',
+          description: 'Official BestPoker.Cash App - Play 24/7',
           theme_color: '#0f172a',
           background_color: '#0f172a',
           display: 'standalone',
           icons: [
             {
-              src: 'https://api.dicebear.com/7.x/shapes/svg?seed=poker192',
-              sizes: '192x192',
-              type: 'image/svg+xml'
-            },
-            {
-              src: 'https://api.dicebear.com/7.x/shapes/svg?seed=poker512',
-              sizes: '512x512',
-              type: 'image/svg+xml'
+              src: 'pwa-icon.svg',
+              sizes: '192x192 512x512',
+              type: 'image/svg+xml',
+              purpose: 'any'
             }
           ]
         }
