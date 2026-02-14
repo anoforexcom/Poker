@@ -48,8 +48,8 @@ export class TournamentSimulator {
 
         // Seed Bots if missing
         if (botCount === 0) {
-            console.log('[SIMULATOR] Seeding initial population (500 bots)...');
-            const totalBots = 500;
+            console.log('[SIMULATOR] Seeding initial population (3000 bots)...');
+            const totalBots = 3000;
             const batchSize = 100;
 
             for (let i = 0; i < totalBots; i += batchSize) {
@@ -201,7 +201,7 @@ export class TournamentSimulator {
                 if (t.status === 'registering' || t.status === 'late_reg') {
                     const hour = now.getHours();
                     const isPeak = (hour >= 18 && hour <= 23) || (hour >= 0 && hour <= 2);
-                    const trafficMultiplier = isPeak ? 4.0 : 1.5;
+                    const trafficMultiplier = isPeak ? 8.0 : 3.5; // significantly increased for ~3000 online
 
                     // INSTANT START FOR SNG/SPINS IF HUMAN JOINED
                     let botsToRegisterCount = 0;
