@@ -185,10 +185,10 @@ export class TournamentSimulator {
                     // 100% chance if human is waiting, otherwise normal chance
                     const fillingChance = hasHuman ? 1.0 : (t.status === 'late_reg' ? 0.2 : 0.5);
                     if (t.players_count < t.max_players && Math.random() < fillingChance) {
-                        // Increase registration speed if almost empty OR human is waiting
+                        // Increase registration speed significantly if human is waiting
                         const isAlmostEmpty = t.players_count < 2;
-                        const baseCount = hasHuman ? (isAlmostEmpty ? 5 : 3) : (isAlmostEmpty ? 2 : 1);
-                        const botsToRegisterCount = Math.min(Math.floor(Math.random() * 3) + baseCount, t.max_players - t.players_count);
+                        const baseCount = hasHuman ? (isAlmostEmpty ? 8 : 4) : (isAlmostEmpty ? 2 : 1);
+                        const botsToRegisterCount = Math.min(Math.floor(Math.random() * 5) + baseCount, t.max_players - t.players_count);
 
                         const { data: availableBots } = await supabase.from('bots').select('id').limit(100);
                         if (availableBots) {

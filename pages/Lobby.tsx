@@ -315,12 +315,16 @@ const Lobby: React.FC = () => {
                         </span>
                         <span className="flex items-center gap-1">
                           <span className="material-symbols-outlined text-[10px] md:text-base text-slate-500">group</span>
-                          <span className="font-mono font-bold leading-none">{t.players}<span className="text-slate-600">/{t.maxPlayers}</span></span>
+                          <span className="font-mono font-bold leading-none">
+                            {t.players}
+                            {t.type !== 'tournament' && <span className="text-slate-600">/{t.maxPlayers}</span>}
+                            {t.type === 'tournament' && <span className="text-slate-600 text-[8px] ml-1">UNLIMITED</span>}
+                          </span>
                         </span>
                         {t.type !== 'cash' && (
                           <span className="flex items-center gap-1 text-gold-light">
                             <span className="material-symbols-outlined text-[10px] md:text-base">emoji_events</span>
-                            <span className="font-black">${t.prizePool.toLocaleString()}</span>
+                            <span className="font-black">${t.prizePool.toLocaleString()} <span className="text-[8px] animate-pulse">UPDATING</span></span>
                           </span>
                         )}
                       </div>
@@ -364,7 +368,10 @@ const Lobby: React.FC = () => {
                       </div>
                       <div className="flex justify-between text-xs">
                         <span className="text-slate-400">Players</span>
-                        <span className="text-white font-mono">{t.players}/{t.maxPlayers}</span>
+                        <span className="text-white font-mono">
+                          {t.players}
+                          {t.type !== 'tournament' ? `/${t.maxPlayers}` : ' (Unlimited)'}
+                        </span>
                       </div>
                       {t.type !== 'cash' && (
                         <div className="flex justify-between text-xs">
@@ -379,7 +386,7 @@ const Lobby: React.FC = () => {
                     <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden mb-3">
                       <div
                         className={`h-full rounded-full ${t.status === 'Running' ? 'bg-blue-500' : 'bg-poker-green'}`}
-                        style={{ width: `${(t.players / t.maxPlayers) * 100}%` }}
+                        style={{ width: t.type === 'tournament' ? '100%' : `${(t.players / t.maxPlayers) * 100}%` }}
                       ></div>
                     </div>
 

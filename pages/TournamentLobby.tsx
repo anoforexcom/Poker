@@ -123,9 +123,12 @@ const TournamentLobby: React.FC = () => {
                         </div>
 
                         <div className="text-left md:text-right bg-gold/5 p-4 rounded-2xl border border-gold/10 w-full md:w-auto">
-                            <div className="text-2xl md:text-4xl font-black text-gold font-mono tracking-tighter">${tournament.prizePool.toLocaleString()}</div>
+                            <div className="text-2xl md:text-4xl font-black text-gold font-mono tracking-tighter">
+                                ${tournament.prizePool.toLocaleString()}
+                                {tournament.type === 'tournament' && <span className="text-[10px] ml-1 animate-pulse">INC.</span>}
+                            </div>
                             <div className="text-[10px] font-black text-gold/60 uppercase tracking-widest">
-                                {tournament.type === 'sitgo' || tournament.type === 'spingo' ? 'Max Prize' : 'Guaranteed Prize Pool'}
+                                {tournament.type === 'sitgo' || tournament.type === 'spingo' ? 'Max Prize' : 'Guaranteed Prize Pool (Dynamic)'}
                             </div>
                         </div>
                     </div>
@@ -325,10 +328,13 @@ const TournamentLobby: React.FC = () => {
                 <div className="space-y-4 pt-6 border-t border-border-dark">
                     <div className="flex justify-between text-sm">
                         <span className="text-slate-500">Entrants</span>
-                        <span className="text-white font-bold">{tournament.players} / {tournament.maxPlayers}</span>
+                        <span className="text-white font-bold">
+                            {tournament.players}
+                            {tournament.type === 'tournament' ? ' (Unlimited)' : ` / ${tournament.maxPlayers}`}
+                        </span>
                     </div>
                     <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                        <div className="bg-poker-green h-full" style={{ width: `${(tournament.players / tournament.maxPlayers) * 100}%` }}></div>
+                        <div className="bg-poker-green h-full" style={{ width: tournament.type === 'tournament' ? '100%' : `${(tournament.players / tournament.maxPlayers) * 100}%` }}></div>
                     </div>
 
                     <div className="flex justify-between text-sm">
