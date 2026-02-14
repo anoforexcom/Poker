@@ -70,9 +70,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
     `}>
       <div className="p-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="bg-primary p-2 rounded-lg">
-            <span className="material-symbols-outlined text-white">style</span>
-          </div>
+          <img src="/logo.svg" className="size-10 rounded-xl" alt="Logo" />
           <h1 className="text-xl font-bold tracking-tight text-white font-display">BESTPOKER.CASH</h1>
         </div>
         <button onClick={onClose} className="md:hidden text-slate-400 hover:text-white">
