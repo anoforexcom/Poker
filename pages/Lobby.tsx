@@ -170,7 +170,7 @@ const Lobby: React.FC = () => {
             <div className="flex flex-wrap gap-1.5 sm:gap-2">
               <div className="bg-emerald-500/10 text-emerald-400 text-[9px] font-black px-2 py-1 rounded-lg border border-emerald-500/20 flex items-center gap-1.5 shadow-sm">
                 <span className="size-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-                {safeTournaments.length} <span className="hidden xs:inline">TOURNAMENTS</span>
+                {filteredTournaments.length} <span className="hidden xs:inline">ACTIVE GAMES</span>
               </div>
               <div className="bg-primary/10 text-primary-light text-[9px] font-black px-2 py-1 rounded-lg border border-primary/20 flex items-center gap-1.5 shadow-sm">
                 <span className="size-1.5 bg-primary-light rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]"></span>

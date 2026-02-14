@@ -49,12 +49,14 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     const fetchOnlinePlayers = async () => {
         try {
-            const { count, error } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
-            if (error) {
-                console.error('Error fetching player count:', error);
-                return;
-            }
-            setOnlinePlayers(count || 0);
+            const { count: humanCount, error: humanError } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
+            const { count: botCount, error: botError } = await supabase.from('bots').select('*', { count: 'exact', head: true });
+
+            if (humanError) console.error('Error fetching human count:', humanError);
+            if (botError) console.error('Error fetching bot count:', botError);
+
+            const total = (humanCount || 0) + (botCount || 0);
+            setOnlinePlayers(total);
         } catch (err) {
             console.error('Unexpected error fetching player count:', err);
         }
