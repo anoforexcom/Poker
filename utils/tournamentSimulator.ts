@@ -116,7 +116,7 @@ export class TournamentSimulator {
             status,
             buy_in: buyIn,
             prize_pool: 0, // Calculated dynamically by simulator
-            players_count: Math.floor(Math.random() * 5),
+            players_count: 0, // Start at 0, let simulator fill with real bots
             max_players: maxPlayers,
             scheduled_start_time: startTime.toISOString(),
             late_reg_until: lateRegUntil.toISOString(),
