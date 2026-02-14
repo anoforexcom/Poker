@@ -24,6 +24,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ChatProvider } from './contexts/ChatContext';
 import { SimulationProvider } from './contexts/SimulationContext';
 import { ActiveGamesSwitcher } from './components/ActiveGamesSwitcher';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
 
 // Scroll to top on route change
 const ScrollToTop = () => {
@@ -301,6 +302,7 @@ const App: React.FC = () => {
     <HashRouter>
       <ScrollToTop />
       <NotificationProvider>
+        <PWAInstallPrompt />
         <AuthProvider>
           <AppRoutes />
         </AuthProvider>

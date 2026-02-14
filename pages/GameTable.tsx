@@ -572,7 +572,7 @@ const GameTable: React.FC = () => {
       </div>
 
       {/* Action Footer - Optimized for Mobile */}
-      <footer className="p-2 md:p-8 flex flex-col md:grid md:grid-cols-12 items-center md:items-end gap-2 md:gap-8 bg-gradient-to-t from-background via-background/80 to-transparent z-20 pb-safe w-full">
+      <footer className="p-1 md:p-8 flex flex-col md:grid md:grid-cols-12 items-center md:items-end gap-1 md:gap-8 bg-gradient-to-t from-background via-background/80 to-transparent z-20 pb-safe w-full">
         {/* Chat - Hidden on mobile to save space, but accessible via settings */}
         <div className="hidden lg:block md:col-span-3 w-full">
           <div className="bg-background/80 backdrop-blur-lg border border-slate-700 rounded-xl overflow-hidden flex flex-col h-28 md:h-40 shadow-lg">
@@ -848,7 +848,7 @@ const HeroCard = ({ suit, value, rotate }: any) => {
   }
 
   return (
-    <div className={`w-11 h-16 md:w-20 md:h-28 bg-white rounded-lg md:rounded-xl border-2 border-primary flex flex-col p-1 md:p-2 items-center justify-between shadow-2xl transform transition-transform md:hover:-translate-y-2 cursor-pointer ${rotate} ${getSuitColor(suit)}`}>
+    <div className={`w-12 h-18 md:w-20 md:h-28 bg-white rounded-lg md:rounded-xl border-2 border-primary flex flex-col p-1 md:p-2 items-center justify-between shadow-2xl transform transition-transform md:hover:-translate-y-2 cursor-pointer ${rotate} ${getSuitColor(suit)}`}>
       <span className="text-base md:text-2xl font-black self-start leading-none tracking-tighter">{value}{getSuitSymbol(suit)}</span>
       <span className="text-xl md:text-4xl">{getSuitSymbol(suit)}</span>
       <span className="text-base md:text-2xl font-black self-end leading-none tracking-tighter rotate-180">{value}{getSuitSymbol(suit)}</span>

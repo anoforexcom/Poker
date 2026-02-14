@@ -38,12 +38,12 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="p-4 md:p-8 max-w-[1440px] mx-auto grid grid-cols-12 gap-4 md:gap-8">
-      <div className="col-span-12">
-        <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight font-display mb-2">Performance Dashboard</h2>
-        <p className="text-sm text-slate-400">Track your progress and analyze your gameplay.</p>
+      <div className="col-span-12 px-2 md:px-0">
+        <h2 className="text-xl md:text-3xl font-bold text-white tracking-tight font-display mb-1 md:mb-2">Performance Dashboard</h2>
+        <p className="text-[10px] md:text-sm text-slate-400">Track your progress and analyze your gameplay.</p>
       </div>
 
-      <div className="col-span-12 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+      <div className="col-span-12 grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
         <KPIBox
           title="Current Balance"
           value={`$${user?.balance.toLocaleString()}`}
@@ -147,13 +147,13 @@ const Dashboard: React.FC = () => {
 };
 
 const KPIBox = ({ title, value, trend, trendType }: any) => (
-  <div className="p-5 rounded-xl bg-surface border border-border-dark shadow-sm">
-    <p className="text-xs font-medium text-slate-500 uppercase tracking-widest">{title}</p>
-    <p className={`text-2xl font-black mt-2 ${trendType === 'positive' ? 'text-poker-green' : trendType === 'negative' ? 'text-rose-500' : 'text-white'}`}>
+  <div className="p-3 md:p-5 rounded-xl bg-surface border border-border-dark shadow-sm">
+    <p className="text-[9px] md:text-xs font-medium text-slate-500 uppercase tracking-widest truncate">{title}</p>
+    <p className={`text-lg md:text-2xl font-black mt-1 md:mt-2 ${trendType === 'positive' ? 'text-poker-green' : trendType === 'negative' ? 'text-rose-500' : 'text-white'}`}>
       {value}
     </p>
-    <div className={`flex items-center gap-1 mt-2 text-[10px] font-bold uppercase tracking-wider ${trendType === 'positive' ? 'text-poker-green' : 'text-slate-400'}`}>
-      <span className="material-symbols-outlined text-sm">{trendType === 'positive' ? 'trending_up' : trendType === 'negative' ? 'trending_down' : 'sync'}</span>
+    <div className={`flex items-center gap-1 mt-1 md:mt-2 text-[9px] md:text-[10px] font-bold uppercase tracking-wider ${trendType === 'positive' ? 'text-poker-green' : 'text-slate-400'}`}>
+      <span className="material-symbols-outlined text-xs md:text-sm">{trendType === 'positive' ? 'trending_up' : trendType === 'negative' ? 'trending_down' : 'sync'}</span>
       {trend}
     </div>
   </div>

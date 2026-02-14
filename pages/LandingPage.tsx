@@ -41,8 +41,9 @@ const TESTIMONIALS = [
 
 const HeroSection = () => {
     const { scrollY } = useScroll();
-    const y1 = useTransform(scrollY, [0, 500], [0, 200]);
-    const y2 = useTransform(scrollY, [0, 500], [0, -150]);
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
+    const y1 = useTransform(scrollY, [0, 500], [0, isMobile ? 0 : 200]);
+    const y2 = useTransform(scrollY, [0, 500], [0, isMobile ? 0 : -150]);
 
     return (
         <section className="relative min-h-screen flex items-center justify-center pt-20">
@@ -130,7 +131,7 @@ const HeroSection = () => {
                     initial={{ opacity: 0, scale: 0.8, rotate: -5 }}
                     animate={{ opacity: 1, scale: 1, rotate: 0 }}
                     transition={{ duration: 1, delay: 0.2 }}
-                    className="relative hidden lg:block"
+                    className="relative block"
                 >
                     {/* Premium Table Composition */}
                     <div className="relative z-10 group">
@@ -138,7 +139,7 @@ const HeroSection = () => {
                         <img
                             src="/hero_poker.png"
                             alt="Professional Poker Table"
-                            className="relative rounded-2xl shadow-2xl border border-white/10 rotate-3 group-hover:rotate-0 transition-all duration-700 object-cover w-full h-[500px]"
+                            className="relative rounded-2xl shadow-2xl border border-white/10 lg:rotate-3 lg:group-hover:rotate-0 transition-all duration-700 object-cover w-full h-[250px] md:h-[400px] lg:h-[500px]"
                         />
 
                         {/* Overlay Gradient */}

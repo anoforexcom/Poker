@@ -144,9 +144,10 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
         const tournament = tournaments.find(t => t.id === tournamentId);
         if (!tournament) throw new Error('Tournament not found');
 
-        // Check if full
-        if (tournament.players >= tournament.maxPlayers) {
-            throw new Error('Tournament is full');
+        // Check if full (Only for Cash and Sit&Go, Tournaments are unlimited)
+        const isUnlimited = tournament.type === 'tournament' || tournament.type === 'spingo';
+        if (!isUnlimited && tournament.players >= tournament.maxPlayers) {
+            throw new Error('This game is full');
         }
 
         // If it's a Demo Guest user or empty ID (not initialized), we bypass the DB

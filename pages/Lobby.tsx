@@ -295,40 +295,45 @@ const Lobby: React.FC = () => {
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 md:gap-4">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className={`size-2 rounded-full ${t.status === 'Running' ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-slate-700'}`}></span>
-                        <h3 className="text-xs md:text-sm font-black text-white truncate leading-tight">{t.name}</h3>
-                        <span className={`text-[8px] md:text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-black/40 ${getStatusColor(t.status)}`}>
-                          {t.status}
-                        </span>
-                        {t.type === 'spingo' && <span className="text-[8px] md:text-[9px] bg-gold/20 text-gold px-1.5 py-0.5 rounded font-black border border-gold/10">SPIN</span>}
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className={`size-2 rounded-full shrink-0 ${t.status === 'Running' ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-slate-700'}`}></span>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-[11px] xs:text-xs md:text-sm font-black text-white truncate leading-none mb-1">{t.name}</h3>
+                          <div className="flex items-center gap-1">
+                            <span className={`text-[7px] md:text-[9px] font-black uppercase tracking-widest px-1 py-0.5 rounded bg-black/40 ${getStatusColor(t.status)}`}>
+                              {t.status}
+                            </span>
+                            {t.type === 'spingo' && <span className="text-[7px] md:text-[9px] bg-gold/20 text-gold px-1 py-0.5 rounded font-black border border-gold/10">SPIN</span>}
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex flex-wrap items-center gap-2 md:gap-4 text-[9px] md:text-xs text-slate-400">
-                        <span className="flex items-center gap-1">
-                          <span className="material-symbols-outlined text-xs md:text-base text-slate-500">payments</span>
+
+                      <div className="flex flex-wrap items-center gap-1.5 xs:gap-2 md:gap-4 text-[8px] xs:text-[9px] md:text-xs text-slate-400">
+                        <span className="flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded-md">
+                          <span className="material-symbols-outlined text-[10px] md:text-base text-slate-500">payments</span>
                           <span className="font-bold text-slate-300">{t.type === 'cash' ? `${t.buyIn}/${t.buyIn * 2}` : `$${t.buyIn.toFixed(2)}`}</span>
                         </span>
-                        <span className="flex items-center gap-1.5">
-                          <span className="material-symbols-outlined text-base text-slate-500">group</span>
-                          <span className="font-mono font-bold">{t.players}<span className="text-slate-600">/{t.maxPlayers}</span></span>
+                        <span className="flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[10px] md:text-base text-slate-500">group</span>
+                          <span className="font-mono font-bold leading-none">{t.players}<span className="text-slate-600">/{t.maxPlayers}</span></span>
                         </span>
                         {t.type !== 'cash' && (
-                          <span className="flex items-center gap-1.5 text-gold-light">
-                            <span className="material-symbols-outlined text-base">emoji_events</span>
+                          <span className="flex items-center gap-1 text-gold-light">
+                            <span className="material-symbols-outlined text-[10px] md:text-base">emoji_events</span>
                             <span className="font-black">${t.prizePool.toLocaleString()}</span>
                           </span>
                         )}
                       </div>
-                    </div>
 
-                    <button className={`px-5 py-2.5 md:px-8 md:py-3 rounded-xl font-black text-[10px] md:text-xs tracking-widest transition-all shadow-xl hover:brightness-110 active:scale-95 whitespace-nowrap uppercase border ${t.status === 'Registering' || t.status === 'Late Reg'
-                      ? 'bg-emerald-600 border-emerald-500 text-white shadow-emerald-900/40'
-                      : t.status === 'Running' || t.status === 'Final Table'
-                        ? 'bg-blue-600 border-blue-500 text-white shadow-blue-900/40'
-                        : 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed'
-                      }`}>
-                      {t.type === 'cash' ? 'ENTER' : t.status === 'Running' || t.status === 'Final Table' ? 'OBSERVE' : t.status === 'Finished' ? 'FINISHED' : 'REGISTER'}
-                    </button>
+                      <button className={`mt-3 px-4 py-2 md:px-8 md:py-3 rounded-xl font-black text-[9px] md:text-xs tracking-widest transition-all shadow-xl hover:brightness-110 active:scale-95 whitespace-nowrap uppercase border ${t.status === 'Registering' || t.status === 'Late Reg'
+                        ? 'bg-emerald-600 border-emerald-500 text-white shadow-emerald-900/40'
+                        : t.status === 'Running' || t.status === 'Final Table'
+                          ? 'bg-blue-600 border-blue-500 text-white shadow-blue-900/40'
+                          : 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed'
+                        }`}>
+                        {t.type === 'cash' ? 'ENTER' : t.status === 'Running' || t.status === 'Final Table' ? 'OBSERVE' : t.status === 'Finished' ? 'FINISHED' : 'REGISTER'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -413,14 +418,14 @@ const Lobby: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick Stats */}
+          {/* Live Stats */}
           <div>
             <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">Live Stats</h3>
             <div className="space-y-2">
               <div className="bg-surface/50 rounded-lg p-3 border border-border-dark">
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-slate-400">Active Tables</span>
-                  <span className="text-lg font-bold text-white">{activeTables.toLocaleString()}</span>
+                  <span className="text-lg font-bold text-white">{headerActiveTables.toLocaleString()}</span>
                 </div>
               </div>
               <div className="bg-surface/50 rounded-lg p-3 border border-border-dark">
