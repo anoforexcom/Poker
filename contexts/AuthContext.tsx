@@ -211,7 +211,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUser(null);
     };
 
-    const continueAsGuest = () => {
+    const continueAsGuest = async () => {
         const guestUser: User = {
             id: 'demo-guest-id',
             name: 'Demo Guest',
@@ -220,6 +220,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             balance: 50000,
             rank: 'Platinum'
         };
+
+        try {
+            // Ensure guest profile exists in DB so foreign keys work
+            await supabase.from('profiles').upsert({
+                id: guestUser.id,
+                name: guestUser.name,
+                avatar_url: guestUser.avatar,
+                balance: guestUser.balance,
+                rank: guestUser.rank
+            });
+        } catch (err) {
+            console.warn('[AUTH_CONTEXT] Guest persistence failed (might be expected in demo):', err);
+        }
+
         setUser(guestUser);
         setIsLoading(false);
     };

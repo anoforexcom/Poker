@@ -150,9 +150,9 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
             throw new Error('This game is full');
         }
 
-        // If it's a Demo Guest user or empty ID (not initialized), we bypass the DB
-        if (userId === 'demo-guest-id' || !userId) {
-            console.log('[LIVE_WORLD] Guest user or empty ID detected, bypassing DB registration');
+        // If it's an empty ID (not initialized), we bypass the DB
+        if (!userId) {
+            console.log('[LIVE_WORLD] Empty user ID detected, bypassing DB registration');
             return;
         }
 

@@ -127,13 +127,32 @@ export const usePokerGame = (
                 });
 
                 // Sort so Hero is always at index 0 for consistent UI control/seating
-                const sortedPlayers = [...mappedPlayers].sort((a, b) => {
+                let finalPlayers = [...mappedPlayers].sort((a, b) => {
                     if (a.id === currentUserId) return -1;
                     if (b.id === currentUserId) return 1;
                     return 0;
                 });
 
-                setPlayers(sortedPlayers);
+                // --- LOCAL HERO INJECTION ---
+                // If current user is registered but not in the sync list yet, inject locally 
+                // to prevent "Waiting for Players" flicker.
+                const isHeroPresent = finalPlayers.some(p => p.id === currentUserId);
+                if (!isHeroPresent && currentUserId) {
+                    finalPlayers.unshift({
+                        id: currentUserId,
+                        name: 'You',
+                        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUserId}`,
+                        balance: config.startingStack,
+                        hand: [],
+                        isFolded: false,
+                        currentBet: 0,
+                        isHuman: true,
+                        isActive: true,
+                        totalContribution: 0
+                    });
+                }
+
+                setPlayers(finalPlayers);
             }
         } catch (err) {
             console.error('[POKER_GAME] Error fetching participants:', err);
