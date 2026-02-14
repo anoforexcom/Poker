@@ -409,30 +409,14 @@ const Lobby: React.FC = () => {
       {/* Sidebar - Hidden on mobile */}
       <aside className="hidden xl:block w-80 border-l border-border-dark bg-surface/10 overflow-y-auto custom-scrollbar">
         <div className="p-6 space-y-6">
-          {/* Featured Event */}
-          <div>
-            <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">Featured Event</h3>
-            <div className="rounded-xl overflow-hidden relative group cursor-pointer shadow-xl aspect-video border border-border-dark">
-              <img src="https://picsum.photos/seed/pokerpromo/400/225" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="Featured" />
-              <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent opacity-80"></div>
-              <div className="absolute bottom-4 left-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="bg-red-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded">LIVE</span>
-                  <p className="text-[10px] font-bold text-gold uppercase">Final Table</p>
-                </div>
-                <p className="text-sm font-bold text-white">Sunday Million</p>
-              </div>
-            </div>
-          </div>
-
           {/* Live Stats */}
           <div>
             <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">Live Stats</h3>
             <div className="space-y-2">
               <div className="bg-surface/50 rounded-lg p-3 border border-border-dark">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs text-slate-400">Active Tables</span>
-                  <span className="text-lg font-bold text-white">{headerActiveTables.toLocaleString()}</span>
+                  <span className="text-xs text-slate-400">Online Players</span>
+                  <span className="text-lg font-bold text-white">{headerOnlinePlayers.toLocaleString()}</span>
                 </div>
               </div>
               <div className="bg-surface/50 rounded-lg p-3 border border-border-dark">
