@@ -48,19 +48,16 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
         }
 
         if (data && data.length > 0) {
-            const normalizeStatus = (s: string): TournamentStatus => {
-                const statusMap: Record<string, TournamentStatus> = {
-                    'registering': 'Registering',
-                    'late reg': 'Late Reg',
-                    'running': 'Running',
-                    'final table': 'Final Table',
-                    'finished': 'Finished'
-                };
-                return statusMap[s.toLowerCase()] || s as TournamentStatus;
-            };
-
             const mapped: Tournament[] = data.map(t => {
-                const normalizedStatus = normalizeStatus(t.status);
+                const now = new Date();
+                const startTime = new Date(t.scheduled_start_time);
+                const lateRegUntil = new Date(t.late_reg_until);
+
+                let normalizedStatus: TournamentStatus = 'Registering';
+                if (t.status === 'finished') normalizedStatus = 'Finished';
+                else if (now > lateRegUntil) normalizedStatus = 'Running';
+                else if (now > startTime) normalizedStatus = 'Late Reg';
+
                 return {
                     id: t.id,
                     name: t.name,
@@ -70,7 +67,7 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
                     players: t.players_count,
                     maxPlayers: t.max_players,
                     status: normalizedStatus,
-                    startTime: 'Now',
+                    startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                     progress: normalizedStatus === 'Running' ? 50 : 0,
                     type: t.type as any
                 };
@@ -99,7 +96,7 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
         }
     };
 
-    // Pequena flutuação no base a cada 10 segundos
+    // Small base fluctuation every 10 seconds
     useEffect(() => {
         const interval = setInterval(() => {
             setCashPlayersBase(prev => {
@@ -125,13 +122,13 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
         };
     }, [cashPlayersBase]);
 
-    // Smoothing Heartbeat (Suavização lenta e profissional)
+    // Smoothing Heartbeat (Slow and professional smoothing)
     useEffect(() => {
         const interval = setInterval(() => {
             setSmoothedOnlinePlayers(prev => {
                 const diff = onlinePlayers - prev;
                 if (Math.abs(diff) < 0.1) return onlinePlayers;
-                // Suavização mais lenta (0.02) para evitar o "cresce muito rápido"
+                // Slower smoothing (0.02) to avoid "growing too fast"
                 const step = diff * 0.02;
                 return prev + step;
             });
@@ -152,7 +149,7 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
             throw new Error('Tournament is full');
         }
 
-        // Se for um usuário Demo Guest ou ID vazio (não inicializado), ignoramos DB
+        // If it's a Demo Guest user or empty ID (not initialized), we bypass the DB
         if (userId === 'demo-guest-id' || !userId) {
             console.log('[LIVE_WORLD] Guest user or empty ID detected, bypassing DB registration');
             return;

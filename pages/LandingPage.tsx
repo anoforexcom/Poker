@@ -66,7 +66,7 @@ const HeroSection = () => {
                         <span className="inline-block py-1 px-3 rounded-full bg-surface border border-white/10 text-primary text-sm font-semibold mb-4 backdrop-blur-md">
                             Next Gen Poker
                         </span>
-                        <h1 className="text-5xl lg:text-7xl font-display font-black leading-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400">
+                        <h1 className="text-4xl xs:text-5xl lg:text-7xl font-display font-black leading-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400">
                             ELEVATE YOUR <br />
                             <span className="text-primary">GAME</span>
                         </h1>
@@ -106,21 +106,21 @@ const HeroSection = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.8, delay: 0.6 }}
-                        className="flex items-center gap-8 justify-center lg:justify-start pt-8"
+                        className="flex items-center gap-4 sm:gap-8 justify-center lg:justify-start pt-8"
                     >
                         <div className="text-center">
-                            <p className="text-2xl font-bold text-white">10K+</p>
-                            <p className="text-xs text-slate-500 uppercase tracking-widest">Active Players</p>
+                            <p className="text-xl sm:text-2xl font-bold text-white">10K+</p>
+                            <p className="text-[10px] text-slate-500 uppercase tracking-widest">Players</p>
                         </div>
-                        <div className="w-px h-10 bg-white/10" />
+                        <div className="w-px h-8 sm:h-10 bg-white/10" />
                         <div className="text-center">
-                            <p className="text-2xl font-bold text-white">$2M+</p>
-                            <p className="text-xs text-slate-500 uppercase tracking-widest">Winnings Paid</p>
+                            <p className="text-xl sm:text-2xl font-bold text-white">$2M+</p>
+                            <p className="text-[10px] text-slate-500 uppercase tracking-widest">Paid Out</p>
                         </div>
-                        <div className="w-px h-10 bg-white/10" />
+                        <div className="w-px h-8 sm:h-10 bg-white/10" />
                         <div className="text-center">
-                            <p className="text-2xl font-bold text-white">24/7</p>
-                            <p className="text-xs text-slate-500 uppercase tracking-widest">Support</p>
+                            <p className="text-xl sm:text-2xl font-bold text-white">24/7</p>
+                            <p className="text-[10px] text-slate-500 uppercase tracking-widest">Support</p>
                         </div>
                     </motion.div>
                 </motion.div>
@@ -203,7 +203,7 @@ const HeroSection = () => {
 
 const FeaturesSection = () => {
     return (
-        <section id="features" className="py-24 bg-surface/30 relative">
+        <section id="features" className="py-16 md:py-24 bg-surface/30 relative">
             <div className="container mx-auto px-4">
                 <FadeIn>
                     <div className="text-center mb-16">
@@ -286,7 +286,7 @@ const TestimonialsSection = () => {
 
 const FAQSection = () => {
     return (
-        <section className="py-24 bg-surface/30">
+        <section className="py-16 md:py-24 bg-surface/30">
             <div className="container mx-auto px-4">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
                     <FadeIn>
@@ -347,11 +347,11 @@ const FAQItem = ({ question, answer }: { question: string, answer: string }) => 
 
 const CTASection = () => {
     return (
-        <section className="py-32 relative overflow-hidden">
+        <section className="py-20 md:py-32 relative overflow-hidden">
             <div className="absolute inset-0 bg-primary/10"></div>
             <div className="container mx-auto px-4 relative z-10 text-center">
                 <FadeIn>
-                    <h2 className="text-4xl lg:text-6xl font-display font-black text-white mb-8">Ready to Deal In?</h2>
+                    <h2 className="text-3xl sm:text-4xl lg:text-6xl font-display font-black text-white mb-6 md:mb-8">Ready to Deal In?</h2>
                     <p className="text-xl text-slate-300 mb-10 max-w-2xl mx-auto">Join thousands of players today and claim your welcome bonus.</p>
                     <Link to="/register" className="inline-block bg-white text-primary px-10 py-5 rounded-full font-bold text-xl hover:scale-105 transition-transform shadow-2xl">
                         Get Started Now

@@ -1,15 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 
-// No Vercel, estas variáveis precisam ser configuradas no Dashboard do projeto
+// In Vercel, these variables need to be configured in the Project Dashboard
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('❌ ERRO CRÍTICO: Credenciais do Supabase não encontradas!');
-    console.warn('Certifique-se de adicionar VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no Dashboard da Vercel.');
+    console.error('❌ CRITICAL ERROR: Supabase credentials not found!');
+    console.warn('Make sure to add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to the Vercel Dashboard.');
 }
 
-// Inicializamos com strings vazias se faltarem (o createClient não explode no import, mas falha nas chamadas)
+// Initialize with empty strings if missing (createClient won't explode on import, but will fail on calls)
 export const supabase = createClient(
     supabaseUrl || 'https://placeholder.supabase.co',
     supabaseAnonKey || 'placeholder'

@@ -251,9 +251,9 @@ const GameTable: React.FC = () => {
                 {/* Tabs */}
                 <div className="flex gap-2 mt-6">
                   {[
-                    { id: 'info', label: 'Informações', icon: 'info' },
-                    { id: 'players', label: 'Jogadores', icon: 'group' },
-                    { id: 'payouts', label: 'Premiação', icon: 'payments' }
+                    { id: 'info', label: 'Information', icon: 'info' },
+                    { id: 'players', label: 'Players', icon: 'group' },
+                    { id: 'payouts', label: 'Payouts', icon: 'payments' }
                   ].map(tab => (
                     <button
                       key={tab.id}
@@ -284,7 +284,7 @@ const GameTable: React.FC = () => {
                         <p className="text-lg font-black text-gold">${tournament?.prizePool.toLocaleString() || '0'}</p>
                       </div>
                       <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
-                        <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Jogadores</p>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Players</p>
                         <p className="text-lg font-black text-white">{players.length}/{tournament?.maxPlayers || '9'}</p>
                       </div>
                       <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
@@ -296,7 +296,7 @@ const GameTable: React.FC = () => {
                     <div className="bg-slate-800/30 border border-slate-700/50 rounded-2xl p-6 space-y-4">
                       <div className="flex justify-between items-center pb-4 border-b border-slate-700/50">
                         <div className="space-y-1">
-                          <p className="text-[10px] font-bold text-slate-500 uppercase">Nível Atual</p>
+                          <p className="text-[10px] font-bold text-slate-500 uppercase">Current Level</p>
                           <p className="text-white font-bold">{isTournamentMode ? `Level ${blindLevel}` : 'Cash Game'}</p>
                         </div>
                         <div className="text-right space-y-1">
@@ -306,11 +306,11 @@ const GameTable: React.FC = () => {
                       </div>
                       <div className="flex justify-between items-center">
                         <div className="space-y-1">
-                          <p className="text-[10px] font-bold text-slate-500 uppercase">Próximo Nível</p>
+                          <p className="text-[10px] font-bold text-slate-500 uppercase">Next Level</p>
                           <p className="text-slate-400 font-bold">{isTournamentMode ? `Level ${blindLevel + 1}` : '-'}</p>
                         </div>
                         <div className="text-right space-y-1">
-                          <p className="text-[10px] font-bold text-slate-500 uppercase">Tempo Restante</p>
+                          <p className="text-[10px] font-bold text-slate-500 uppercase">Time Remaining</p>
                           <div className="flex items-center gap-2 justify-end">
                             <span className="material-symbols-outlined text-sm text-slate-500">schedule</span>
                             <p className="text-white font-mono font-bold">
@@ -328,7 +328,7 @@ const GameTable: React.FC = () => {
                 {activeLobbyTab === 'players' && (
                   <div className="space-y-2">
                     <div className="flex justify-between px-4 py-2 text-[10px] font-bold text-slate-500 uppercase border-b border-slate-700/50 mb-2">
-                      <span>Jogador</span>
+                      <span>Player</span>
                       <span>Chips</span>
                     </div>
                     {[...players].sort((a, b) => b.balance - a.balance).map((p, i) => (
@@ -338,7 +338,7 @@ const GameTable: React.FC = () => {
                           <div className="size-8 rounded-full bg-slate-700 overflow-hidden">
                             <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${p.name}`} alt="" />
                           </div>
-                          <span className={`text-sm font-bold ${p.isHuman ? 'text-white' : 'text-slate-300'}`}>{p.name} {p.isHuman && '(Você)'}</span>
+                          <span className={`text-sm font-bold ${p.isHuman ? 'text-white' : 'text-slate-300'}`}>{p.name} {p.isHuman && '(You)'}</span>
                         </div>
                         <span className="text-sm font-black text-white">${p.balance.toLocaleString()}</span>
                       </div>
@@ -366,7 +366,7 @@ const GameTable: React.FC = () => {
                         <div key={payout.rank} className="flex justify-between items-center p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
                           <div className="flex items-center gap-3">
                             <span className={`size-6 rounded-full flex items-center justify-center font-bold text-[10px] ${payout.rank === 1 ? 'bg-gold text-background' : 'bg-slate-700 text-slate-300'}`}>{payout.rank}º</span>
-                            <span className="text-sm text-slate-400">Posição</span>
+                            <span className="text-sm text-slate-400">Position</span>
                           </div>
                           <div className="text-right">
                             <p className="text-sm font-black text-white">${((tournament?.prizePool || 0) * (payout.percent / 100)).toLocaleString()}</p>
@@ -386,14 +386,14 @@ const GameTable: React.FC = () => {
                   className="flex-1 bg-slate-800 hover:bg-red-600/20 hover:text-red-400 text-slate-400 font-bold py-3 rounded-2xl transition-all flex items-center justify-center gap-2 border border-slate-700 group"
                 >
                   <span className="material-symbols-outlined text-sm group-hover:animate-pulse">logout</span>
-                  Sair da Mesa
+                  Leave Table
                 </button>
                 <button
                   onClick={() => setShowLobbyModal(false)}
                   className="flex-1 bg-primary hover:brightness-110 text-white font-black py-3 rounded-2xl shadow-xl shadow-primary/20 transition-all flex items-center justify-center gap-2"
                 >
                   <span className="material-symbols-outlined text-sm">play_arrow</span>
-                  Voltar ao Jogo
+                  Back to Game
                 </button>
               </div>
             </div>
@@ -407,7 +407,7 @@ const GameTable: React.FC = () => {
           <div className="absolute top-16 right-4 md:top-20 md:right-8 z-50 w-64 md:w-72 animate-scale-in origin-top-right">
             <div className="bg-[#0f172a]/95 border border-white/10 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl">
               <div className="p-4 border-b border-white/5 flex justify-between items-center bg-white/5">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Suas Mesas</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Your Tables</span>
                 <button onClick={() => setShowGameSwitcher(false)} className="text-slate-500 hover:text-white transition">
                   <span className="material-symbols-outlined text-base">close</span>
                 </button>
@@ -420,7 +420,7 @@ const GameTable: React.FC = () => {
                   onClick={() => navigate('/play')}
                   className="text-[9px] font-black text-primary hover:text-white transition uppercase tracking-widest"
                 >
-                  + Abrir Nova Mesa
+                  + Open New Table
                 </button>
               </div>
             </div>
@@ -462,7 +462,7 @@ const GameTable: React.FC = () => {
           <div className="flex flex-col items-center gap-6">
             <div className="flex flex-col items-center gap-2">
               <div className="bg-black/40 backdrop-blur-md px-6 py-2 rounded-full border border-white/10 flex flex-col items-center">
-                <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Pote Total</span>
+                <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Total Pot</span>
                 <span className="text-2xl font-black text-white">${pot.toLocaleString()}</span>
               </div>
 
@@ -577,7 +577,7 @@ const GameTable: React.FC = () => {
         <div className="hidden lg:block md:col-span-3 w-full">
           <div className="bg-background/80 backdrop-blur-lg border border-slate-700 rounded-xl overflow-hidden flex flex-col h-28 md:h-40 shadow-lg">
             <div className="p-2 border-b border-slate-700 flex justify-between cursor-pointer hover:bg-white/5 transition" onClick={() => setShowSettings(true)}>
-              <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase">Chat da Mesa</span>
+              <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase">Table Chat</span>
               <span className="material-symbols-outlined text-slate-500 text-xs hover:text-white transition">settings</span>
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-1 text-[10px] md:text-[11px] scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
@@ -594,7 +594,7 @@ const GameTable: React.FC = () => {
         {!isObserver && (
           <div className="flex items-center gap-3 md:gap-6">
             {/* User Avatar */}
-            <div className="flex flex-col items-center gap-1 md:gap-2 scale-75 md:scale-100 origin-bottom">
+            <div className="flex flex-col items-center gap-1 md:gap-2 scale-[0.6] xs:scale-[0.8] md:scale-100 origin-bottom">
               <div className={`relative size-12 md:size-20 rounded-full border-2 md:border-4 ${currentTurn === 0 ? 'border-amber-400 ring-2 md:ring-8 ring-amber-400/20' : 'border-primary'} bg-slate-700 overflow-hidden shadow-2xl transition-all duration-300`}>
                 {currentTurn === 0 && (
                   <svg className="absolute inset-0 size-full -rotate-90 pointer-events-none" viewBox="0 0 100 100">
@@ -615,8 +615,8 @@ const GameTable: React.FC = () => {
                   alt={user?.name || 'You'}
                 />
               </div>
-              <div className="bg-background/90 backdrop-blur-sm px-3 py-1 rounded-lg border border-primary/30 shadow-xl">
-                <p className="text-[10px] md:text-xs font-black text-white tracking-widest uppercase">{user?.name || 'You'}</p>
+              <div className="bg-background/90 backdrop-blur-sm px-2 md:px-3 py-0.5 md:py-1 rounded-lg border border-primary/30 shadow-xl">
+                <p className="text-[8px] md:text-xs font-black text-white tracking-widest uppercase">{user?.name || 'You'}</p>
               </div>
             </div>
 
@@ -632,8 +632,8 @@ const GameTable: React.FC = () => {
 
         {/* Player Balance and Turn Indicator - Hide if observing */}
         {!isObserver && activeUser && (
-          <div className={`relative bg-primary/10 border-2 ${currentTurn === 0 ? 'border-amber-400 animate-pulse ring-2 md:ring-4 ring-amber-400/10' : 'border-primary'} backdrop-blur-md px-3 md:px-10 py-1 md:py-3 rounded-2xl flex flex-col items-center shadow-lg shadow-primary/20`}>
-            <span className="text-[7px] md:text-[10px] font-black uppercase tracking-widest text-primary/70">{currentTurn === 0 ? 'SUA VEZ' : `VEZ DE ${players[currentTurn]?.name}`}</span>
+          <div className={`relative bg-primary/10 border-2 ${currentTurn === 0 ? 'border-amber-400 animate-pulse ring-1 md:ring-4 ring-amber-400/10' : 'border-primary'} backdrop-blur-md px-2 md:px-10 py-1 md:py-3 rounded-xl md:rounded-2xl flex flex-col items-center shadow-lg shadow-primary/20`}>
+            <span className="text-[7px] md:text-[10px] font-black uppercase tracking-widest text-primary/70">{currentTurn === 0 ? 'YOUR TURN' : `TURN OF ${players[currentTurn]?.name}`}</span>
             <div className="flex items-center gap-2">
               <span className="text-xs md:text-2xl font-black text-white font-mono">${activeUser?.balance.toLocaleString()}</span>
             </div>
@@ -643,30 +643,30 @@ const GameTable: React.FC = () => {
         {/* User Actions - Only show if not observing */}
         {!isObserver && activeUser && (
           <div className="w-full md:col-span-3 space-y-2 md:space-y-4">
-            <div className="bg-background/80 backdrop-blur-md p-3 md:p-4 rounded-xl border border-slate-700 space-y-2 md:space-y-4">
-              <div className="flex justify-between items-center text-[9px] md:text-[10px] font-bold text-slate-400 gap-4">
-                <span className="hidden xs:inline">MIN: $20</span>
+            <div className="bg-background/80 backdrop-blur-md p-2 md:p-4 rounded-xl border border-slate-700 space-y-2 md:space-y-4">
+              <div className="flex justify-between items-center text-[9px] md:text-[10px] font-bold text-slate-400 gap-2 md:gap-4">
+                <span className="hidden sm:inline">MIN: $20</span>
                 <div className="flex-1 flex items-center bg-slate-800 rounded-lg px-2 border border-primary/30">
                   <span className="text-primary mr-1">$</span>
                   <input
                     type="number"
                     value={betValue}
                     onChange={(e) => setBetValue(Math.min(activeUser?.balance || 0, Math.max(0, Number(e.target.value))))}
-                    className="bg-transparent border-none text-white text-xs md:text-sm font-mono w-full focus:ring-0 p-1"
+                    className="bg-transparent border-none text-white text-[10px] md:text-sm font-mono w-full focus:ring-0 p-1"
                   />
                 </div>
-                <span className="hidden xs:inline">MAX: ${(activeUser?.balance || 0).toLocaleString()}</span>
+                <span className="hidden sm:inline">MAX: ${(activeUser?.balance || 0).toLocaleString()}</span>
               </div>
               <input
                 type="range" min="20" max={activeUser?.balance || 100} value={betValue}
                 onChange={(e) => setBetValue(Number(e.target.value))}
-                className="w-full h-1.5 bg-slate-700 rounded-full appearance-none accent-primary cursor-pointer"
+                className="w-full h-1 md:h-1.5 bg-slate-700 rounded-full appearance-none accent-primary cursor-pointer touch-none"
               />
               <div className="grid grid-cols-4 gap-1 md:gap-2">
-                <button onClick={() => setBetValue(Math.floor(pot / 2))} className="bg-slate-800 hover:bg-slate-700 text-[10px] md:text-[10px] font-bold py-1.5 md:py-1.5 rounded transition">1/2</button>
-                <button onClick={() => setBetValue(Math.floor(pot * 0.75))} className="bg-slate-800 hover:bg-slate-700 text-[10px] md:text-[10px] font-bold py-1.5 md:py-1.5 rounded transition">3/4</button>
-                <button onClick={() => setBetValue(pot)} className="bg-slate-800 hover:bg-slate-700 text-[10px] md:text-[10px] font-bold py-1.5 md:py-1.5 rounded transition">POT</button>
-                <button onClick={() => setBetValue(activeUser?.balance || 0)} className="bg-slate-800 hover:bg-slate-700 text-[10px] md:text-[10px] font-bold py-1.5 md:py-1.5 rounded transition">ALL-IN</button>
+                <button onClick={() => setBetValue(Math.floor(pot / 2))} className="bg-slate-800 hover:bg-slate-700 text-[8px] md:text-[10px] font-bold py-1 md:py-1.5 rounded transition">1/2</button>
+                <button onClick={() => setBetValue(Math.floor(pot * 0.75))} className="bg-slate-800 hover:bg-slate-700 text-[8px] md:text-[10px] font-bold py-1 md:py-1.5 rounded transition">3/4</button>
+                <button onClick={() => setBetValue(pot)} className="bg-slate-800 hover:bg-slate-700 text-[8px] md:text-[10px] font-bold py-1 md:py-1.5 rounded transition">POT</button>
+                <button onClick={() => setBetValue(activeUser?.balance || 0)} className="bg-slate-800 hover:bg-slate-700 text-[8px] md:text-[10px] font-bold py-1 md:py-1.5 rounded transition">ALL-IN</button>
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2 md:gap-3">
@@ -769,7 +769,7 @@ const PlayerSeat = ({ position, name, balance, active, inactive, dealer, current
   };
 
   return (
-    <div className={`absolute ${positions[position]} flex flex-col items-center gap-0.5 md:gap-2 z-10 transition-all duration-500 scale-[0.6] xs:scale-[0.7] md:scale-100`}>
+    <div className={`absolute ${positions[position]} flex flex-col items-center gap-0.5 md:gap-2 z-10 transition-all duration-500 scale-[0.45] xs:scale-[0.6] sm:scale-[0.8] md:scale-100`}>
       <div className={`relative size-14 md:size-24 rounded-full border-2 md:border-4 ${active ? 'border-amber-400 ring-2 md:ring-8 ring-amber-400/20 scale-110' : 'border-slate-800'} bg-slate-700 overflow-hidden ${inactive ? 'grayscale opacity-50' : ''} transition-all duration-300 shadow-xl`}>
         {active && timeLeft > 0 && (
           <svg className="absolute inset-0 size-full -rotate-90 pointer-events-none" viewBox="0 0 100 100">

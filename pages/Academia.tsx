@@ -30,7 +30,7 @@ const Academia: React.FC = () => {
 
   // Computed Global Progress
   const totalModules = modules.length;
-  const completedModules = Object.values(userProgress).filter(p => p.completed).length;
+  const completedModules = (Object.values(userProgress) as { completed: boolean }[]).filter(p => p.completed).length;
   const globalProgress = (completedModules / totalModules) * 100;
 
   // --- Actions ---
@@ -141,8 +141,8 @@ const Academia: React.FC = () => {
   if (!activeModule) {
     // Module Selection View
     return (
-      <div className="p-8 max-w-[1440px] mx-auto h-full overflow-y-auto custom-scrollbar">
-        <header className="mb-8 flex items-end justify-between">
+      <div className="p-4 md:p-8 max-w-[1440px] mx-auto h-full overflow-y-auto custom-scrollbar">
+        <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase mb-2">
               Poker <span className="text-primary">Academia</span>
@@ -159,15 +159,15 @@ const Academia: React.FC = () => {
               </div>
             )}
           </div>
-          <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 w-64 shadow-lg">
+          <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 w-full md:w-64 shadow-lg">
             <div className="flex justify-between text-xs font-bold mb-2">
-              <span className="text-white">COURSE MASTERY</span>
+              <span className="text-white uppercase tracking-tight">Course Mastery</span>
               <span className="text-primary">{Math.round(globalProgress)}%</span>
             </div>
             <div className="h-2 bg-slate-900 rounded-full overflow-hidden">
               <div className="h-full bg-primary transition-all duration-1000" style={{ width: `${globalProgress}%` }}></div>
             </div>
-            <p className="text-[10px] text-slate-500 mt-2 text-right">{completedModules}/{totalModules} Modules Completed</p>
+            <p className="text-[10px] text-slate-500 mt-2 text-right">{completedModules}/{totalModules} Modules</p>
           </div>
         </header>
 
@@ -271,27 +271,27 @@ const Academia: React.FC = () => {
         <div className="h-full bg-primary transition-all duration-500" style={{ width: `${progress}%` }}></div>
       </div>
 
-      <header className="px-8 py-6 flex justify-between items-center border-b border-slate-800">
+      <header className="px-4 md:px-8 py-4 md:py-6 flex justify-between items-center border-b border-slate-800">
         <div>
-          <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest">{activeModule.title}</h2>
-          <p className="text-white font-mono text-xs mt-1">Question {currentQuestionIndex + 1} of {activeModule.questions.length}</p>
+          <h2 className="text-[10px] md:text-sm font-bold text-slate-500 uppercase tracking-widest truncate max-w-[120px] xs:max-w-none">{activeModule.title}</h2>
+          <p className="text-white font-mono text-[10px] md:text-xs mt-1">Q{currentQuestionIndex + 1} of {activeModule.questions.length}</p>
         </div>
-        <div className="flex items-center gap-4">
-          <button onClick={() => toggleBookmark(currentQ.id)} className={`flex items-center gap-2 text-xs font-bold uppercase transition-colors ${isBookmarked ? 'text-primary' : 'text-slate-400 hover:text-white'}`}>
-            <span className={`material-symbols-outlined text-lg ${isBookmarked ? 'fill-1' : ''}`}>bookmark</span>
-            {isBookmarked ? 'Saved' : 'Save'}
+        <div className="flex items-center gap-2 md:gap-4">
+          <button onClick={() => toggleBookmark(currentQ.id)} className={`flex items-center gap-1 md:gap-2 text-[10px] md:text-xs font-bold uppercase transition-colors ${isBookmarked ? 'text-primary' : 'text-slate-400 hover:text-white'}`}>
+            <span className={`material-symbols-outlined text-base md:text-lg ${isBookmarked ? 'fill-1' : ''}`}>bookmark</span>
+            <span className="hidden sm:inline">{isBookmarked ? 'Saved' : 'Save'}</span>
           </button>
           <div className="h-4 w-px bg-slate-700"></div>
-          <button onClick={handleExit} className="text-slate-400 hover:text-white flex items-center gap-2 text-xs font-bold uppercase">
-            <span className="material-symbols-outlined text-lg">close</span> Quit
+          <button onClick={handleExit} className="text-slate-400 hover:text-white flex items-center gap-1 md:gap-2 text-[10px] md:text-xs font-bold uppercase">
+            <span className="material-symbols-outlined text-base md:text-lg">close</span> <span className="hidden sm:inline">Quit</span>
           </button>
         </div>
       </header>
 
       {/* Question Area */}
-      <div className="flex-1 flex flex-col items-center justify-center p-8 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 overflow-y-auto custom-scrollbar">
         <div className="max-w-3xl w-full">
-          <h3 className="text-2xl md:text-3xl font-bold text-white mb-8 leading-tight">{currentQ.text}</h3>
+          <h3 className="text-xl xs:text-2xl md:text-3xl font-bold text-white mb-6 md:mb-8 leading-tight">{currentQ.text}</h3>
 
           <div className="space-y-4 mb-8">
             {currentQ.options.map((option, idx) => {
@@ -312,9 +312,9 @@ const Academia: React.FC = () => {
                   key={idx}
                   disabled={isAnswered}
                   onClick={() => handleAnswer(idx)}
-                  className={`w-full p-6 rounded-xl border-2 text-left transition-all flex justify-between items-center group ${stateClass}`}
+                  className={`w-full p-4 md:p-6 rounded-xl border-2 text-left transition-all flex justify-between items-center group ${stateClass}`}
                 >
-                  <span className="font-bold text-lg">{option}</span>
+                  <span className="font-bold text-base md:text-lg">{option}</span>
                   {isAnswered && isCorrect && <span className="material-symbols-outlined text-2xl">check_circle</span>}
                   {isAnswered && isSelected && !isCorrect && <span className="material-symbols-outlined text-2xl">cancel</span>}
                 </button>

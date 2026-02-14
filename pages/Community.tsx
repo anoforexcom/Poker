@@ -228,7 +228,7 @@ const Community: React.FC = () => {
       setGlobalChat(prev => [...prev, {
         author: generateBotName(),
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        message: ["Lol", "True", "Aggree", "Nice", "Anyone for HU?"][Math.floor(Math.random() * 5)],
+        message: ["Lol", "True", "Agree", "Nice", "Anyone for HU?"][Math.floor(Math.random() * 5)],
         color: "text-slate-400"
       }]);
     }, 2000);

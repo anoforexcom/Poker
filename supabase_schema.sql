@@ -1,4 +1,4 @@
--- 1. TABELA DE PERFIS (Dados dos usuários reais)
+-- 1. PROFILES TABLE (Real user data)
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
   name TEXT NOT NULL,
@@ -8,22 +8,23 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 2. TABELA DE TORNEIOS (Sincronização global)
+-- 2. TOURNAMENTS TABLE (Global synchronization)
 CREATE TABLE IF NOT EXISTS public.tournaments (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   type TEXT NOT NULL, -- 'tournament', 'cash', 'sitgo', 'spingo'
-  status TEXT DEFAULT 'registering', -- 'registering', 'running', 'finished'
+  status TEXT DEFAULT 'registering', -- 'registering', 'late_reg', 'running', 'finished'
   buy_in DECIMAL NOT NULL,
   prize_pool DECIMAL DEFAULT 0,
   players_count INTEGER DEFAULT 0,
   max_players INTEGER NOT NULL,
-  start_time TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  blind_level INTEGER DEFAULT 1,
+  scheduled_start_time TIMESTAMP WITH TIME ZONE,
+  late_reg_until TIMESTAMP WITH TIME ZONE,
+  current_blind_level INTEGER DEFAULT 1,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
--- 3. TABELA DE BOTS (Para preencher as mesas)
+-- 3. BOTS TABLE (To fill tables)
 CREATE TABLE IF NOT EXISTS public.bots (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -34,7 +35,7 @@ CREATE TABLE IF NOT EXISTS public.bots (
   tournaments_won INTEGER DEFAULT 0
 );
 
--- 4. TABELA DE PARTICIPANTES (Quem está em qual torneio)
+-- 4. PARTICIPANTS TABLE (Who is in which tournament)
 CREATE TABLE IF NOT EXISTS public.tournament_participants (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   tournament_id TEXT REFERENCES public.tournaments(id) ON DELETE CASCADE,
@@ -44,7 +45,7 @@ CREATE TABLE IF NOT EXISTS public.tournament_participants (
   status TEXT DEFAULT 'active' -- 'active', 'eliminated'
 );
 
--- 5. SEGURANÇA (Row Level Security - RLS)
+-- 5. SECURITY (Row Level Security - RLS)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tournaments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.bots ENABLE ROW LEVEL SECURITY;
@@ -62,7 +63,7 @@ DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
 CREATE POLICY "Users can update their own profile" ON public.profiles
   FOR UPDATE USING (auth.uid() = id);
 
--- POLÍTICAS PARA TOURNAMENTS (Permissivo para o demo/simulação)
+-- TOURNAMENT POLICIES (Permissive for demo/simulation)
 DROP POLICY IF EXISTS "Tournaments are viewable by everyone" ON public.tournaments;
 CREATE POLICY "Tournaments are viewable by everyone" ON public.tournaments
   FOR SELECT USING (true);
@@ -71,7 +72,7 @@ DROP POLICY IF EXISTS "Anyone can insert/update tournaments" ON public.tournamen
 CREATE POLICY "Anyone can insert/update tournaments" ON public.tournaments
   FOR ALL USING (true) WITH CHECK (true);
 
--- POLÍTICAS PARA BOTS (Permissivo para o demo/simulação)
+-- BOT POLICIES (Permissive for demo/simulation)
 DROP POLICY IF EXISTS "Bots are viewable by everyone" ON public.bots;
 CREATE POLICY "Bots are viewable by everyone" ON public.bots
   FOR SELECT USING (true);
@@ -80,7 +81,7 @@ DROP POLICY IF EXISTS "Anyone can manage bots" ON public.bots;
 CREATE POLICY "Anyone can manage bots" ON public.bots
   FOR ALL USING (true) WITH CHECK (true);
 
--- POLÍTICAS PARA PARTICIPANTES
+-- PARTICIPANT POLICIES
 DROP POLICY IF EXISTS "Participants are viewable by everyone" ON public.tournament_participants;
 CREATE POLICY "Participants are viewable by everyone" ON public.tournament_participants
   FOR SELECT USING (true);
@@ -89,7 +90,7 @@ DROP POLICY IF EXISTS "Anyone can join tournaments" ON public.tournament_partici
 CREATE POLICY "Anyone can join tournaments" ON public.tournament_participants
   FOR INSERT WITH CHECK (true);
 
--- 6. TRIGGER: CRIAR PERFIL AUTOMÁTICO AO REGISTRAR
+-- 6. TRIGGER: AUTOMATIC PROFILE CREATION ON REGISTRATION
 CREATE OR REPLACE FUNCTION public.handle_new_user() 
 RETURNS trigger AS $$
 BEGIN
@@ -103,15 +104,15 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Se o trigger já existir, removemos para evitar erro
+-- If the trigger already exists, remove it to avoid errors
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 
--- Ativa o trigger na tabela de usuários do Supabase Auth
+-- Activate trigger on the Supabase Auth users table
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
--- 7. TABELA DE TRANSAÇÕES (Histórico financeiro)
+-- 7. TRANSACTION TABLE (Financial history)
 CREATE TABLE IF NOT EXISTS public.transactions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
