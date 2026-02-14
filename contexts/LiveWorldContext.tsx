@@ -73,7 +73,19 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
 
                 // Format friendly time
                 const timeOptions: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' };
-                const formattedTime = startDate.toLocaleTimeString([], timeOptions);
+                let formattedTime = startDate.toLocaleTimeString([], timeOptions);
+
+                // Dynamic Relative Time
+                const diffMs = startDate.getTime() - now.getTime();
+                const diffMins = Math.ceil(diffMs / 60000);
+
+                if (diffMs > 0 && diffMs < 60 * 60 * 1000) {
+                    formattedTime = `Starting in ${diffMins}m`;
+                } else if (diffMs <= 0 && diffMs > -60000) { // Within 1 min passed
+                    formattedTime = 'Starting...';
+                } else if (normalizedStatus === 'Running' || normalizedStatus === 'Late Reg') {
+                    formattedTime = 'Now';
+                }
 
                 return {
                     id: t.id,
@@ -132,6 +144,14 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
         }, 10000);
         return () => clearInterval(interval);
     }, []);
+
+    // Periodically refresh data to update relative times ("In 5m" -> "In 4m")
+    useEffect(() => {
+        const interval = setInterval(() => {
+            fetchTournaments();
+        }, 60000); // Update every minute
+        return () => clearInterval(interval);
+    }, [cashPlayersBase]);
 
     useEffect(() => {
         fetchTournaments();

@@ -185,16 +185,32 @@ export class TournamentSimulator {
 
                 // Update Status based on time
                 let newStatus = t.status;
+                const minPlayersToStart = t.type === 'spingo' ? 3 : 2;
+
                 if (now > lateRegUntil && t.status !== 'running') {
-                    if (t.players_count >= 2) newStatus = 'running';
+                    // Force start if time passed, even if empty (fill with bots below)
+                    newStatus = 'running';
                 }
-                else if (now > startTime && now <= lateRegUntil && t.status !== 'late_reg') {
-                    newStatus = 'late_reg';
+                else if (now > startTime && now <= lateRegUntil && t.status !== 'late_reg' && t.status !== 'running') {
+                    // If it's start time, we should run or be in late reg
+                    // If we have enough players, run. If not, maybe late reg or fill.
+                    if (t.players_count >= minPlayersToStart) {
+                        newStatus = 'running';
+                    } else {
+                        newStatus = 'late_reg';
+                    }
                 }
 
                 if (newStatus !== t.status) {
                     await supabase.from('tournaments').update({ status: newStatus }).eq('id', t.id);
                     t.status = newStatus;
+                }
+
+                // CRITICAL: Force-fill bots if we are supposed to be RUNNING but have no players
+                if (newStatus === 'running' && t.players_count < minPlayersToStart) {
+                    const deficit = minPlayersToStart - t.players_count + Math.floor(Math.random() * 5); // Add minimum + some extras
+                    // Trigger fill logic below specifically for this case
+                    t.status = 'late_reg'; // Temporarily treat as late_reg to trigger the bot filler block below
                 }
 
                 // Fill with BOTS if registering or late_reg
