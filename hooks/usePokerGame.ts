@@ -201,8 +201,10 @@ export const usePokerGame = (
         if (tournamentId && players.length < 2 && config.status !== 'Finished') {
             const timer = setTimeout(async () => {
                 console.log('[POKER_GAME] Force-filling table with bots...');
-                // 1. Fetch 5 random bots from DB
-                let { data: bots } = await supabase.from('bots').select('*').limit(5);
+                // 1. Fetch random bots (grab a large chunk and pick random ones to avoid same 5 locking)
+                // Using .range() to grab from somewhere in the middle
+                const randomOffset = Math.floor(Math.random() * 1000);
+                let { data: bots } = await supabase.from('bots').select('*').range(randomOffset, randomOffset + 9);
 
                 // FALLBACK: If no bots exist in DB, create temporary ones
                 if (!bots || bots.length === 0) {
