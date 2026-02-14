@@ -125,7 +125,11 @@ export const usePokerGame = (
                         id: p.bot_id || p.user_id || `player-${index}`,
                         name: isHero ? 'You' : (profile?.name || (isBot ? 'Bot' : 'Player')),
                         avatar: (profile as any)?.avatar || (profile as any)?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${index}`,
-                        balance: Number((profile as any)?.balance) || config.startingStack,
+                        // REALSIM FIX: For Tournaments, always start with config.startingStack (10k), ignoring wallet balance.
+                        // For Cash games, use the profile balance.
+                        balance: (mode === 'cash')
+                            ? (Number((profile as any)?.balance) || config.startingStack)
+                            : config.startingStack,
                         hand: [],
                         isFolded: false,
                         currentBet: 0,
