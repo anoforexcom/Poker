@@ -46,17 +46,17 @@ export class TournamentSimulator {
         const { count: tournCount } = await supabase.from('tournaments').select('*', { count: 'exact', head: true });
         const { count: botCount } = await supabase.from('bots').select('*', { count: 'exact', head: true });
 
-        // Seed Bots if missing
-        if (botCount === 0) {
-            console.log('[SIMULATOR] Seeding initial population (3000 bots)...');
-            const totalBots = 3000;
+        // Seed Bots if missing or insufficient
+        if (botCount === null || botCount < 3000) {
+            console.log(`[SIMULATOR] Population low (${botCount}). Seeding up to 3000 bots...`);
+            const needed = 3000 - (botCount || 0);
             const batchSize = 100;
 
-            for (let i = 0; i < totalBots; i += batchSize) {
-                const bots = Array.from({ length: batchSize }).map((_, j) => {
-                    const idx = i + j;
+            for (let i = 0; i < needed; i += batchSize) {
+                const bots = Array.from({ length: Math.min(batchSize, needed - i) }).map((_, j) => {
+                    const idx = (botCount || 0) + i + j;
                     return {
-                        id: `bot_${idx}`,
+                        id: `bot_${idx}_${Date.now()}`, // Ensure unique ID
                         name: generateBotName(),
                         avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=bot${idx}`,
                         balance: 5000 + Math.random() * 20000,
@@ -102,12 +102,27 @@ export class TournamentSimulator {
         // Determine status based on time
         const now = new Date();
         let status: TournamentStatus = 'registering';
-        if (now > lateRegUntil) status = 'running';
-        else if (now > startTime) status = 'late_reg';
+        let initialPlayers = 0;
+
+        if (now > lateRegUntil) {
+            status = 'running';
+            // Pre-fill running tournaments so lobby isn't empty
+            initialPlayers = Math.floor(Math.random() * 150) + 20;
+        }
+        else if (now > startTime) {
+            status = 'late_reg';
+            initialPlayers = Math.floor(Math.random() * 80) + 10;
+        } else {
+            // Future tournaments have some pre-reg
+            initialPlayers = Math.floor(Math.random() * 15);
+        }
 
         // Massive field for Tournaments
         const isMajor = type === 'tournament' && Math.random() > 0.7;
         const maxPlayers = type === 'cash' ? 6 : type === 'spingo' ? 3 : type === 'sitgo' ? 9 : 5000;
+
+        // Cap initial players by max
+        initialPlayers = Math.min(initialPlayers, maxPlayers);
 
         return {
             id,
@@ -115,8 +130,8 @@ export class TournamentSimulator {
             type,
             status,
             buy_in: buyIn,
-            prize_pool: 0, // Calculated dynamically by simulator
-            players_count: 0, // Start at 0, let simulator fill with real bots
+            prize_pool: initialPlayers * buyIn, // Est. prize pool
+            players_count: initialPlayers,
             max_players: maxPlayers,
             scheduled_start_time: startTime.toISOString(),
             late_reg_until: lateRegUntil.toISOString(),
