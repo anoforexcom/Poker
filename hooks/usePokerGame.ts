@@ -177,6 +177,21 @@ export const usePokerGame = (
         }
     }, [tournamentId, currentUserId, config.startingStack]);
 
+    // RESILIENCE: 24/7 Bot Autoplay Enforcement
+    // If it's a bot's turn, force them to move even if normal triggers missed
+    useEffect(() => {
+        if (players.length > 0 && currentTurn >= 0 && currentTurn < players.length && phase !== 'showdown') {
+            const currentPlayer = players[currentTurn];
+            if (!currentPlayer.isHuman && !currentPlayer.isFolded && currentPlayer.isActive) {
+                const timer = setTimeout(() => {
+                    console.log('[AUTOPLAY] Forcing missing bot move for:', currentPlayer.name);
+                    makeBotMove();
+                }, 3000); // 3s fallback
+                return () => clearTimeout(timer);
+            }
+        }
+    }, [currentTurn, players, phase]);
+
     useEffect(() => {
         if (tournamentId) {
             fetchParticipants();

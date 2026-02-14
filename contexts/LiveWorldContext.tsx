@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../utils/supabase';
+import { getTournamentSimulator } from '../utils/tournamentSimulator';
 
 export type TournamentStatus = 'Registering' | 'Late Reg' | 'Running' | 'Final Table' | 'Finished';
 
@@ -95,6 +96,19 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
             setActiveTables(Math.ceil(5000 / 9) + Math.ceil(cashPlayersBase / 6));
         }
     };
+
+
+
+    // Initialize Simulator for realistic background activity
+    useEffect(() => {
+        const simulator = getTournamentSimulator();
+        simulator.start();
+
+        // Seed initial 24/7 schedule if empty
+        simulator.seedInitialData();
+
+        return () => simulator.stop();
+    }, []);
 
     // Small base fluctuation every 10 seconds
     useEffect(() => {
