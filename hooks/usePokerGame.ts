@@ -83,6 +83,14 @@ export const usePokerGame = (
     // Initialize Players (Start with empty, then sync with DB)
     const [players, setPlayers] = useState<Player[]>([]);
 
+    // Adaptive AI: Human Player Profiling
+    const [humanStats, setHumanStats] = useState({
+        raises: 0,
+        calls: 0,
+        folds: 0,
+        totalHands: 0
+    });
+
     const fetchParticipants = useCallback(async () => {
         if (!tournamentId) return;
 
@@ -597,7 +605,19 @@ export const usePokerGame = (
             loops++;
         }
 
-        setCurrentTurn(nextTurn);
+        // Track human stats for Adaptive AI
+        if (currentPlayer.isHuman) {
+            setHumanStats(prev => ({
+                ...prev,
+                raises: action === 'raise' ? prev.raises + 1 : prev.raises,
+                calls: action === 'call' ? prev.calls + 1 : prev.calls,
+                folds: action === 'fold' ? prev.folds + 1 : prev.folds,
+                totalHands: action === 'fold' ? prev.totalHands + 1 : prev.totalHands // Hand ends for them if fold
+            }));
+        }
+
+        setPlayers(updatedPlayers);
+        setPot(prev => prev + addToPot);
 
         // Betting round completion is now handled by useEffect
     };
@@ -628,7 +648,7 @@ export const usePokerGame = (
         }
     }, [players, currentBet, phase]);
 
-    // Bot Logic
+    // Adaptive Bot AI Logic
     useEffect(() => {
         const currentPlayer = players[currentTurn];
 
@@ -638,42 +658,49 @@ export const usePokerGame = (
 
         const timer = setTimeout(() => {
             const amountToCall = currentBet - currentPlayer.currentBet;
+            const potOdds = amountToCall / (pot + amountToCall);
 
-            // Simple bot AI
+            // 1. Evaluate Hand Strength (0 to 1 scale roughly)
+            const evaluation = evaluateHand(currentPlayer.hand, communityCards);
+            const handStrength = evaluation.ranking / 10; // Simple normalize 1-10 to 0.1-1.0
+
+            // 2. Factor in Human Aggression (0.5 = normal, >0.5 = human is a bluffer)
+            const humanAggression = humanStats.raises / (humanStats.calls + humanStats.folds + 1);
+            const callThreshold = 0.3 - (humanAggression * 0.1); // If human is aggressive, bot calls easier
+
             const random = Math.random();
 
             if (amountToCall === 0) {
-                // Can check or raise
-                if (random > 0.2) {
-                    handlePlayerAction('check');
-                } else {
-                    // Realistic raise: 3x Big Blind or half pot
+                // Choice: Check or Raise
+                if (handStrength > 0.7 || (handStrength > 0.4 && random > 0.7)) {
+                    // Strong hand or semi-bluff
                     const raiseAmount = Math.max(initialBB * 3, Math.floor(pot * 0.5));
                     handlePlayerAction('raise', currentBet + raiseAmount);
-                }
-            } else if (amountToCall > currentPlayer.balance * 0.6) {
-                // Large bet relative to stack
-                if (random > 0.8) {
-                    handlePlayerAction('call');
                 } else {
-                    handlePlayerAction('fold');
+                    handlePlayerAction('check');
                 }
             } else {
-                // Normal bet
-                if (random > 0.4) {
-                    handlePlayerAction('call');
-                } else if (random > 0.1) {
-                    // Occasional re-raise
-                    const reRaiseAmount = Math.max(lastRaiseAmount, Math.floor(pot * 0.75));
-                    handlePlayerAction('raise', currentBet + reRaiseAmount);
+                // Choice: Call, Raise, or Fold
+                const winProbability = handStrength; // Simplified
+
+                if (winProbability > 0.8) {
+                    // Monster hand: Raise/All-in
+                    handlePlayerAction('raise', currentBet + Math.max(pot, initialBB * 10));
+                } else if (winProbability > potOdds || random < 0.1) {
+                    // Positive expected value OR occasional bluff-call
+                    if (winProbability > 0.6 && random > 0.8) {
+                        handlePlayerAction('raise', currentBet + Math.floor(pot * 0.5));
+                    } else {
+                        handlePlayerAction('call');
+                    }
                 } else {
                     handlePlayerAction('fold');
                 }
             }
-        }, 1000 + Math.random() * 1000);
+        }, 1500 + Math.random() * 1500); // More "thinking" time for bots
 
         return () => clearTimeout(timer);
-    }, [currentTurn, phase, players, currentBet]);
+    }, [currentTurn, phase, players, currentBet, pot, communityCards, humanStats]);
 
     // Showdown Logic with Side Pots and Odd Chip rule
     useEffect(() => {
