@@ -9,11 +9,44 @@ const AdminFinances: React.FC = () => {
         setLoading(true);
         const { data } = await supabase
             .from('transactions')
-            .select('*, profiles(name)')
+            .select('*, profiles(name, balance)')
             .order('created_at', { ascending: false });
 
         if (data) setTransactions(data);
         setLoading(false);
+    };
+
+    const handleApprove = async (tx: any) => {
+        const { error } = await supabase
+            .from('transactions')
+            .update({ status: 'completed' })
+            .eq('id', tx.id);
+
+        if (!error) {
+            alert('Withdrawal approved successfully');
+            fetchTransactions();
+        }
+    };
+
+    const handleReject = async (tx: any) => {
+        // Refund the user
+        const newBalance = (tx.profiles?.balance || 0) + tx.amount;
+
+        // Use a transaction or sequential updates
+        const { error: profileError } = await supabase
+            .from('profiles')
+            .update({ balance: newBalance })
+            .eq('id', tx.user_id);
+
+        if (!profileError) {
+            await supabase
+                .from('transactions')
+                .update({ status: 'rejected' })
+                .eq('id', tx.id);
+
+            alert('Withdrawal rejected and funds refunded.');
+            fetchTransactions();
+        }
     };
 
     useEffect(() => {
@@ -73,10 +106,30 @@ const AdminFinances: React.FC = () => {
                                     {new Date(tx.created_at).toLocaleString()}
                                 </td>
                                 <td className="px-6 py-4 text-right">
-                                    <div className="flex items-center justify-end gap-1 text-emerald-400 font-bold text-[10px] uppercase">
-                                        <span className="material-symbols-outlined text-sm">check_circle</span>
-                                        {tx.status}
-                                    </div>
+                                    {tx.status === 'pending' ? (
+                                        <div className="flex items-center justify-end gap-2">
+                                            <button
+                                                onClick={() => handleApprove(tx)}
+                                                className="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded text-[10px] font-black uppercase transition-all"
+                                            >
+                                                Approve
+                                            </button>
+                                            <button
+                                                onClick={() => handleReject(tx)}
+                                                className="bg-rose-500 hover:bg-rose-600 text-white px-3 py-1 rounded text-[10px] font-black uppercase transition-all"
+                                            >
+                                                Reject
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className={`flex items-center justify-end gap-1 font-bold text-[10px] uppercase ${tx.status === 'completed' ? 'text-emerald-400' : 'text-slate-500'
+                                            }`}>
+                                            <span className="material-symbols-outlined text-sm">
+                                                {tx.status === 'completed' ? 'check_circle' : 'cancel'}
+                                            </span>
+                                            {tx.status}
+                                        </div>
+                                    )}
                                 </td>
                             </tr>
                         ))}

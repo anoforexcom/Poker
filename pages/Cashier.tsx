@@ -33,7 +33,7 @@ const Cashier: React.FC = () => {
         await withdraw(val, method);
         setIsProcessing(false);
         setAmount('');
-        await showAlert(`Withdrawn $${val.toLocaleString()} to ${method} successfully!`, 'success', { title: 'Transaction Complete' });
+        await showAlert(`Withdrawal of $${val.toLocaleString()} to ${method} requested and is pending approval.`, 'info', { title: 'Request Received' });
       } catch (err: any) {
         setIsProcessing(false);
         await showAlert('Insufficient funds for this withdrawal.', 'error', { title: 'Transaction Failed' });

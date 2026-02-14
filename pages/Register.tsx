@@ -56,6 +56,9 @@ const Register: React.FC = () => {
 
             <div className="max-w-md w-full bg-surface border border-border-dark rounded-2xl shadow-2xl relative z-10 p-8 sm:p-10">
                 <div className="text-center mb-8">
+                    <div className="inline-flex items-center justify-center mb-4">
+                        <img src="/logo.png" className="size-16 rounded-2xl shadow-lg border border-primary/20 object-cover" alt="Logo" />
+                    </div>
                     <h1 className="text-3xl font-black text-white font-display mb-2">Create Account</h1>
                     <p className="text-slate-400">Join the high stakes action today.</p>
                 </div>

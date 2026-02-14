@@ -8,6 +8,8 @@ interface UserState {
   avatar: string;
   balance: number;
   rank: string;
+  xp: number;
+  level: number;
 }
 
 interface Transaction {
@@ -29,6 +31,7 @@ interface GameContextType {
   activeGames: string[];
   addActiveGame: (id: string) => void;
   removeActiveGame: (id: string) => void;
+  claimReward: (challengeId: number) => Promise<{ success: boolean; message: string; new_balance?: number }>;
 }
 
 const defaultUser: UserState = {
@@ -37,6 +40,8 @@ const defaultUser: UserState = {
   avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Guest',
   balance: 0,
   rank: 'Bronze',
+  xp: 0,
+  level: 1,
 };
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -73,6 +78,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         avatar: authUser.avatar,
         balance: authUser.balance,
         rank: authUser.rank,
+        xp: authUser.xp || 0,
+        level: authUser.level || 1,
       });
       fetchTransactions();
     } else {
@@ -116,7 +123,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           type: 'withdrawal',
           amount: amount,
           method: method,
-          status: 'completed'
+          status: 'pending'
         });
         fetchTransactions();
       }
@@ -146,6 +153,17 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setActiveGames(prev => prev.filter(gameId => gameId !== id));
   };
 
+  const claimReward = async (challengeId: number) => {
+    const { data, error } = await supabase.rpc('claim_reward', { challenge_id_param: challengeId });
+    if (error) throw error;
+
+    if (data.success) {
+      setUser(prev => ({ ...prev, balance: data.new_balance }));
+      fetchTransactions();
+    }
+    return data;
+  };
+
   return (
     <GameContext.Provider value={{
       user,
@@ -154,6 +172,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       withdraw,
       updateBalance,
       updateUser,
+      claimReward,
       activeGames,
       addActiveGame,
       removeActiveGame

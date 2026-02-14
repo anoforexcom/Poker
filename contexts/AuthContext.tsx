@@ -8,6 +8,8 @@ interface User {
     avatar: string;
     balance: number;
     rank: string;
+    xp: number;
+    level: number;
     isAdmin: boolean;
 }
 
@@ -47,6 +49,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     avatar: data.avatar_url,
                     balance: data.balance,
                     rank: data.rank,
+                    xp: data.xp || 0,
+                    level: data.level || 1,
                     isAdmin: data.is_admin || false
                 };
             }
@@ -85,6 +89,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     avatar: data.avatar_url,
                     balance: data.balance,
                     rank: data.rank,
+                    xp: data.xp || 0,
+                    level: data.level || 1,
                     isAdmin: data.is_admin || false
                 };
             }
@@ -144,6 +150,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lucky',
                     balance: 100000,
                     rank: 'Diamond',
+                    xp: 5000,
+                    level: 10,
                     isAdmin: true
                 };
                 setUser(testUser);
@@ -203,6 +211,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     ...profileData,
                     email: email,
                     avatar: profileData.avatar_url,
+                    xp: 0,
+                    level: 1,
                     isAdmin: false
                 });
             }
@@ -227,6 +237,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Guest',
             balance: 50000,
             rank: 'Platinum',
+            xp: 2500,
+            level: 5,
             isAdmin: false
         };
 

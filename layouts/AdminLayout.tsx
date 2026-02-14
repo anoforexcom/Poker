@@ -37,7 +37,7 @@ const AdminLayout: React.FC = () => {
             <aside className="w-64 bg-surface border-r border-border-dark flex flex-col h-screen shrink-0">
                 <div className="p-6">
                     <div className="flex items-center gap-3">
-                        <img src="/logo.svg" className="size-10 rounded-xl" alt="Logo" />
+                        <img src="/logo.png" className="size-10 rounded-xl object-cover" alt="Logo" />
                         <div>
                             <h1 className="text-lg font-bold text-white leading-none">ADMIN</h1>
                             <p className="text-[10px] text-primary font-black uppercase tracking-widest">BestPoker.Cash</p>
