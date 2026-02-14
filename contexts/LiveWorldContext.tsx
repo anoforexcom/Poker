@@ -51,13 +51,29 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
         if (data && data.length > 0) {
             const mapped: Tournament[] = data.map(t => {
                 const now = new Date();
-                const startTime = new Date(t.scheduled_start_time);
-                const lateRegUntil = new Date(t.late_reg_until);
+                let startDate = new Date();
+                try {
+                    if (t.scheduled_start_time) {
+                        startDate = new Date(t.scheduled_start_time);
+                        // Check for Invalid Date
+                        if (isNaN(startDate.getTime())) {
+                            startDate = new Date();
+                        }
+                    }
+                } catch (e) {
+                    console.error('Date parse error', e);
+                }
+
+                const lateRegUntil = t.late_reg_until ? new Date(t.late_reg_until) : new Date(startDate.getTime() + 30 * 60000);
 
                 let normalizedStatus: TournamentStatus = 'Registering';
                 if (t.status === 'finished') normalizedStatus = 'Finished';
-                else if (now > lateRegUntil) normalizedStatus = 'Running';
-                else if (now > startTime) normalizedStatus = 'Late Reg';
+                else if (now > lateRegUntil) normalizedStatus = 'Running'; // Fallback if simulator didn't update
+                else if (now > startDate) normalizedStatus = 'Late Reg';
+
+                // Format friendly time
+                const timeOptions: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' };
+                const formattedTime = startDate.toLocaleTimeString([], timeOptions);
 
                 return {
                     id: t.id,
@@ -68,7 +84,7 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
                     players: t.players_count,
                     maxPlayers: t.max_players,
                     status: normalizedStatus,
-                    startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    startTime: formattedTime === 'Invalid Date' ? 'Now' : formattedTime,
                     progress: normalizedStatus === 'Running' ? 50 : 0,
                     type: t.type as any
                 };
