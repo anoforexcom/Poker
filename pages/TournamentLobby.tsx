@@ -292,22 +292,34 @@ const TournamentLobby: React.FC = () => {
                         <button className="w-full py-4 bg-green-500/10 border border-green-500 text-green-500 font-black rounded-xl cursor-default flex flex-col items-center justify-center gap-1">
                             <div className="flex items-center gap-2"><span className="material-symbols-outlined">check_circle</span> REGISTERED</div>
                         </button>
-                        <button
-                            onClick={handleGoToTable}
-                            disabled={isNavigating}
-                            className="w-full py-4 bg-primary hover:bg-blue-600 disabled:bg-primary/50 text-white font-black rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2 animate-pulse"
-                        >
-                            {isNavigating ? (
-                                <>
-                                    <span className="size-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                                    LOADING...
-                                </>
-                            ) : (
-                                <>
-                                    GO TO TABLE <span className="material-symbols-outlined">login</span>
-                                </>
-                            )}
-                        </button>
+                        {/* Waiting Room Logic */}
+                        {tournament.status === 'Registering' && tournament.startTime !== 'Now' ? (
+                            <div className="w-full py-4 bg-slate-800 border border-slate-700 rounded-xl flex flex-col items-center justify-center gap-2">
+                                <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest animate-pulse">Tournament Starts In</span>
+                                <div className="text-2xl font-black text-white font-mono">
+                                    {/* Calculated in parent or separate component, but here we can just show start time for now or a static 'WAITING' */}
+                                    {tournament.startTime}
+                                </div>
+                                <p className="text-[9px] text-slate-500">You are registered. Please wait.</p>
+                            </div>
+                        ) : (
+                            <button
+                                onClick={handleGoToTable}
+                                disabled={isNavigating}
+                                className="w-full py-4 bg-primary hover:bg-blue-600 disabled:bg-primary/50 text-white font-black rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2 animate-pulse"
+                            >
+                                {isNavigating ? (
+                                    <>
+                                        <span className="size-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                                        LOADING...
+                                    </>
+                                ) : (
+                                    <>
+                                        GO TO TABLE <span className="material-symbols-outlined">login</span>
+                                    </>
+                                )}
+                            </button>
+                        )}
                     </div>
                 ) : isRegistering ? (
                     <button

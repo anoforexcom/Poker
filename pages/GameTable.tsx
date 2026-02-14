@@ -62,7 +62,8 @@ const GameTable: React.FC = () => {
       return 'regular';
     })() as BlindStructureType,
 
-    isObserver
+    isObserver,
+    status: tournament.status
   } : undefined;
 
   const {

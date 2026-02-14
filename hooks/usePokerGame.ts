@@ -35,6 +35,7 @@ export interface GameConfig {
     maxPlayers: number;
     blindStructureType?: BlindStructureType;
     isObserver?: boolean;
+    status?: string; // To detect if tournament is running for late reg logic
 }
 
 const DEFAULT_CONFIG: GameConfig = {
@@ -120,7 +121,7 @@ export const usePokerGame = (
 
                     const isHero = p.user_id === currentUserId;
 
-                    return {
+                    const mappedPlayer: Player = {
                         id: p.bot_id || p.user_id || `player-${index}`,
                         name: isHero ? 'You' : (profile?.name || (isBot ? 'Bot' : 'Player')),
                         avatar: (profile as any)?.avatar || (profile as any)?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${index}`,
@@ -132,6 +133,15 @@ export const usePokerGame = (
                         isActive: true,
                         totalContribution: 0
                     };
+
+                    // REALISM: If joining a running tournament (Late Reg), randomize bot stacks 
+                    // to simulate action that has already happened.
+                    if (isBot && (config.status === 'Running' || config.status === 'Late Reg') && mappedPlayer.balance === config.startingStack) {
+                        const randomFactor = 0.5 + Math.random() * 2.5; // 0.5x to 3.0x stack
+                        mappedPlayer.balance = Math.floor(config.startingStack * randomFactor);
+                    }
+
+                    return mappedPlayer;
                 });
 
                 // Sort so Hero is always at index 0 for consistent UI control/seating
