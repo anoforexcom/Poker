@@ -24,7 +24,20 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
                 return;
             }
             if (data) {
-                setTournaments(data);
+                // Map snake_case database columns to camelCase for frontend components
+                const mappedTournaments = data.map((t: any) => ({
+                    ...t,
+                    buyIn: t.buy_in,
+                    prizePool: t.prize_pool,
+                    players: t.players_count,
+                    maxPlayers: t.max_players,
+                    scheduledStartTime: t.scheduled_start_time,
+                    lateRegUntil: t.late_reg_until,
+                    currentBlindLevel: t.current_blind_level
+                }));
+
+                setTournaments(mappedTournaments);
+
                 // Simple estimation for active tables based on player count
                 const totalPlayers = data.reduce((acc: number, t: any) => acc + (t.players_count || 0), 0);
                 setActiveTables(Math.ceil(totalPlayers / 6) || 0);
