@@ -66,6 +66,24 @@ const Lobby: React.FC = () => {
     }
 
     return true;
+  }).sort((a, b) => {
+    // Sort critical statuses to top
+    const statusOrder: Record<string, number> = {
+      'registering': 0,
+      'late_reg': 1,
+      'running': 2,
+      'final_table': 3,
+      'active': 0, // for cash games
+      'finished': 9
+    };
+
+    const statusA = statusOrder[a.status?.toLowerCase()] ?? 8;
+    const statusB = statusOrder[b.status?.toLowerCase()] ?? 8;
+
+    if (statusA !== statusB) return statusA - statusB;
+
+    // Secondary sort by title to keep it stable
+    return a.name.localeCompare(b.name);
   });
 
   const handleJoinGame = async (t: any) => {
@@ -392,13 +410,13 @@ const Lobby: React.FC = () => {
                       ></div>
                     </div>
 
-                    <button className={`w-full py-2 rounded-lg font-black text-xs transition-all shadow-lg hover:brightness-110 ${t.status === 'Registering' || t.status === 'Late Reg'
+                    <button className={`w-full py-2 rounded-lg font-black text-xs transition-all shadow-lg hover:brightness-110 ${['registering', 'late_reg', 'active'].includes(t.status?.toLowerCase())
                       ? 'bg-poker-green text-white shadow-poker-green/20'
-                      : t.status === 'Running'
+                      : ['running', 'final_table'].includes(t.status?.toLowerCase())
                         ? 'bg-blue-600 text-white shadow-blue-600/20'
                         : 'bg-slate-700 text-slate-400 cursor-not-allowed'
                       }`}>
-                      {t.type === 'cash' ? 'JOIN' : t.status === 'Running' || t.status === 'Final Table' ? 'OBSERVE' : t.status === 'Finished' ? 'ENDED' : 'REGISTER'}
+                      {t.type === 'cash' ? 'JOIN' : ['running', 'final_table'].includes(t.status?.toLowerCase()) ? 'OBSERVE' : t.status?.toLowerCase() === 'finished' ? 'ENDED' : 'REGISTER'}
                     </button>
                   </div>
                 </div>
