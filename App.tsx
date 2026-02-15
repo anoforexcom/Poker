@@ -322,12 +322,10 @@ const AppRoutes = () => {
 
 import { NotificationProvider } from './contexts/NotificationContext';
 
-import DebugOverlay from './components/DebugOverlay';
 
 const App: React.FC = () => {
   return (
     <HashRouter>
-      <DebugOverlay />
       <ScrollToTop />
       <NotificationProvider>
         <PWAInstallPrompt />

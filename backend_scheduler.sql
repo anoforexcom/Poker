@@ -13,7 +13,7 @@ DECLARE
     v_running_count INT;
     v_needed INT;
     v_i INT;
-    v_new_id UUID;
+    v_new_id TEXT;
     v_titles TEXT[] := ARRAY['Hyper Turbo', 'Daily Big', 'Deepstack', 'Speed Racer', 'Bounty Hunter'];
     v_types TEXT[] := ARRAY['tournament', 'sitgo'];
     v_random_title TEXT;
@@ -21,9 +21,10 @@ DECLARE
     v_random_buyin NUMERIC;
 BEGIN
     -- 1. Gather verify statistics
-    SELECT count(*) INTO v_registering_count FROM tournaments WHERE status = 'registering' OR status = 'Registering';
-    SELECT count(*) INTO v_late_reg_count FROM tournaments WHERE status = 'late_reg' OR status = 'Late Reg';
-    SELECT count(*) INTO v_running_count FROM tournaments WHERE status = 'running' OR status = 'Running';
+    -- 1. Gather verify statistics
+    SELECT count(*) INTO v_registering_count FROM public.tournaments WHERE status = 'registering' OR status = 'Registering';
+    SELECT count(*) INTO v_late_reg_count FROM public.tournaments WHERE status = 'late_reg' OR status = 'Late Reg';
+    SELECT count(*) INTO v_running_count FROM public.tournaments WHERE status = 'running' OR status = 'Running';
 
     -- Log current state
     RAISE NOTICE 'WorldState: Reg=%, Late=%, Run=%', v_registering_count, v_late_reg_count, v_running_count;
@@ -44,8 +45,9 @@ BEGIN
                 v_random_buyin := 50 + floor(random() * 100); -- 50-150
             END IF;
 
-            -- Insert the tournament
-            INSERT INTO tournaments (
+            -- Inserção SEM user de sistema (coluna created_by não existe)
+            INSERT INTO public.tournaments (
+                id,
                 name,
                 type,
                 status,
@@ -57,6 +59,7 @@ BEGIN
                 current_blind_level,
                 created_at
             ) VALUES (
+                gen_random_uuid()::text,
                 v_random_title || ' #' || floor(random() * 1000),
                 v_random_type,
                 'registering',

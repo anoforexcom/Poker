@@ -1,0 +1,17 @@
+--- INSPECTING TOURNAMENTS SCHEMA ---
+Columns found on record: [
+  'id',
+  'name',
+  'type',
+  'status',
+  'buy_in',
+  'prize_pool',
+  'players_count',
+  'max_players',
+  'start_time',
+  'blind_level',
+  'created_at',
+  'scheduled_start_time',
+  'late_reg_until',
+  'current_blind_level'
+]
