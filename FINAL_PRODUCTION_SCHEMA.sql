@@ -74,6 +74,27 @@ CREATE TABLE IF NOT EXISTS public.transactions (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Garante colunas extra (caso tabela já exista de versões antigas)
+DO $$
+BEGIN
+    BEGIN
+        ALTER TABLE tournaments ADD COLUMN scheduled_start_time TIMESTAMP WITH TIME ZONE;
+    EXCEPTION WHEN duplicate_column THEN END;
+    BEGIN
+        ALTER TABLE tournaments ADD COLUMN late_reg_until TIMESTAMP WITH TIME ZONE;
+    EXCEPTION WHEN duplicate_column THEN END;
+    BEGIN
+        ALTER TABLE tournaments ADD COLUMN current_blind_level INTEGER DEFAULT 1;
+    EXCEPTION WHEN duplicate_column THEN END;
+    BEGIN
+        ALTER TABLE tournaments ADD COLUMN prize_pool DECIMAL DEFAULT 0;
+    EXCEPTION WHEN duplicate_column THEN END;
+    BEGIN
+        ALTER TABLE tournaments ADD COLUMN players_count INTEGER DEFAULT 0;
+    EXCEPTION WHEN duplicate_column THEN END;
+END $$;
+
+
 -- Motor de Jogo (Fase 5 - Com Auditoria)
 CREATE TABLE IF NOT EXISTS public.game_states (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
