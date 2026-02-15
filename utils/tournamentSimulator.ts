@@ -324,7 +324,7 @@ export class TournamentSimulator {
             }
 
             // Maintain upcoming schedule (OUTSIDE the per-tournament loop)
-            const futureLimit = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+            const futureLimit = new Date(now.getTime() + 12 * 60 * 60 * 1000); // 12h ahead for performance
 
             // Get the latest scheduled start time from all tournaments (active or finished) to keep the rhythm
             const { data: latestTournaments } = await supabase
@@ -333,18 +333,29 @@ export class TournamentSimulator {
                 .order('scheduled_start_time', { ascending: false })
                 .limit(1);
 
-            const latestStartTime = latestTournaments?.[0]?.scheduled_start_time
+            let latestStartTime = latestTournaments?.[0]?.scheduled_start_time
                 ? new Date(latestTournaments[0].scheduled_start_time)
                 : now;
 
+            // If the schedule is in the past, jump to now
+            if (latestStartTime < now) {
+                latestStartTime = now;
+            }
+
             if (latestStartTime < futureLimit) {
-                // Generate a batch of tournaments if we are low on future ones
-                const tournamentsToGenerate = 5;
-                for (let i = 1; i <= tournamentsToGenerate; i++) {
-                    const nextTime = new Date(latestStartTime.getTime() + i * 15 * 60000);
+                const tournamentsToGenerate: any[] = [];
+                // Generate enough tournaments to reach future limit (capped at 20 per tick)
+                while (latestStartTime < futureLimit && tournamentsToGenerate.length < 20) {
+                    const nextTime = new Date(latestStartTime.getTime() + 15 * 60000);
                     const nextLateReg = new Date(nextTime.getTime() + 30 * 60000);
                     const type: GameType = Math.random() > 0.7 ? 'tournament' : 'cash';
-                    await supabase.from('tournaments').insert([this.generateTournamentData(type, nextTime, nextLateReg)]);
+                    tournamentsToGenerate.push(this.generateTournamentData(type, nextTime, nextLateReg));
+                    latestStartTime = nextTime;
+                }
+
+                if (tournamentsToGenerate.length > 0) {
+                    await supabase.from('tournaments').insert(tournamentsToGenerate);
+                    console.log(`[SIMULATOR] Generated ${tournamentsToGenerate.length} new tournaments to catch up.`);
                 }
             }
         } catch (err) {

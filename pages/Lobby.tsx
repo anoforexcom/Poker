@@ -70,10 +70,11 @@ const Lobby: React.FC = () => {
 
   const handleJoinGame = async (t: any) => {
     // If it's a finished tournament, we can only observe
-    if (t.status === 'Finished') return;
+    const status = t.status?.toLowerCase();
+    if (status === 'finished') return;
 
     // For Running tournaments, we are observing
-    if (t.status === 'Running' || t.status === 'Final Table') {
+    if (status === 'running' || status === 'final_table') {
       navigate(t.type === 'cash' || t.type === 'sitgo' || t.type === 'spingo' ? `/table/${t.id}` : `/tournament/${t.id}`);
       return;
     }
@@ -127,13 +128,14 @@ const Lobby: React.FC = () => {
     return 0;
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (rawStatus: string) => {
+    const status = rawStatus?.toLowerCase();
     switch (status) {
-      case 'Registering': return 'text-poker-green';
-      case 'Late Reg': return 'text-yellow-500';
-      case 'Running': return 'text-blue-400';
-      case 'Final Table': return 'text-red-500 animate-pulse';
-      case 'Finished': return 'text-slate-500';
+      case 'registering': return 'text-poker-green';
+      case 'late_reg': return 'text-yellow-500';
+      case 'running': return 'text-blue-400';
+      case 'final_table': return 'text-red-500 animate-pulse';
+      case 'finished': return 'text-slate-500';
       default: return 'text-white';
     }
   };
@@ -301,7 +303,7 @@ const Lobby: React.FC = () => {
                           <h3 className="text-[11px] xs:text-xs md:text-sm font-black text-white truncate leading-none mb-1">{t.name}</h3>
                           <div className="flex items-center gap-1">
                             <span className={`text-[7px] md:text-[9px] font-black uppercase tracking-widest px-1 py-0.5 rounded bg-black/40 ${getStatusColor(t.status)}`}>
-                              {t.status}
+                              {t.status?.replace('_', ' ')}
                             </span>
                             {t.type === 'spingo' && <span className="text-[7px] md:text-[9px] bg-gold/20 text-gold px-1 py-0.5 rounded font-black border border-gold/10">SPIN</span>}
                           </div>
@@ -329,13 +331,13 @@ const Lobby: React.FC = () => {
                         )}
                       </div>
 
-                      <button className={`mt-3 px-4 py-2 md:px-8 md:py-3 rounded-xl font-black text-[9px] md:text-xs tracking-widest transition-all shadow-xl hover:brightness-110 active:scale-95 whitespace-nowrap uppercase border ${t.status === 'Registering' || t.status === 'Late Reg'
+                      <button className={`mt-3 px-4 py-2 md:px-8 md:py-3 rounded-xl font-black text-[9px] md:text-xs tracking-widest transition-all shadow-xl hover:brightness-110 active:scale-95 whitespace-nowrap uppercase border ${t.status?.toLowerCase() === 'registering' || t.status?.toLowerCase() === 'late_reg'
                         ? 'bg-emerald-600 border-emerald-500 text-white shadow-emerald-900/40'
-                        : t.status === 'Running' || t.status === 'Final Table'
+                        : t.status?.toLowerCase() === 'running' || t.status?.toLowerCase() === 'final_table'
                           ? 'bg-blue-600 border-blue-500 text-white shadow-blue-900/40'
                           : 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed'
                         }`}>
-                        {t.type === 'cash' ? 'ENTER' : t.status === 'Running' || t.status === 'Final Table' ? 'OBSERVE' : t.status === 'Finished' ? 'FINISHED' : 'REGISTER'}
+                        {t.type === 'cash' ? 'ENTER' : (t.status?.toLowerCase() === 'running' || t.status?.toLowerCase() === 'final_table') ? 'OBSERVE' : t.status?.toLowerCase() === 'finished' ? 'FINISHED' : 'REGISTER'}
                       </button>
                     </div>
                   </div>
