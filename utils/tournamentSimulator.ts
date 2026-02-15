@@ -321,16 +321,27 @@ export class TournamentSimulator {
                         }
                     }
                 }
+            }
 
-                // Maintain upcoming schedule
-                const futureLimit = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-                const latestT = activeTournaments.reduce((prev, curr) =>
-                    new Date(curr.scheduled_start_time) > new Date(prev.scheduled_start_time) ? curr : prev,
-                    activeTournaments[0] || { scheduled_start_time: now.toISOString() }
-                );
+            // Maintain upcoming schedule (OUTSIDE the per-tournament loop)
+            const futureLimit = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
-                if (new Date(latestT.scheduled_start_time) < futureLimit) {
-                    const nextTime = new Date(new Date(latestT.scheduled_start_time).getTime() + 15 * 60000);
+            // Get the latest scheduled start time from all tournaments (active or finished) to keep the rhythm
+            const { data: latestTournaments } = await supabase
+                .from('tournaments')
+                .select('scheduled_start_time')
+                .order('scheduled_start_time', { ascending: false })
+                .limit(1);
+
+            const latestStartTime = latestTournaments?.[0]?.scheduled_start_time
+                ? new Date(latestTournaments[0].scheduled_start_time)
+                : now;
+
+            if (latestStartTime < futureLimit) {
+                // Generate a batch of tournaments if we are low on future ones
+                const tournamentsToGenerate = 5;
+                for (let i = 1; i <= tournamentsToGenerate; i++) {
+                    const nextTime = new Date(latestStartTime.getTime() + i * 15 * 60000);
                     const nextLateReg = new Date(nextTime.getTime() + 30 * 60000);
                     const type: GameType = Math.random() > 0.7 ? 'tournament' : 'cash';
                     await supabase.from('tournaments').insert([this.generateTournamentData(type, nextTime, nextLateReg)]);

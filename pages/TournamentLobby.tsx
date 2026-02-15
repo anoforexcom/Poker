@@ -76,12 +76,12 @@ const TournamentLobby: React.FC = () => {
 
     // Timer logic
     useEffect(() => {
-        if (!tournament || tournament.status !== 'Registering') return;
+        if (!tournament || (tournament.status?.toLowerCase() !== 'registering')) return;
 
         const timer = setInterval(() => {
             // Simple parsing for "HH:MM" format
             // Assumes tournament.startTime is like "14:00" or "Now"
-            if (tournament.startTime === 'Now') {
+            if (tournament.startTime === 'Now' || tournament.scheduledStartTime === 'Now') {
                 setTimeLeft('Starting...');
                 return;
             }
@@ -238,7 +238,7 @@ const TournamentLobby: React.FC = () => {
                                 <span className="material-symbols-outlined">check_circle</span> Registered
                             </div>
 
-                            {(tournament.status === 'Running' || tournament.status === 'Late Reg' || timeLeft === 'Starting...') ? (
+                            {(tournament.status?.toLowerCase() === 'running' || tournament.status?.toLowerCase() === 'late_reg' || timeLeft === 'Starting...') ? (
                                 <button
                                     onClick={handleEnter}
                                     disabled={isNavigating}
@@ -255,7 +255,7 @@ const TournamentLobby: React.FC = () => {
                             )}
                         </>
                     ) : (
-                        tournament.status !== 'Finished' && (
+                        tournament.status?.toLowerCase() !== 'finished' && (
                             <button
                                 onClick={handleRegister}
                                 disabled={isRegistering}
