@@ -9,14 +9,49 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
 console.log("🚀 Poker Simulator Edge Function Started");
 
+// LOCK & CONCURRENCY HELPERS
+async function acquireLock(key: string, durationInitialMap = 60) {
+    // Attempt to acquire lock via DB function
+    // Since we don't have direct SQL connection for session-level advisory locks,
+    // we use a table-based lock with expiration.
+    const { data, error } = await supabase.rpc('acquire_system_lock', {
+        target_key: key,
+        duration_seconds: durationInitialMap
+    });
+
+    if (error) {
+        console.error('Lock Error:', error);
+        return false;
+    }
+    return data; // true if acquired, false if denied
+}
+
+async function releaseLock(key: string) {
+    await supabase.rpc('release_system_lock', { target_key: key });
+}
+
 serve(async (req) => {
     try {
         const { action, ...payload } = await req.json();
 
+        // ADVISORY LOCK (Simulation Tick Only)
+        // Prevent double execution of the heavy tick logic
         if (action === 'tick') {
-            await processSimulationTick();
-            // await processGameProgression(); // Merged into tick/move logic
-            return new Response(JSON.stringify({ success: true, message: 'Tick processed' }), { headers: { "Content-Type": "application/json" } });
+            const hasLock = await acquireLock('poker_tick_runner', 55); // 55s expiry (cron runs every 60s)
+
+            if (!hasLock) {
+                console.warn('⚠️ Tick simulation locked by another instance. Aborting.');
+                return new Response(JSON.stringify({ success: false, message: 'Locked' }), { status: 423 }); // Locked
+            }
+
+            try {
+                await processSimulationTick();
+                // Check if any tournament is running, if not, ensure seed
+                await ensureOpenTournaments();
+                return new Response(JSON.stringify({ success: true, message: 'Tick processed' }), { headers: { "Content-Type": "application/json" } });
+            } finally {
+                await releaseLock('poker_tick_runner');
+            }
         }
 
         if (action === 'seed') {
@@ -436,6 +471,33 @@ async function processSimulationTick() {
     }
 }
 
+async function ensureOpenTournaments() {
+    // Check if there are any registering or running tournaments
+    const { count } = await supabase
+        .from('tournaments')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['registering', 'late_reg', 'running']);
+
+    if (count === 0) {
+        console.log('No active tournaments found. Creating a new one...');
+        // Create a new tournament due to emptiness
+        const startTime = new Date();
+        startTime.setMinutes(startTime.getMinutes() + 2); // Start in 2 mins
+
+        await supabase.from('tournaments').insert({
+            name: `Sit & Go ${Math.floor(Math.random() * 1000)}`,
+            status: 'registering',
+            type: 'sit_and_go',
+            buy_in: 1000,
+            prize_pool: 0,
+            scheduled_start_time: startTime.toISOString(),
+            min_players: 2,
+            max_players: 6,
+            players_count: 0
+        });
+    }
+}
+
 async function handleBotMove(tournamentId: string, botId: string, state: any) {
     const playerState = state.player_states[botId];
     if (!playerState) return;
@@ -448,8 +510,12 @@ async function handleBotMove(tournamentId: string, botId: string, state: any) {
     let action = 'call';
     let amount = 0;
 
+    // Random Key for audit
+    // In a real RNG engine, we'd generate this securely
+    const decisionRng = Math.random();
+
     // Randomly Raise
-    if (Math.random() > 0.8 && toCall < 200) {
+    if (decisionRng > 0.8 && toCall < 200) {
         action = 'raise';
         amount = currentBet + 40; // min raise
     } else if (toCall > 500) {
