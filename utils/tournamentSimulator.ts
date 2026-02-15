@@ -41,36 +41,54 @@ export class TournamentSimulator {
     ) { }
 
     async seedInitialData() {
-        console.log('[SIMULATOR] Checking for existing data...');
-        console.log('[SIMULATOR] Checking for existing data...');
-        const { count: tournCount } = await supabase.from('tournaments').select('*', { count: 'exact', head: true });
-        const { count: botCount } = await supabase.from('bots').select('*', { count: 'exact', head: true });
+        console.log('[SIMULATOR] Starting data synchronization...');
+        try {
+            const { count: tournCount, error: tournErr } = await supabase.from('tournaments').select('*', { count: 'exact', head: true });
+            const { count: botCount, error: botErr } = await supabase.from('bots').select('*', { count: 'exact', head: true });
 
-        // Seed Bots if missing or insufficient
-        if (botCount === null || botCount < 3000) {
-            console.log(`[SIMULATOR] Population low (${botCount}). Seeding up to 3000 bots...`);
-            const needed = 3000 - (botCount || 0);
-            const batchSize = 100;
+            if (tournErr) console.error('[SIMULATOR] Error checking tournaments:', tournErr);
+            if (botErr) console.error('[SIMULATOR] Error checking bots:', botErr);
 
-            for (let i = 0; i < needed; i += batchSize) {
-                const bots = Array.from({ length: Math.min(batchSize, needed - i) }).map((_, j) => {
-                    const idx = (botCount || 0) + i + j;
-                    return {
-                        id: `bot_${idx}_${Date.now()}`, // Ensure unique ID
-                        name: generateBotName(),
-                        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=bot${idx}`,
-                        balance: 5000 + Math.random() * 20000,
-                        skill: 20 + Math.random() * 80,
-                    };
-                });
-                await supabase.from('bots').upsert(bots);
+            console.log(`[SIMULATOR] Current stats: ${tournCount} tournaments, ${botCount} bots.`);
+
+            // Seed Bots if missing or insufficient
+            if (botCount === null || botCount < 3000) {
+                const targetCount = 3000;
+                console.log(`[SIMULATOR] Population low (${botCount}/${targetCount}). Seeding bots...`);
+                const needed = targetCount - (botCount || 0);
+                const batchSize = 100;
+
+                for (let i = 0; i < needed; i += batchSize) {
+                    const count = Math.min(batchSize, needed - i);
+                    console.log(`[SIMULATOR] Generating batch of ${count} bots (${i + (botCount || 0)}/${targetCount})...`);
+
+                    const bots = Array.from({ length: count }).map((_, j) => {
+                        const idx = (botCount || 0) + i + j;
+                        return {
+                            id: `bot_${idx}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, // More unique
+                            name: generateBotName(),
+                            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=bot${idx}`,
+                            balance: 5000 + Math.random() * 20000,
+                            skill: 20 + Math.random() * 80,
+                        };
+                    });
+
+                    const { error: upsertErr } = await supabase.from('bots').upsert(bots);
+                    if (upsertErr) {
+                        console.error(`[SIMULATOR] Batch upsert failed at index ${i}:`, upsertErr);
+                        break; // Stop if we hit an error to avoid infinite loops or spam
+                    }
+                }
+                console.log('[SIMULATOR] Bot seeding completed.');
             }
-        }
 
-        // Seed Tournaments if missing
-        if (tournCount === 0) {
-            // Create 24h schedule
-            await this.generateFixedSchedule();
+            // Seed Tournaments if missing
+            if (tournCount === 0) {
+                console.log('[SIMULATOR] No tournaments found. Generating initial schedule...');
+                await this.generateFixedSchedule();
+            }
+        } catch (err) {
+            console.error('[SIMULATOR] Fatal error during seeding:', err);
         }
     }
 
@@ -91,6 +109,7 @@ export class TournamentSimulator {
             tournaments.push(this.generateTournamentData(type, startTime, lateRegUntil));
         }
 
+        console.log(`[SIMULATOR] Inserting ${tournaments.length} initial tournaments...`);
         const { data: insertedTournaments, error } = await supabase.from('tournaments').insert(tournaments).select();
 
         if (error) {
@@ -98,42 +117,44 @@ export class TournamentSimulator {
             return;
         }
 
+        console.log(`[SIMULATOR] Successfully inserted ${insertedTournaments?.length} tournaments.`);
+
         // CRITICAL FIX: Insert actual participant rows for the pre-filled counts
-        // Otherwise Lobby shows "50 Players" but the list is empty.
         if (insertedTournaments && insertedTournaments.length > 0) {
             const participantsToInsert: any[] = [];
-
-            // Fetch a pool of bots to distribute
             const { data: allBots } = await supabase.from('bots').select('id').limit(3000);
-            if (!allBots || allBots.length === 0) return;
 
+            if (!allBots || allBots.length === 0) {
+                console.warn('[SIMULATOR] No bots found to assign to initial tournaments.');
+                return;
+            }
+
+            console.log(`[SIMULATOR] Assigning ${allBots.length} potential bots to tournaments...`);
             let botIndex = 0;
 
             for (const tourney of insertedTournaments) {
                 if (tourney.players_count > 0) {
                     const count = tourney.players_count;
-                    // Assign unique bots to this tournament
                     for (let i = 0; i < count; i++) {
-                        if (botIndex >= allBots.length) botIndex = 0; // Wrap around if needed
-
+                        if (botIndex >= allBots.length) botIndex = 0;
                         participantsToInsert.push({
                             tournament_id: tourney.id,
                             bot_id: allBots[botIndex].id,
                             status: 'active',
-                            stack: tourney.buy_in * 100 // Standard stack logic
+                            stack: (tourney.buy_in || 10) * 100
                         });
                         botIndex++;
                     }
                 }
             }
 
-            // Batch insert participants
             if (participantsToInsert.length > 0) {
-                // Split into chunks to avoid request size limits
+                console.log(`[SIMULATOR] Inserting ${participantsToInsert.length} initial participants...`);
                 const chunkSize = 1000;
                 for (let i = 0; i < participantsToInsert.length; i += chunkSize) {
                     const chunk = participantsToInsert.slice(i, i + chunkSize);
-                    await supabase.from('tournament_participants').insert(chunk);
+                    const { error: partErr } = await supabase.from('tournament_participants').insert(chunk);
+                    if (partErr) console.error('[SIMULATOR] Error inserting participants chunk:', partErr);
                 }
             }
         }
@@ -151,31 +172,25 @@ export class TournamentSimulator {
 
         if (now > lateRegUntil) {
             status = 'running';
-            // Pre-fill running tournaments so lobby isn't empty
             initialPlayers = Math.floor(Math.random() * 150) + 20;
         }
         else if (now > startTime) {
             status = 'late_reg';
             initialPlayers = Math.floor(Math.random() * 80) + 10;
         } else {
-            // Future tournaments have some pre-reg
             initialPlayers = Math.floor(Math.random() * 15);
         }
 
-        // Massive field for Tournaments
-        const isMajor = type === 'tournament' && Math.random() > 0.7;
         const maxPlayers = type === 'cash' ? 6 : type === 'spingo' ? 3 : type === 'sitgo' ? 9 : 5000;
-
-        // Cap initial players by max
         initialPlayers = Math.min(initialPlayers, maxPlayers);
 
         return {
             id,
-            name: this.generateRealisticName(type, buyIn, startTime, isMajor),
+            name: this.generateRealisticName(type, buyIn, startTime, type === 'tournament' && Math.random() > 0.7),
             type,
             status,
             buy_in: buyIn,
-            prize_pool: initialPlayers * buyIn, // Est. prize pool
+            prize_pool: initialPlayers * buyIn,
             players_count: initialPlayers,
             max_players: maxPlayers,
             scheduled_start_time: startTime.toISOString(),
@@ -209,11 +224,11 @@ export class TournamentSimulator {
     async start() {
         if (this.isRunning) return;
         this.isRunning = true;
-        console.log('🚀 24/7 Platform Scheduler Active');
+        console.log('🚀 Tournament Simulator Engine Started');
 
         this.simulationInterval = setInterval(async () => {
+            console.log('[SIMULATOR] Ticking...');
             await this.processSimulationTick();
-            // Process eliminations and conclusions every 2 ticks to feel more steady
             if (Math.random() > 0.5) {
                 await this.processGameProgression();
             }

@@ -55,6 +55,8 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
             if (humanError) console.error('Error fetching human count:', humanError);
             if (botError) console.error('Error fetching bot count:', botError);
 
+            console.log(`[LIVEWORLD] Online Stats: Humans=${humanCount}, Bots=${botCount}`);
+
             const total = (humanCount || 0) + (botCount || 0);
             setOnlinePlayers(total);
         } catch (err) {
