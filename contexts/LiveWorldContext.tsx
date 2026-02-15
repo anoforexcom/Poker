@@ -68,7 +68,16 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("User not authenticated");
 
-        // Check if already registered
+        // 1. Get tournament details (to get buy-in)
+        const { data: tournament, error: tError } = await supabase
+            .from('tournaments')
+            .select('buy_in')
+            .eq('id', tournamentId)
+            .single();
+
+        if (tError || !tournament) throw new Error("Tournament not found");
+
+        // 2. Check if already registered
         const { data: existing } = await supabase
             .from('tournament_participants')
             .select('id')
@@ -78,13 +87,30 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
 
         if (existing) return; // Already registered
 
-        const { error } = await supabase.from('tournament_participants').insert({
+        // 3. SECURE PROCESS: CALL RPC FOR BUY-IN
+        // This function verifies auth.uid(), checks balance, deducts money and creates a transaction.
+        const { error: rpcError } = await supabase.rpc('process_human_buyin', {
+            tournament_id_param: tournamentId,
+            amount_param: tournament.buy_in
+        });
+
+        if (rpcError) {
+            console.error('[LIVEWORLD] RPC Buy-in failed:', rpcError);
+            throw rpcError;
+        }
+
+        // 4. Insert participant record
+        // The trigger trg_update_players_count will automatically increment tournaments.players_count
+        const { error: insertError } = await supabase.from('tournament_participants').insert({
             tournament_id: tournamentId,
             user_id: user.id,
             status: 'active'
         });
 
-        if (error) throw error;
+        if (insertError) {
+            console.error('[LIVEWORLD] Participant insertion failed:', insertError);
+            throw insertError;
+        }
 
         // Refresh data
         fetchTournaments();

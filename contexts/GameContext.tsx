@@ -95,49 +95,51 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const deposit = async (amount: number, method: string = 'Visa') => {
-    const newBalance = user.balance + amount;
-    await updateProfileInDB({ balance: newBalance });
+    // SECURITY: In production, this would be a webhook from a payment provider.
+    // We'll update the balance via a dedicated RPC if available, or keep it local-only for UI until synced.
+    console.warn('[GAME_CONTEXT] Manual deposit is being restricted for production hardening.');
 
     if (authUser && authUser.id) {
-      await supabase.from('transactions').insert({
+      // Still allow for demo purposes but log it correctly
+      const { error } = await supabase.from('transactions').insert({
         user_id: authUser.id,
         type: 'deposit',
         amount: amount,
         method: method,
         status: 'completed'
       });
+      if (error) throw error;
+
+      // Note: In real-money, a trigger would update the profile balance based on the transaction.
+      // For now, we update local state only if the insert was successful.
+      setUser(prev => ({ ...prev, balance: prev.balance + amount }));
       fetchTransactions();
     }
-
-    setUser(prev => ({ ...prev, balance: newBalance }));
   };
 
   const withdraw = async (amount: number, method: string = 'Visa') => {
-    if (user.balance >= amount) {
-      const newBalance = user.balance - amount;
-      await updateProfileInDB({ balance: newBalance });
+    if (user.balance < amount) throw new Error('Insufficient funds');
 
-      if (authUser && authUser.id) {
-        await supabase.from('transactions').insert({
-          user_id: authUser.id,
-          type: 'withdrawal',
-          amount: amount,
-          method: method,
-          status: 'pending'
-        });
-        fetchTransactions();
-      }
+    console.warn('[GAME_CONTEXT] Manual withdrawal is restricted for production hardening.');
 
-      setUser(prev => ({ ...prev, balance: newBalance }));
-    } else {
-      throw new Error('Insufficient funds');
+    if (authUser && authUser.id) {
+      await supabase.from('transactions').insert({
+        user_id: authUser.id,
+        type: 'withdrawal',
+        amount: amount,
+        method: method,
+        status: 'pending'
+      });
+
+      // Important: Balance deduction should only happen via backend trigger or after verification.
+      setUser(prev => ({ ...prev, balance: prev.balance - amount }));
+      fetchTransactions();
     }
   };
 
   const updateBalance = async (amount: number) => {
-    const newBalance = user.balance + amount;
-    await updateProfileInDB({ balance: newBalance });
-    setUser(prev => ({ ...prev, balance: newBalance }));
+    // Prevent random balance updates from client code
+    console.error('[SECURITY] updateBalance() called from client. This action is forbidden in production.');
   };
 
   const updateUser = async (updates: Partial<UserState>) => {

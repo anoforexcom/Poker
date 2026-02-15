@@ -107,10 +107,13 @@ export const SimulationProvider: React.FC<{ children: ReactNode }> = ({ children
     };
 
     useEffect(() => {
-        startSimulation();
+        // PRODUCTION: The simulation is now centralized in a Supabase Edge Function!
+        // Local simulation is disabled to prevent multiple clients from interfering with each other.
+        // startSimulation(); 
+
         const interval = setInterval(fetchData, 3000);
         return () => {
-            simulator.stop();
+            // simulator.stop();
             clearInterval(interval);
         };
     }, []);
