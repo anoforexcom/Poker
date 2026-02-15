@@ -166,11 +166,22 @@ DROP POLICY IF EXISTS "Users view own transactions" ON public.transactions;
 CREATE POLICY "Users view own transactions" ON public.transactions FOR SELECT USING (auth.uid() = user_id);
 
 -- Service Role Bypass (Para o Edge Function)
+DROP POLICY IF EXISTS "Service Role Full Access Tournaments" ON public.tournaments;
 CREATE POLICY "Service Role Full Access Tournaments" ON public.tournaments FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Service Role Full Access Bots" ON public.bots;
 CREATE POLICY "Service Role Full Access Bots" ON public.bots FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Service Role Full Access Participants" ON public.tournament_participants;
 CREATE POLICY "Service Role Full Access Participants" ON public.tournament_participants FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Service Role Full Access GameStates" ON public.game_states;
 CREATE POLICY "Service Role Full Access GameStates" ON public.game_states FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Service Role Full Access History" ON public.game_hand_history;
 CREATE POLICY "Service Role Full Access History" ON public.game_hand_history FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Service Role Full Access Locks" ON public.system_locks;
 CREATE POLICY "Service Role Full Access Locks" ON public.system_locks FOR ALL USING (true);
 
 -- 4. TRIGGERS (Lógica de Negócio)

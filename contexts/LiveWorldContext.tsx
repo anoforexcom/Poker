@@ -18,11 +18,14 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     const fetchTournaments = async () => {
         try {
+            console.log('[LIVEWORLD] Fetching tournaments...');
             const { data, error } = await supabase.from('tournaments').select('*');
             if (error) {
-                console.error('Error fetching tournaments:', error);
+                console.error('[LIVEWORLD] Error fetching tournaments:', error);
                 return;
             }
+            console.log('[LIVEWORLD] Raw data:', data);
+
             if (data) {
                 // Map snake_case database columns to camelCase for frontend components
                 const mappedTournaments = data.map((t: any) => ({
@@ -36,6 +39,7 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
                     currentBlindLevel: t.current_blind_level
                 }));
 
+                console.log('[LIVEWORLD] Mapped tournaments:', mappedTournaments);
                 setTournaments(mappedTournaments);
 
                 // Simple estimation for active tables based on player count
@@ -43,7 +47,7 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
                 setActiveTables(Math.ceil(totalPlayers / 6) || 0);
             }
         } catch (err) {
-            console.error('Unexpected error fetching tournaments:', err);
+            console.error('[LIVEWORLD] Unexpected error fetching tournaments:', err);
         }
     };
 
