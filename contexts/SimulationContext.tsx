@@ -22,8 +22,7 @@ interface SimulationContextType {
 const SimulationContext = createContext<SimulationContextType | undefined>(undefined);
 
 export const SimulationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [simulator] = useState<TournamentSimulator>(() => getTournamentSimulator());
-    const [isRunning, setIsRunning] = useState(false);
+    // Simulator removed. State is now driven by Backend + Realtime
     const [stats, setStats] = useState({
         totalBots: 0,
         totalTournaments: 0,
@@ -38,16 +37,13 @@ export const SimulationProvider: React.FC<{ children: ReactNode }> = ({ children
 
     const fetchData = async () => {
         try {
-            // Fetch total bots
             const { count: totalBots } = await supabase.from('bots').select('*', { count: 'exact', head: true });
-
-            // Fetch tournaments
-            const { data: allTournaments } = await supabase.from('tournaments').select('*');
+            const { data: allTournaments } = await supabase.from('tournaments').select('*').order('scheduled_start_time', { ascending: true });
 
             if (allTournaments) {
-                const regs = allTournaments.filter(t => t.status === 'Registering' || t.status === 'Late Reg').length;
-                const runs = allTournaments.filter(t => t.status === 'Running').length;
-                const fins = allTournaments.filter(t => t.status === 'Finished').length;
+                const regs = allTournaments.filter(t => t.status === 'registering' || t.status === 'late_reg' || t.status === 'Registering' || t.status === 'Late Reg').length;
+                const runs = allTournaments.filter(t => t.status === 'running' || t.status === 'Running').length;
+                const fins = allTournaments.filter(t => t.status === 'finished' || t.status === 'Finished').length;
                 const totalPlayers = allTournaments.reduce((acc, t) => acc + (t.players_count || 0), 0);
 
                 setStats(prev => ({
@@ -60,66 +56,66 @@ export const SimulationProvider: React.FC<{ children: ReactNode }> = ({ children
                     totalPlayersInTournaments: totalPlayers
                 }));
 
+                // Filter out finished for the Lobby list, sort by start time/active
                 setTournaments(allTournaments
-                    .filter(t => t.status !== 'Finished')
-                    .sort((a, b) => b.players_count - a.players_count)
+                    .filter(t => t.status !== 'finished' && t.status !== 'Finished')
+                    .sort((a, b) => {
+                        // Running first
+                        const statusA = a.status.toLowerCase();
+                        const statusB = b.status.toLowerCase();
+                        if (statusA === 'running' && statusB !== 'running') return -1;
+                        if (statusB === 'running' && statusA !== 'running') return 1;
+                        return new Date(a.scheduled_start_time).getTime() - new Date(b.scheduled_start_time).getTime();
+                    })
                 );
-
-                // House profit
-                const { data: pokerTx } = await supabase
-                    .from('transactions')
-                    .select('type, amount')
-                    .in('type', ['poker_buyin', 'poker_win']);
-
-                if (pokerTx) {
-                    const buyins = pokerTx.filter(tx => tx.type === 'poker_buyin').reduce((sum, tx) => sum + Number(tx.amount), 0);
-                    const wins = pokerTx.filter(tx => tx.type === 'poker_win').reduce((sum, tx) => sum + Number(tx.amount), 0);
-                    setStats(prev => ({ ...prev, houseProfit: buyins - wins }));
-                }
             }
 
-            // Fetch top bots
+            // House Profit (Transactions)
+            const { data: pokerTx } = await supabase
+                .from('transactions')
+                .select('type, amount')
+                .in('type', ['poker_buyin', 'poker_win']);
+
+            if (pokerTx) {
+                const buyins = pokerTx.filter(tx => tx.type === 'poker_buyin').reduce((sum, tx) => sum + Number(tx.amount), 0);
+                const wins = pokerTx.filter(tx => tx.type === 'poker_win').reduce((sum, tx) => sum + Number(tx.amount), 0);
+                setStats(prev => ({ ...prev, houseProfit: buyins - wins }));
+            }
+
             const { data: top } = await supabase.from('bots').select('*').order('balance', { ascending: false }).limit(20);
-            if (top) {
-                setTopBots(top.map(b => ({
-                    ...b,
-                    winRate: b.games_played > 0 ? b.tournaments_won / b.games_played : 0,
-                    gamesPlayed: b.games_played,
-                    tournamentsWon: b.tournaments_won
-                })));
-            }
+            if (top) setTopBots(top);
 
         } catch (err) {
             console.error('[SIMULATION] Fetch Error:', err);
         }
     };
 
-    const startSimulation = async () => {
-        setIsRunning(true);
-        await simulator.seedInitialData();
-        await simulator.start();
-        fetchData();
-    };
-
-    const stopSimulation = () => {
-        simulator.stop();
-        setIsRunning(false);
-    };
-
     useEffect(() => {
-        // PRODUCTION: The simulation is now centralized in a Supabase Edge Function!
-        // Local simulation is disabled to prevent multiple clients from interfering with each other.
-        // startSimulation(); 
+        fetchData();
 
-        const interval = setInterval(fetchData, 3000);
+        // Realtime Subscription
+        const channel = supabase.channel('public:tournaments')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'tournaments' }, (payload) => {
+                // Refresh data on any tournament change
+                fetchData();
+            })
+            .subscribe();
+
+        // Also refresh every 30s just in case
+        const interval = setInterval(fetchData, 30000);
+
         return () => {
-            // simulator.stop();
+            supabase.removeChannel(channel);
             clearInterval(interval);
         };
     }, []);
 
+    // No-ops for simulation control
+    const startSimulation = () => { };
+    const stopSimulation = () => { };
+
     return (
-        <SimulationContext.Provider value={{ isRunning, startSimulation, stopSimulation, stats, tournaments, topBots }}>
+        <SimulationContext.Provider value={{ isRunning: true, startSimulation, stopSimulation, stats, tournaments, topBots }}>
             {children}
         </SimulationContext.Provider>
     );

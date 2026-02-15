@@ -158,9 +158,8 @@ const GameTable: React.FC = () => {
   const [betValue, setBetValue] = useState(20);
 
   // Start game loop
-  React.useEffect(() => {
-    if (players.length > 0 && players.every(p => p.hand.length === 0)) startNewHand();
-  }, [players]);
+  // Game Loop is now driven by Backend Realtime updates. 
+  // startNewHand is only called explicitly (e.g. via "Next Hand" button after showdown).
 
   // Legacy chat state removed in favor of ChatContext
   const [showSettings, setShowSettings] = useState(false);
