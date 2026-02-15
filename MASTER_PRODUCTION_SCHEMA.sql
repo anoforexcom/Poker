@@ -229,7 +229,7 @@ SELECT cron.schedule('poker-simulation-tick', '* * * * *', $$
   -- Tenta obter o lock 12345. Se já estiver ocupado, aborta silenciosamente.
   SELECT net.http_post(
     url := 'https://uhykmcwgznkzehxnkrbx.supabase.co/functions/v1/poker-simulator',
-    headers := '{"Content-Type": "application/json", "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoeWttY3dnem5remVoeG5rcmJ4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDkwMTkzMiwiZXhwIjoyMDg2NDc3OTMyfQ.lCAQ2GgfamDxu3EgR9Xks2dmd5frvp0K5s9RZs9iHbQ"}'::jsonb,
+    headers := '{"Content-Type": "application/json", "Authorization": "Bearer process.env.SUPABASE_SERVICE_ROLE_KEY"}'::jsonb,
     body := '{"action": "tick"}'::jsonb
   ) WHERE pg_try_advisory_lock(12345);
 $$);
@@ -237,6 +237,6 @@ $$);
 -- Trigger inicial para criar bots e torneios agora mesmo
 SELECT net.http_post(
   url := 'https://uhykmcwgznkzehxnkrbx.supabase.co/functions/v1/poker-simulator',
-  headers := '{"Content-Type": "application/json", "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoeWttY3dnem5remVoeG5rcmJ4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDkwMTkzMiwiZXhwIjoyMDg2NDc3OTMyfQ.lCAQ2GgfamDxu3EgR9Xks2dmd5frvp0K5s9RZs9iHbQ"}'::jsonb,
+  headers := '{"Content-Type": "application/json", "Authorization": "Bearer process.env.SUPABASE_SERVICE_ROLE_KEY"}'::jsonb,
   body := '{"action": "seed"}'::jsonb
 );

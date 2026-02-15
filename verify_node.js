@@ -1,5 +1,5 @@
 const SUPABASE_URL = 'https://uhykmcwgznkzehxnkrbx.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoeWttY3dnem5remVoeG5rcmJ4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDkwMTkzMiwiZXhwIjoyMDg2NDc3OTMyfQ.lCAQ2GgfamDxu3EgR9Xks2dmd5frvp0K5s9RZs9iHbQ';
+const SUPABASE_KEY = 'process.env.SUPABASE_SERVICE_ROLE_KEY';
 
 async function checkStatus() {
     console.log("Checking Phase 3 Database State...");
