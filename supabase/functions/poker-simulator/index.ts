@@ -501,29 +501,35 @@ async function processSimulationTick() {
 }
 
 async function ensureOpenTournaments() {
-    // Check if there are any registering or running tournaments
-    const { count } = await supabase
-        .from('tournaments')
-        .select('*', { count: 'exact', head: true })
-        .in('status', ['registering', 'late_reg', 'running']);
+    // Call the SQL logic which maintains 4 registering tournaments
+    const { error } = await supabase.rpc('ensure_active_tournaments');
+    if (error) {
+        console.error('Failed to run ensure_active_tournaments RPC:', error);
 
-    if (count === 0) {
-        console.log('No active tournaments found. Creating a new one...');
-        // Create a new tournament due to emptiness
-        const startTime = new Date();
-        startTime.setMinutes(startTime.getMinutes() + 2); // Start in 2 mins
+        // Fallback: If RPC fails, keep at least one alive
+        const { count } = await supabase
+            .from('tournaments')
+            .select('*', { count: 'exact', head: true })
+            .in('status', ['registering', 'late_reg', 'running']);
 
-        await supabase.from('tournaments').insert({
-            name: `Sit & Go ${Math.floor(Math.random() * 1000)}`,
-            status: 'registering',
-            type: 'sit_and_go',
-            buy_in: 1000,
-            prize_pool: 0,
-            scheduled_start_time: startTime.toISOString(),
-            min_players: 2,
-            max_players: 6,
-            players_count: 0
-        });
+        if (count === 0) {
+            console.log('Fallback: Creating 1 emergency tournament.');
+            const startTime = new Date();
+            startTime.setMinutes(startTime.getMinutes() + 2);
+            await supabase.from('tournaments').insert({
+                name: `Emergency Sit & Go ${Math.floor(Math.random() * 1000)}`,
+                status: 'registering',
+                type: 'sit_and_go',
+                buy_in: 100,
+                prize_pool: 0,
+                scheduled_start_time: startTime.toISOString(),
+                min_players: 2,
+                max_players: 6,
+                players_count: 0
+            });
+        }
+    } else {
+        console.log('✅ ensure_active_tournaments RPC executed.');
     }
 }
 
