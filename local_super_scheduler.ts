@@ -36,13 +36,15 @@ async function processTournamentStarts() {
         for (const t of dueTournaments) {
             console.log(`   -> Starting ${t.name} (${t.id})`);
 
-            // Start!
+            // Use 'late_reg' if within late registration window
+            const hasLateReg = t.late_reg_until && new Date(t.late_reg_until) > now;
+            const nextStatus = hasLateReg ? 'late_reg' : 'running';
+
             const { error } = await supabase.from('tournaments')
-                .update({ status: 'running' })
+                .update({ status: nextStatus })
                 .eq('id', t.id);
 
             if (!error) {
-                // Determine if we need to init game state
                 await initGame(t.id);
             }
         }
@@ -56,6 +58,10 @@ async function processTournamentStarts() {
 
     if (activeTournaments) {
         for (const t of activeTournaments) {
+            // Check if late reg expired
+            if (t.status === 'late_reg' && t.late_reg_until && new Date(t.late_reg_until) <= now) {
+                await supabase.from('tournaments').update({ status: 'running' }).eq('id', t.id);
+            }
             await initGame(t.id);
         }
     }

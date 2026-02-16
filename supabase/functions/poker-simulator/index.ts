@@ -600,7 +600,7 @@ async function ensureBotsInTournaments() {
     if (!bots || bots.length === 0) return;
 
     for (const t of tournaments) {
-        const targetPlayers = t.max_players === 6 ? 6 : 9; // Fill SitGos, seed regular
+        const targetPlayers = t.max_players || 6;
 
         // Get current participants count
         const { count, error } = await supabase
@@ -613,28 +613,32 @@ async function ensureBotsInTournaments() {
         const current = count || 0;
         if (current < targetPlayers) {
             const needed = targetPlayers - current;
-            // Only add 1-2 bots per tick to simulate organic growth, unless urgent
-            const isUrgent = new Date(t.scheduled_start_time).getTime() - Date.now() < 60000; // < 1 min
-            const toAdd = isUrgent ? needed : Math.min(needed, Math.floor(Math.random() * 3) + 1);
 
-            console.log(`[BOTS] Adding ${toAdd} bots to ${t.name} (Current: ${current}, Target: ${targetPlayers})`);
+            // AGGRESSIVE FILLING: 
+            // If it's a SitGo/SpinGo or it's already RUNNING, fill completely immediately.
+            // If it's Registering/LateReg, fill 1-3 bots unless urgent (< 1 min).
+            const isUrgent = new Date(t.scheduled_start_time).getTime() - Date.now() < 60000;
+            const isFastType = t.type === 'sitgo' || t.type === 'spingo' || t.status === 'running';
 
-            // Shuffle bots
-            const shuffled = bots.sort(() => 0.5 - Math.random());
-            let added = 0;
+            const toAdd = (isUrgent || isFastType) ? needed : Math.min(needed, Math.floor(Math.random() * 3) + 1);
 
-            for (const bot of shuffled) {
-                if (added >= toAdd) break;
-                // Try insert (ignore duplicates implicitly via DB or just let it fail silently)
-                // Better: check if exists, but for speed we just try
-                const { error: insertError } = await supabase.from('tournament_participants').insert({
-                    tournament_id: t.id,
-                    bot_id: bot.id,
-                    stack: t.starting_stack || 10000,
-                    status: 'active'
-                });
+            if (toAdd > 0) {
+                console.log(`[BOTS] Adding ${toAdd} bots to ${t.name} (Current: ${current}, Target: ${targetPlayers}, Status: ${t.status})`);
 
-                if (!insertError) added++;
+                // Shuffle bots
+                const shuffled = bots.sort(() => 0.5 - Math.random());
+                let added = 0;
+
+                for (const bot of shuffled) {
+                    if (added >= toAdd) break;
+                    const { error: insertError } = await supabase.from('tournament_participants').insert({
+                        tournament_id: t.id,
+                        bot_id: bot.id, // Bot ID goes here
+                        stack: t.starting_stack || 10000,
+                        status: 'active'
+                    });
+                    if (!insertError) added++;
+                }
             }
         }
     }
