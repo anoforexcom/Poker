@@ -49,7 +49,7 @@ serve(async (req) => {
         // ADVISORY LOCK (Simulation Tick Only)
         // Prevent double execution of the heavy tick logic
         if (action === 'tick') {
-            const hasLock = await acquireLock('poker_tick_runner', 55); // 55s expiry (cron runs every 60s)
+            const hasLock = await acquireLock('poker_tick_runner', 50); // 50s expiry (cron runs every 60s)
 
             if (!hasLock) {
                 console.warn('⚠️ Tick simulation locked by another instance. Aborting.');
@@ -430,24 +430,80 @@ async function startNewHand(tournamentId: string) {
     playerStates[pBB.user_id || pBB.bot_id].current_bet = bb;
     pot = sb + bb;
 
-    // Upsert State
-    const { data: existing } = await supabase.from('game_states').select('id').eq('tournament_id', tournamentId).maybeSingle();
+    // DEALER ROTATION & ELIMINATION
+    const { data: existing } = await supabase.from('game_states').select('*').eq('tournament_id', tournamentId).maybeSingle();
+
+    // Eliminate players with zero chips
+    for (const p of participants) {
+        if (p.stack <= 0) {
+            console.log(`[ELIMINATION] Player ${p.user_id || p.bot_id} is out!`);
+            await supabase.from('tournament_participants').update({ status: 'eliminated' }).eq('id', p.id);
+        }
+    }
+
+    // Refresh participants after elimination
+    const { data: activeParticipants } = await supabase.from('tournament_participants').select('*').eq('tournament_id', tournamentId).eq('status', 'active');
+
+    if (!activeParticipants || activeParticipants.length < 2) {
+        // Tournament Finished!
+        if (activeParticipants && activeParticipants.length === 1) {
+            const winner = activeParticipants[0];
+            await supabase.from('tournaments').update({
+                status: 'finished',
+                winner_id: winner.user_id || null,
+                winner_bot_id: winner.bot_id || null
+            }).eq('id', tournamentId);
+            console.log(`[TOURNAMENT] Winner: ${winner.user_id || winner.bot_id}`);
+        }
+        return;
+    }
+
+    activeParticipants.sort((a, b) => (a.user_id || a.bot_id).localeCompare(b.user_id || b.bot_id));
+
+    let dealerIdx = existing?.dealer_index !== undefined ? (existing.dealer_index + 1) % activeParticipants.length : 0;
+
+    const deck = shuffleDeck(createDeck());
+    const sb = 10; const bb = 20;
+
+    const playerStates: any = {};
+    for (const p of activeParticipants) {
+        const pid = p.user_id || p.bot_id;
+        playerStates[pid] = {
+            is_folded: false,
+            current_bet: 0,
+            has_acted: false,
+            hole_cards: [deck.pop(), deck.pop()]
+        };
+    }
+
+    // SB is (Dealer + 1), BB is (Dealer + 2)
+    const sbIdx = (dealerIdx + 1) % activeParticipants.length;
+    const bbIdx = (dealerIdx + 2) % activeParticipants.length;
+    const firstActIdx = (dealerIdx + 3) % activeParticipants.length;
+
+    const pSB = activeParticipants[sbIdx];
+    const pBB = activeParticipants[bbIdx];
+    const pFirst = activeParticipants[firstActIdx];
+
+    await supabase.rpc('increment_participant_stack', { participant_id: pSB.id, amount: -sb });
+    await supabase.rpc('increment_participant_stack', { participant_id: pBB.id, amount: -bb });
+
+    playerStates[pSB.user_id || pSB.bot_id].current_bet = sb;
+    playerStates[pBB.user_id || pBB.bot_id].current_bet = bb;
+
     const stateData = {
         tournament_id: tournamentId,
         deck,
         community_cards: [],
-        current_pot: pot,
+        current_pot: sb + bb,
         phase: 'pre-flop',
         player_states: playerStates,
         last_raise_amount: bb,
         last_raiser_id: null,
-        current_turn_user_id: participants[2]?.user_id || (participants[2] ? null : participants[0].user_id) || null,
-        current_turn_bot_id: participants[2]?.bot_id || (participants[2] ? null : participants[0].bot_id) || null
+        dealer_index: dealerIdx,
+        current_turn_user_id: pFirst.user_id || null,
+        current_turn_bot_id: pFirst.bot_id || null
     };
-
-    // If only 2 players, SB is dealer, BB is first to act? Or SB acts first?
-    // Heads up: Dealer is SB. SB acts first pre-flop.
-    // Logic above is for 3+ players roughly.
 
     if (existing) await supabase.from('game_states').update(stateData).eq('id', existing.id);
     else await supabase.from('game_states').insert(stateData);
@@ -493,14 +549,17 @@ async function processSimulationTick() {
     for (const t of activeTournaments) {
         if (t.status === 'running' || t.status === 'late_reg') {
             let movesThisTick = 0;
-            const maxMoves = 15; // Move up to 15 times per tick to keep it fast
+            const maxMoves = 100; // Resolve an entire hand per tick
 
             while (movesThisTick < maxMoves) {
                 const { data: state } = await supabase.from('game_states').select('*').eq('tournament_id', t.id).maybeSingle();
 
                 if (!state) {
                     await startNewHand(t.id);
-                    // After starting a hand, we break to wait for the next tick/refresh
+                    break;
+                } else if (state.phase === 'showdown') {
+                    // AUTO-SHOWDOWN: ChatGPT's critical fix
+                    await startNewHand(t.id);
                     break;
                 } else if (state.current_turn_bot_id) {
                     await handleBotMove(t.id, state.current_turn_bot_id, state);
