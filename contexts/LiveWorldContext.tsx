@@ -61,8 +61,13 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
 
             console.log(`[LIVEWORLD] Online Stats: Humans=${humanCount}, Bots=${botCount}`);
 
-            const total = (humanCount || 0) + (botCount || 0);
-            setOnlinePlayers(total);
+            // Resilience: Only update if we have valid numbers
+            if (humanCount !== null && botCount !== null) {
+                const total = (humanCount || 0) + (botCount || 0);
+                setOnlinePlayers(total);
+            } else {
+                console.warn('[LIVEWORLD] Could not fetch player stats, keeping last state.');
+            }
         } catch (err) {
             console.error('Unexpected error fetching player count:', err);
         }
@@ -133,7 +138,13 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
     // HEARTBEAT: Ensure the world stays alive
     useEffect(() => {
         const pulse = async () => {
-            console.log('[LIVEWORLD] Sending Server Pulse...');
+            // Speedup Lobby: If no tournaments, force a pulse immediately
+            if (tournaments.length === 0) {
+                console.log('[LIVEWORLD] Lobby empty, sending AGGRESSIVE Server Pulse...');
+            } else {
+                console.log('[LIVEWORLD] Sending Server Pulse...');
+            }
+
             try {
                 await supabase.functions.invoke('poker-simulator', {
                     body: { action: 'tick' }
@@ -143,11 +154,14 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
             }
         };
 
-        // Pulse immediately and then every 30s
+        // Pulse immediately
         pulse();
-        const interval = setInterval(pulse, 30000);
+
+        // dynamic interval: faster if empty
+        const pulseInterval = tournaments.length === 0 ? 10000 : 30000;
+        const interval = setInterval(pulse, pulseInterval);
         return () => clearInterval(interval);
-    }, []);
+    }, [tournaments.length]); // Re-run if length changes to adjust pulse speed
 
     return (
         <LiveWorldContext.Provider value={{
