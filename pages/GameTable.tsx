@@ -151,7 +151,7 @@ const GameTable: React.FC = () => {
         }
       }
     }
-    navigate('/');
+    navigate('/dashboard');
   };
 
   // Restored Game Logic

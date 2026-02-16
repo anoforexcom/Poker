@@ -60,9 +60,11 @@ async function processTournamentStarts() {
         for (const t of activeTournaments) {
             // Check if late reg expired
             if (t.status === 'late_reg' && t.late_reg_until && new Date(t.late_reg_until) <= now) {
+                console.log(`[LATE_REG] Expired for ${t.id}, moving to running.`);
                 await supabase.from('tournaments').update({ status: 'running' }).eq('id', t.id);
             }
-            await initGame(t.id);
+            const res = await initGame(t.id);
+            if (res) console.log(`   -> Game state initialized for ${t.id}`);
         }
     }
 }
@@ -135,9 +137,10 @@ async function initGame(tournamentId) {
         .eq('status', 'active');
 
     if (!participants || participants.length < 2) {
-        console.warn(`[GAME] Not enough players to start ${tournamentId}`);
+        console.warn(`[GAME] Not enough players to start ${tournamentId} (Found: ${participants?.length || 0})`);
         return;
     }
+    console.log(`[GAME] Found ${participants.length} players for ${tournamentId}. Starting...`);
 
     // Shuffle and Deal (Simplified)
     const SUITS = ['s', 'h', 'd', 'c'];

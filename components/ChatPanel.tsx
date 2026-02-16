@@ -99,11 +99,11 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ tournamentId, isMinimized 
                                     </div>
                                     <div
                                         className={`px-3 py-2 rounded-lg max-w-[80%] break-words ${msg.playerId === 'user'
-                                                ? 'bg-primary text-white'
-                                                : 'bg-slate-700/50 text-slate-200'
+                                            ? 'bg-blue-600 text-white'
+                                            : 'bg-zinc-800 text-zinc-100 border border-zinc-700'
                                             }`}
                                     >
-                                        <p className="text-sm">{msg.message}</p>
+                                        <p className="text-sm font-medium">{msg.message}</p>
                                     </div>
                                 </>
                             )}
@@ -121,7 +121,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ tournamentId, isMinimized 
                         value={inputMessage}
                         onChange={(e) => setInputMessage(e.target.value)}
                         placeholder="Type a message..."
-                        className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-primary transition-colors"
+                        className="flex-1 bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500 transition-colors"
                         maxLength={200}
                     />
                     <button
@@ -132,7 +132,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ tournamentId, isMinimized 
                         <span className="material-symbols-outlined text-lg">send</span>
                     </button>
                 </div>
-                <p className="text-[10px] text-slate-600 mt-1">
+                <p className="text-[10px] text-zinc-500 mt-1">
                     {inputMessage.length}/200
                 </p>
             </form>

@@ -18,7 +18,7 @@ const Lobby: React.FC = () => {
   const [speedFilter, setSpeedFilter] = useState<string[]>([]);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const navigate = useNavigate();
-  const { user: gameUser, withdraw } = useGame();
+  const { user: gameUser, withdraw, activeGames } = useGame();
   const { showAlert } = useNotification();
 
   // Safety check: ensure tournaments is always an array
@@ -349,13 +349,20 @@ const Lobby: React.FC = () => {
                         )}
                       </div>
 
-                      <button className={`mt-3 px-4 py-2 md:px-8 md:py-3 rounded-xl font-black text-[9px] md:text-xs tracking-widest transition-all shadow-xl hover:brightness-110 active:scale-95 whitespace-nowrap uppercase border ${t.status?.toLowerCase() === 'registering' || t.status?.toLowerCase() === 'late_reg'
-                        ? 'bg-emerald-600 border-emerald-500 text-white shadow-emerald-900/40'
-                        : t.status?.toLowerCase() === 'running' || t.status?.toLowerCase() === 'final_table'
-                          ? 'bg-blue-600 border-blue-500 text-white shadow-blue-900/40'
-                          : 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed'
-                        }`}>
-                        {t.type === 'cash' ? 'ENTER' : (t.status?.toLowerCase() === 'running' || t.status?.toLowerCase() === 'final_table') ? 'OBSERVE' : t.status?.toLowerCase() === 'finished' ? 'FINISHED' : 'REGISTER'}
+                      <button
+                        className={`mt-3 px-4 py-2 md:px-8 md:py-3 rounded-xl font-black text-[9px] md:text-xs tracking-widest transition-all shadow-xl hover:brightness-110 active:scale-95 whitespace-nowrap uppercase border ${t.status?.toLowerCase() === 'registering' || t.status?.toLowerCase() === 'late_reg'
+                          ? 'bg-emerald-600 border-emerald-500 text-white shadow-emerald-900/40'
+                          : t.status?.toLowerCase() === 'running' || t.status?.toLowerCase() === 'final_table'
+                            ? 'bg-blue-600 border-blue-500 text-white shadow-blue-900/40'
+                            : 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed'
+                          }`}>
+                        {t.type === 'cash' || activeGames.some(ag => ag.id === t.id)
+                          ? 'ENTER'
+                          : (t.status?.toLowerCase() === 'running' || t.status?.toLowerCase() === 'final_table')
+                            ? 'OBSERVE'
+                            : t.status?.toLowerCase() === 'finished'
+                              ? 'FINISHED'
+                              : 'REGISTER'}
                       </button>
                     </div>
                   </div>
@@ -416,7 +423,13 @@ const Lobby: React.FC = () => {
                         ? 'bg-blue-600 text-white shadow-blue-600/20'
                         : 'bg-slate-700 text-slate-400 cursor-not-allowed'
                       }`}>
-                      {t.type === 'cash' ? 'JOIN' : ['running', 'final_table'].includes(t.status?.toLowerCase()) ? 'OBSERVE' : t.status?.toLowerCase() === 'finished' ? 'ENDED' : 'REGISTER'}
+                      {t.type === 'cash' || activeGames.some(ag => ag.id === t.id)
+                        ? 'ENTER'
+                        : ['running', 'final_table'].includes(t.status?.toLowerCase())
+                          ? 'OBSERVE'
+                          : t.status?.toLowerCase() === 'finished'
+                            ? 'ENDED'
+                            : 'REGISTER'}
                     </button>
                   </div>
                 </div>
