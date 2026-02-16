@@ -262,8 +262,17 @@ const TournamentLobby: React.FC = () => {
                                 >
                                     <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
                                     <div className="flex items-center gap-2 relative z-10">
-                                        {isNavigating ? 'ENTERING TABLE...' : 'GO TO TABLE'}
-                                        {!isNavigating && <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>}
+                                        {isNavigating ? (
+                                            <div className="flex items-center gap-2">
+                                                <div className="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                                <span>ENTERING TABLE...</span>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <span>GO TO TABLE</span>
+                                                <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                                            </>
+                                        )}
                                     </div>
                                     <span className="text-[10px] opacity-70 font-bold tracking-widest relative z-10">THE ACTION IS LIVE!</span>
                                 </button>
@@ -289,7 +298,12 @@ const TournamentLobby: React.FC = () => {
                                 disabled={isRegistering}
                                 className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl shadow-lg transition-all"
                             >
-                                {isRegistering ? 'Registering...' : `REGISTER NOW ($${tournament.buyIn})`}
+                                {isRegistering ? (
+                                    <div className="flex items-center justify-center gap-2">
+                                        <div className="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                        <span>PROCESSING...</span>
+                                    </div>
+                                ) : `REGISTER NOW ($${tournament.buyIn})`}
                             </button>
                         )
                     )}

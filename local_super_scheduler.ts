@@ -16,10 +16,19 @@ async function tick() {
     try {
         await processTournamentStarts();
         await ensureBotsInTournaments();
-        // await processRunningGames(); // Optional: if games rely on backend tick for moves
+        await processRunningGames();
     } catch (e) {
         console.error("Critical Error in Tick:", e);
     }
+}
+
+async function processRunningGames() {
+    console.log("   -> Pulsing Edge Function (Tick)...");
+    const { data, error } = await supabase.functions.invoke('poker-simulator', {
+        body: { action: 'tick' }
+    });
+    if (error) console.error("Edge Tick Error:", error);
+    else console.log("   -> Pulse Success:", data);
 }
 
 // 1. Start Scheduled Tournaments
@@ -211,6 +220,6 @@ async function initGame(tournamentId) {
 }
 
 
-// Run every 5 seconds
-setInterval(tick, 5000);
+// Run every 1 second for ultra-responsive games
+setInterval(tick, 1000);
 tick(); // First run

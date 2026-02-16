@@ -20,6 +20,7 @@ const Lobby: React.FC = () => {
   const navigate = useNavigate();
   const { user: gameUser, withdraw, activeGames } = useGame();
   const { showAlert } = useNotification();
+  const [isRegistering, setIsRegistering] = useState<string | null>(null);
 
   // Safety check: ensure tournaments is always an array
   const safeTournaments = Array.isArray(tournaments) ? tournaments : [];
@@ -115,6 +116,7 @@ const Lobby: React.FC = () => {
     );
 
     if (confirmed) {
+      setIsRegistering(t.id);
       try {
         await withdraw(t.buyIn);
         await registerForTournament(t.id, gameUser.id);
@@ -124,6 +126,8 @@ const Lobby: React.FC = () => {
       } catch (err: any) {
         console.error('Registration failed:', err);
         await showAlert(`Registration failed: ${err.message || JSON.stringify(err)}`, 'error');
+      } finally {
+        setIsRegistering(null);
       }
     }
   };
@@ -423,13 +427,20 @@ const Lobby: React.FC = () => {
                         ? 'bg-blue-600 text-white shadow-blue-600/20'
                         : 'bg-slate-700 text-slate-400 cursor-not-allowed'
                       }`}>
-                      {t.type === 'cash' || activeGames.some(ag => ag.id === t.id)
-                        ? 'ENTER'
-                        : ['running', 'final_table'].includes(t.status?.toLowerCase())
-                          ? 'OBSERVE'
-                          : t.status?.toLowerCase() === 'finished'
-                            ? 'ENDED'
-                            : 'REGISTER'}
+                      {isRegistering === t.id ? (
+                        <div className="flex items-center justify-center gap-2 uppercase">
+                          <div className="size-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                          Processing
+                        </div>
+                      ) : (
+                        t.type === 'cash' || activeGames.some(ag => ag.id === t.id)
+                          ? 'ENTER'
+                          : ['running', 'final_table'].includes(t.status?.toLowerCase())
+                            ? 'OBSERVE'
+                            : t.status?.toLowerCase() === 'finished'
+                              ? 'ENDED'
+                              : 'REGISTER'
+                      )}
                     </button>
                   </div>
                 </div>
