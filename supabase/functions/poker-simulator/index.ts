@@ -490,15 +490,30 @@ async function processSimulationTick() {
     if (!activeTournaments) return;
 
     for (const t of activeTournaments) {
-        if (t.status === 'running') {
-            const { data: state } = await supabase.from('game_states').select('*').eq('tournament_id', t.id).maybeSingle();
-            if (!state) {
-                await startNewHand(t.id);
-            } else if (state.current_turn_bot_id) {
-                await handleBotMove(t.id, state.current_turn_bot_id, state);
+        if (t.status === 'running' || t.status === 'late_reg') {
+            let movesThisTick = 0;
+            const maxMoves = 15; // Move up to 15 times per tick to keep it fast
+
+            while (movesThisTick < maxMoves) {
+                const { data: state } = await supabase.from('game_states').select('*').eq('tournament_id', t.id).maybeSingle();
+
+                if (!state) {
+                    await startNewHand(t.id);
+                    // After starting a hand, we break to wait for the next tick/refresh
+                    break;
+                } else if (state.current_turn_bot_id) {
+                    await handleBotMove(t.id, state.current_turn_bot_id, state);
+                    movesThisTick++;
+                } else {
+                    // Not a bot turn (human's turn or transition)
+                    break;
+                }
             }
         }
     }
+
+    // 3. Ensure Bots are filling up tournaments
+    await ensureBotsInTournaments();
 }
 
 async function ensureOpenTournaments() {
@@ -574,7 +589,7 @@ async function ensureBotsInTournaments() {
     const { data: tournaments } = await supabase
         .from('tournaments')
         .select('*')
-        .or('status.eq.registering,status.eq.late_reg')
+        .or('status.eq.registering,status.eq.late_reg,status.eq.running')
         .order('scheduled_start_time', { ascending: true })
         .limit(5);
 

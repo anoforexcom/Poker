@@ -28,7 +28,7 @@ async function processTournamentStarts() {
     const { data: dueTournaments } = await supabase
         .from('tournaments')
         .select('*')
-        .eq('status', 'registering')
+        .or('status.eq.registering,status.eq.late_reg')
         .lte('scheduled_start_time', now.toISOString());
 
     if (dueTournaments && dueTournaments.length > 0) {
@@ -47,6 +47,18 @@ async function processTournamentStarts() {
             }
         }
     }
+
+    // New: Check for 'running' or 'late_reg' that don't have a game state yet
+    const { data: activeTournaments } = await supabase
+        .from('tournaments')
+        .select('*')
+        .in('status', ['running', 'late_reg']);
+
+    if (activeTournaments) {
+        for (const t of activeTournaments) {
+            await initGame(t.id);
+        }
+    }
 }
 
 // 2. Ensure Bots
@@ -54,7 +66,7 @@ async function ensureBotsInTournaments() {
     const { data: tournaments } = await supabase
         .from('tournaments')
         .select('*')
-        .or('status.eq.registering,status.eq.late_reg')
+        .or('status.eq.registering,status.eq.late_reg,status.eq.running')
         .order('scheduled_start_time', { ascending: true })
         .limit(5);
 
@@ -75,7 +87,7 @@ async function ensureBotsInTournaments() {
         const current = count || 0;
 
         // Urgent if starting soon or running
-        const isUrgent = new Date(t.scheduled_start_time).getTime() - Date.now() < 60000;
+        const isUrgent = new Date(t.scheduled_start_time).getTime() - Date.now() < 60000 || t.status === 'running';
 
         if (current < targetPlayers) {
             const needed = targetPlayers - current;
