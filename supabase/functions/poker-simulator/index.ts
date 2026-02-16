@@ -617,7 +617,7 @@ async function ensureBotsInTournaments() {
     const { data: tournaments } = await supabase
         .from('tournaments')
         .select('*')
-        .or('status.eq.registering,status.eq.late_reg,status.eq.running')
+        .or('status.eq.registering,status.eq.late_reg,status.eq.running,status.eq.active')
         .order('scheduled_start_time', { ascending: true })
         .limit(10);
 
@@ -641,7 +641,7 @@ async function ensureBotsInTournaments() {
             const needed = targetPlayers - current;
 
             const isUrgent = new Date(t.scheduled_start_time).getTime() - Date.now() < 30000; // More aggressive: 30s
-            const isFastType = t.type === 'sitgo' || t.type === 'spingo' || t.status === 'running';
+            const isFastType = t.type === 'sitgo' || t.type === 'spingo' || t.type === 'cash' || t.status === 'running' || t.status === 'active';
 
             const toAdd = (isUrgent || isFastType) ? needed : Math.min(needed, 2);
 

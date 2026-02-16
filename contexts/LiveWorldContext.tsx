@@ -19,7 +19,13 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
     const fetchTournaments = async () => {
         try {
             console.log('[LIVEWORLD] Fetching tournaments...');
-            const { data, error } = await supabase.from('tournaments').select('*');
+            // Filter out finished games early to reduce noise
+            const { data, error } = await supabase
+                .from('tournaments')
+                .select('*')
+                .neq('status', 'finished')
+                .order('created_at', { ascending: false });
+
             if (error) {
                 console.error('[LIVEWORLD] Error fetching tournaments:', error);
                 return;
@@ -149,6 +155,8 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
                 await supabase.functions.invoke('poker-simulator', {
                     body: { action: 'tick' }
                 });
+                // Immediate refresh after tick to show new bots/games
+                fetchTournaments();
             } catch (err) {
                 console.error('[LIVEWORLD] Pulse failed:', err);
             }
