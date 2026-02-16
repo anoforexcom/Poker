@@ -59,6 +59,7 @@ serve(async (req) => {
                 await processSimulationTick();
                 // Check if any tournament is running, if not, ensure seed
                 await ensureOpenTournaments();
+                await ensureBotsInTournaments();
                 return new Response(JSON.stringify({ success: true, message: 'Tick processed' }), { headers: { "Content-Type": "application/json" } });
             } finally {
                 await releaseLock('poker_tick_runner');
@@ -566,4 +567,60 @@ async function handleBotMove(tournamentId: string, botId: string, state: any) {
         action,
         amount
     });
+}
+
+async function ensureBotsInTournaments() {
+    console.log('[BOTS] Checking for bots population needs...');
+    const { data: tournaments } = await supabase
+        .from('tournaments')
+        .select('*')
+        .or('status.eq.registering,status.eq.late_reg')
+        .order('scheduled_start_time', { ascending: true })
+        .limit(5);
+
+    if (!tournaments || tournaments.length === 0) return;
+
+    // Get a pool of bots
+    const { data: bots } = await supabase.from('bots').select('id').limit(50);
+    if (!bots || bots.length === 0) return;
+
+    for (const t of tournaments) {
+        const targetPlayers = t.max_players === 6 ? 6 : 9; // Fill SitGos, seed regular
+
+        // Get current participants count
+        const { count, error } = await supabase
+            .from('tournament_participants')
+            .select('*', { count: 'exact', head: true })
+            .eq('tournament_id', t.id);
+
+        if (error) continue;
+
+        const current = count || 0;
+        if (current < targetPlayers) {
+            const needed = targetPlayers - current;
+            // Only add 1-2 bots per tick to simulate organic growth, unless urgent
+            const isUrgent = new Date(t.scheduled_start_time).getTime() - Date.now() < 60000; // < 1 min
+            const toAdd = isUrgent ? needed : Math.min(needed, Math.floor(Math.random() * 3) + 1);
+
+            console.log(`[BOTS] Adding ${toAdd} bots to ${t.name} (Current: ${current}, Target: ${targetPlayers})`);
+
+            // Shuffle bots
+            const shuffled = bots.sort(() => 0.5 - Math.random());
+            let added = 0;
+
+            for (const bot of shuffled) {
+                if (added >= toAdd) break;
+                // Try insert (ignore duplicates implicitly via DB or just let it fail silently)
+                // Better: check if exists, but for speed we just try
+                const { error: insertError } = await supabase.from('tournament_participants').insert({
+                    tournament_id: t.id,
+                    bot_id: bot.id,
+                    stack: t.starting_stack || 10000,
+                    status: 'active'
+                });
+
+                if (!insertError) added++;
+            }
+        }
+    }
 }
