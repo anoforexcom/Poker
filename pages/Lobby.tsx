@@ -191,6 +191,14 @@ const Lobby: React.FC = () => {
             <div>
               <h2 className="text-xl md:text-3xl font-black text-white tracking-tighter font-display uppercase italic">Lobby</h2>
               <p className="text-slate-500 text-[9px] md:text-sm font-bold uppercase tracking-widest mt-0.5">Explore active tables</p>
+
+              {/* DIAGNOSTIC OVERLAY */}
+              <div className="mt-2 bg-red-600/20 border border-red-500/30 rounded-md p-1.5 text-[9px] font-mono text-red-100 flex gap-4">
+                <span>RAW: {safeTournaments.length}</span>
+                <span>FILTERED: {filteredTournaments.length}</span>
+                <span>TAB: {activeTab}</span>
+                <span>TYPES: {Array.from(new Set(safeTournaments.map(t => t.type))).join(', ') || 'NONE'}</span>
+              </div>
             </div>
             <div className="flex flex-wrap gap-1.5 sm:gap-2">
               <div className="bg-emerald-500/10 text-emerald-400 text-[9px] font-black px-2 py-1 rounded-lg border border-emerald-500/20 flex items-center gap-1.5 shadow-sm">
