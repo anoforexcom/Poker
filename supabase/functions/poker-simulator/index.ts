@@ -73,6 +73,16 @@ serve(async (req) => {
             return new Response(JSON.stringify({ success: hasMoved }), { headers: { "Content-Type": "application/json" } });
         }
 
+        if (action === 'debug_info') {
+            const { count: tCount, error: tErr } = await supabase.from('tournaments').select('*', { count: 'exact', head: true });
+            const { count: bCount, error: bErr } = await supabase.from('bots').select('*', { count: 'exact', head: true });
+            const { data: latest } = await supabase.from('tournaments').select('*').limit(5).order('created_at', { ascending: false });
+            return new Response(JSON.stringify({
+                tournaments: { count: tCount, error: tErr, latest: latest || [] },
+                bots: { count: bCount, error: bErr }
+            }), { headers: { "Content-Type": "application/json" } });
+        }
+
         return new Response(JSON.stringify({ error: 'Invalid action' }), { status: 400 });
     } catch (err) {
         console.error('Edge Function Error:', err);

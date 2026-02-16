@@ -308,8 +308,14 @@ const Lobby: React.FC = () => {
             <div className="space-y-3">
               {filteredTournaments.length === 0 && (
                 <div className="text-center py-20 bg-surface/10 rounded-2xl border border-dashed border-border-dark">
-                  <span className="material-symbols-outlined text-5xl text-slate-700 mb-2">info</span>
-                  <p className="text-slate-500 italic">No games found in this category</p>
+                  <span className="material-symbols-outlined text-5xl text-slate-700 mb-2">sentiment_dissatisfied</span>
+                  <p className="text-slate-500 italic">Nenhum jogo encontrado nesta categoria</p>
+                  <button
+                    onClick={() => { setActiveTab('tournaments'); setFilter('ALL'); }}
+                    className="mt-4 text-xs text-primary hover:underline"
+                  >
+                    Ver Todos os Torneios
+                  </button>
                 </div>
               )}
               {filteredTournaments.map(t => (
@@ -383,6 +389,12 @@ const Lobby: React.FC = () => {
           ) : (
             // Grid View
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredTournaments.length === 0 && (
+                <div className="col-span-full text-center py-20 bg-surface/10 rounded-2xl border border-dashed border-border-dark">
+                  <span className="material-symbols-outlined text-5xl text-slate-700 mb-2">sentiment_dissatisfied</span>
+                  <p className="text-slate-500 italic">Nenhum jogo encontrado nesta categoria</p>
+                </div>
+              )}
               {filteredTournaments.map(t => (
                 <div
                   key={t.id}
