@@ -123,7 +123,7 @@ const Lobby: React.FC = () => {
         navigate(t.type === 'cash' || t.type === 'sitgo' || t.type === 'spingo' ? `/table/${t.id}` : `/tournament/${t.id}`);
       } catch (err: any) {
         console.error('Registration failed:', err);
-        await showAlert('Failed to register. Please try again.', 'error');
+        await showAlert(`Registration failed: ${err.message || JSON.stringify(err)}`, 'error');
       }
     }
   };
