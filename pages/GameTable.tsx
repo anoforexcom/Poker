@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Component, ErrorInfo, ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useGame } from '../contexts/GameContext';
 import { usePokerGame, GameConfig } from '../hooks/usePokerGame';
@@ -10,6 +10,31 @@ import { ActiveGamesSwitcher } from '../components/ActiveGamesSwitcher';
 import { OrientationPrompt } from '../components/OrientationPrompt';
 
 import { useChat } from '../contexts/ChatContext';
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+  props: { children: ReactNode } = { children: null }; // Add member declaration
+
+  static getDerivedStateFromError() { return { hasError: true }; }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("GameTable Crash:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center h-screen bg-slate-900 text-white p-8 text-center">
+          <span className="material-symbols-outlined text-6xl text-red-500 mb-4">error</span>
+          <h2 className="text-2xl font-black mb-2">Oops! Something went wrong.</h2>
+          <p className="text-slate-400 mb-6">The game table encountered an unexpected error. Don't worry, your balance is safe.</p>
+          <button onClick={() => window.location.reload()} className="px-8 py-3 bg-primary rounded-xl font-bold uppercase tracking-widest">Reload Table</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const GameTable: React.FC = () => {
   const { id } = useParams();
@@ -541,12 +566,13 @@ const GameTable: React.FC = () => {
 
           {/* Players Seats */}
           {players.map((player, index) => {
-            if (player.isHuman) return null; // Render user separately (bottom center)
+            if (player.id === user.id) return null; // Hero rendered manually or skipped here
 
-            // Adjust position mapping for observers (who don't have a human player at index 0)
-            const seatIndex = isObserver ? index : index - 1;
+            // Correct position mapping
+            const otherPlayers = players.filter(p => p.id !== user.id);
+            const pIdx = otherPlayers.findIndex(p => p.id === player.id);
             const posMap = ['mid-right', 'top-right', 'top', 'top-left', 'mid-left', 'bottom-left', 'bottom-right'];
-            const pos = posMap[seatIndex] || 'top';
+            const pos = posMap[pIdx] || 'top';
 
             return (
               <PlayerSeat
@@ -566,15 +592,142 @@ const GameTable: React.FC = () => {
         </div>
       </div>
 
-      {/* Action Footer - Optimized for Mobile & Repositioned to Right */}
-      <footer className="p-4 md:p-8 flex flex-col md:flex-row items-center md:items-end justify-between gap-4 bg-gradient-to-t from-background via-background/80 to-transparent z-20 pb-safe w-full">
-        {/* Chat - Hidden on mobile to save space, but accessible via settings */}
-        <div className="hidden lg:block w-72">
-          <div className="bg-background/80 backdrop-blur-lg border border-slate-700 rounded-xl overflow-hidden flex flex-col h-32 md:h-48 shadow-lg">
-            <div className="p-2 border-b border-slate-700 flex justify-between cursor-pointer hover:bg-white/5 transition" onClick={() => setShowSettings(true)}>
-              <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase">Table Chat</span>
-              <span className="material-symbols-outlined text-slate-500 text-xs hover:text-white transition">settings</span>
+      {/* NEW: Professional Waiting Overlay */}
+      {(players.length < 2) && (
+        <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-[#0a0f1a]/95 backdrop-blur-xl p-8 text-center animate-fade-in">
+          <div className="relative mb-12">
+            <div className="absolute inset-0 bg-primary/20 blur-[120px] animate-pulse"></div>
+            <div className="size-32 md:size-48 border-b-8 border-r-8 border-primary rounded-full animate-spin [animation-duration:3s]"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="material-symbols-outlined text-5xl md:text-7xl text-primary animate-bounce">style</span>
             </div>
+          </div>
+          <h2 className="text-4xl md:text-6xl font-black text-white italic mb-4 tracking-tighter glow-blue uppercase">Preparing Deck</h2>
+          <p className="text-slate-400 max-w-md text-sm md:text-lg font-medium leading-relaxed mb-10 opacity-80">
+            Waiting for more participants to join the table. <br /> The action starts as soon as the quota is met.
+          </p>
+
+          <div className="flex flex-col md:flex-row gap-4 w-full max-w-xl">
+            <div className="flex-1 bg-white/5 p-4 rounded-3xl border border-white/10 backdrop-blur-md">
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Players Ready</p>
+              <p className="text-3xl font-mono text-white font-black">{players?.length || 1} <span className="text-slate-600 text-lg">/ {tournament?.maxPlayers || 9}</span></p>
+            </div>
+            <div className="flex-1 bg-white/5 p-4 rounded-3xl border border-white/10 backdrop-blur-md">
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Buy-In</p>
+              <p className="text-3xl font-mono text-gold font-black">${tournament?.buyIn?.toLocaleString() || '0'}</p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => navigate('/play')}
+            className="mt-16 group flex items-center gap-3 px-8 py-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 transition-all active:scale-95"
+          >
+            <span className="material-symbols-outlined text-slate-500 group-hover:text-red-400 transition-colors">logout</span>
+            <span className="text-xs font-black text-slate-400 uppercase tracking-widest group-hover:text-white transition-colors">Return to Lobby</span>
+          </button>
+        </div>
+      )}
+
+      {/* Action Controls (Floating Bottom-Right) */}
+      {!isObserver && activeUser && (
+        <div className="absolute bottom-8 right-8 z-[80] flex flex-col items-end gap-5 animate-scale-in origin-bottom-right">
+          {(!phase || phase === 'showdown') ? (
+            <button
+              onClick={startNewHand}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white font-black px-12 py-6 rounded-3xl shadow-[0_20px_50px_rgba(16,185,129,0.3)] flex items-center gap-3 group transition-all active:scale-95 hover:-translate-y-1"
+            >
+              <span className="material-symbols-outlined text-2xl group-hover:rotate-180 transition-transform duration-500">refresh</span>
+              <span className="text-xl">NEXT HAND</span>
+            </button>
+          ) : (
+            currentTurn !== -1 && players[currentTurn]?.id === user.id ? (
+              <div className="flex flex-col items-end gap-6">
+                {/* Bet Slider Panel */}
+                <div className="bg-slate-900/90 backdrop-blur-2xl p-8 rounded-[40px] border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.5)] w-80 md:w-96">
+                  <div className="flex justify-between items-center mb-6">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Wager</span>
+                      <span className="text-3xl font-black text-white font-mono leading-none">${betValue.toLocaleString()}</span>
+                    </div>
+                    <div className="bg-primary/20 px-3 py-1 rounded-full border border-primary/30">
+                      <span className="text-[10px] font-black text-primary uppercase">{((betValue / (activeUser?.balance || 1)) * 100).toFixed(0)}% STACK</span>
+                    </div>
+                  </div>
+
+                  <input
+                    type="range" min={gameConfig?.bigBlind || 20} max={activeUser?.balance || 1000} step={gameConfig?.smallBlind || 10}
+                    value={betValue} onChange={(e) => setBetValue(Number(e.target.value))}
+                    className="w-full h-4 bg-slate-800 rounded-full appearance-none cursor-pointer accent-primary mb-6"
+                  />
+
+                  <div className="grid grid-cols-4 gap-2">
+                    {[2, 3, 5].map(mult => (
+                      <button
+                        key={mult}
+                        onClick={() => setBetValue((gameConfig?.bigBlind || 20) * mult)}
+                        className="bg-white/5 hover:bg-white/10 py-2 rounded-xl text-[10px] font-black text-slate-400 transition-colors uppercase"
+                      >
+                        {mult}x BB
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setBetValue(activeUser?.balance || 0)}
+                      className="bg-red-500/10 hover:bg-red-500/20 py-2 rounded-xl text-[10px] font-black text-red-500 transition-colors uppercase"
+                    >
+                      All-In
+                    </button>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => handlePlayerAction('fold')}
+                    className="bg-slate-800 hover:bg-slate-700 text-slate-400 font-bold px-10 py-5 rounded-3xl border border-slate-700 shadow-xl transition-all active:scale-95 hover:text-white"
+                  >
+                    FOLD
+                  </button>
+                  <button
+                    onClick={() => handlePlayerAction(currentBet > 0 ? 'call' : 'check')}
+                    className="bg-white/5 hover:bg-white/10 text-white font-black px-12 py-5 rounded-3xl border border-white/10 shadow-xl transition-all active:scale-95"
+                  >
+                    {currentBet > 0 ? `CALL $${currentBet.toLocaleString()}` : 'CHECK'}
+                  </button>
+                  <button
+                    onClick={() => handlePlayerAction('raise', betValue)}
+                    className="bg-primary hover:brightness-110 text-white font-black px-16 py-5 rounded-3xl shadow-[0_20px_40px_rgba(37,99,235,0.3)] transition-all active:scale-95 flex items-center gap-3 relative overflow-hidden group"
+                  >
+                    <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                    <span className="material-symbols-outlined text-xl relative z-10">payments</span>
+                    <span className="text-xl relative z-10">{currentBet > 0 ? 'RAISE' : 'BET'}</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              // Not user turn - Show status
+              <div className="bg-black/60 backdrop-blur-xl px-8 py-5 rounded-full border border-white/10 shadow-2xl flex items-center gap-4">
+                <div className="size-3 bg-amber-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(245,158,11,0.5)]"></div>
+                <span className="text-sm font-black text-white uppercase tracking-widest italic opacity-80">
+                  {players[currentTurn]?.name || 'Opponent'}'s Turn...
+                </span>
+              </div>
+            )
+          )}
+        </div>
+      )}
+
+      <footer className="p-4 md:p-8 flex flex-col md:flex-row items-center md:items-end justify-between gap-4 bg-gradient-to-t from-background via-background/80 to-transparent z-20 pb-safe w-full">
+        {/* Chat - Optimized */}
+        <div className="w-80">
+          <div className="bg-black/40 backdrop-blur-2xl border border-white/5 rounded-3xl overflow-hidden flex flex-col h-40 md:h-56 shadow-2xl">
+            <div className="p-3 border-b border-white/5 flex justify-between items-center bg-white/5">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Live Table Chat</span>
+              <div className="flex gap-2">
+                <div className="size-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                <span className="text-[8px] font-bold text-emerald-500/80 uppercase">Online</span>
+              </div>
+            </div>
+            {/* ... rest of chat history is the same ... */}
             <div className="flex-1 overflow-y-auto p-2 space-y-1 text-[10px] md:text-[11px] scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
               {chatHistory.slice(-10).map((msg, idx) => {
                 // Deterministic color for player names
@@ -847,4 +1000,10 @@ const HeroCard = ({ suit, value, rotate }: any) => {
   );
 };
 
-export default GameTable;
+const GameTableWrapper = () => (
+  <ErrorBoundary>
+    <GameTable />
+  </ErrorBoundary>
+);
+
+export default GameTableWrapper;

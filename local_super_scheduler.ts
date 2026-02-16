@@ -156,7 +156,17 @@ async function initGame(tournamentId) {
     }
 
     const playerStates = {};
-    const sb = 10; const bb = 20;
+
+    // Determine Blinds based on tournament type
+    const { data: tInfo } = await supabase.from('tournaments').select('*').eq('id', tournamentId).single();
+    let sb = tInfo?.small_blind || 10;
+    let bb = tInfo?.big_blind || 20;
+
+    if (!tInfo?.small_blind) {
+        if (tInfo?.type === 'cash') { sb = 5; bb = 10; }
+        else if (tInfo?.type === 'spingo') { sb = 10; bb = 20; }
+        else { sb = tInfo?.buy_in / 10 || 10; bb = tInfo?.buy_in / 5 || 20; }
+    }
 
     participants.forEach(p => {
         const pid = p.user_id || p.bot_id;

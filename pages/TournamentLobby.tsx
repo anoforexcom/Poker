@@ -140,6 +140,14 @@ const TournamentLobby: React.FC = () => {
         setTimeout(() => navigate(`/table/${id}`), 500);
     };
 
+    // Auto-Enter logic: If registered and status is running, jump in!
+    useEffect(() => {
+        if (isRegistered && !isNavigating && (tournament?.status?.toLowerCase() === 'running' || tournament?.status?.toLowerCase() === 'late_reg')) {
+            console.log("[LOBBY] Tournament is live! Auto-navigating...");
+            handleEnter();
+        }
+    }, [isRegistered, tournament?.status, isNavigating]);
+
     if (!tournament) return <div className="p-8 text-center text-white">Loading Tournament...</div>;
 
     return (
@@ -250,15 +258,27 @@ const TournamentLobby: React.FC = () => {
                                 <button
                                     onClick={handleEnter}
                                     disabled={isNavigating}
-                                    className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
+                                    className="w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black rounded-2xl shadow-2xl shadow-blue-500/20 transition-all flex flex-col items-center justify-center gap-1 group relative overflow-hidden active:scale-[0.98]"
                                 >
-                                    {isNavigating ? 'Loading...' : 'GO TO TABLE'}
-                                    {!isNavigating && <span className="material-symbols-outlined">login</span>}
+                                    <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                                    <div className="flex items-center gap-2 relative z-10">
+                                        {isNavigating ? 'ENTERING TABLE...' : 'GO TO TABLE'}
+                                        {!isNavigating && <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>}
+                                    </div>
+                                    <span className="text-[10px] opacity-70 font-bold tracking-widest relative z-10">THE ACTION IS LIVE!</span>
                                 </button>
                             ) : (
-                                <div className="p-4 bg-slate-800 rounded-xl text-center">
-                                    <div className="text-[10px] text-slate-400 uppercase font-bold mb-1">Starts In</div>
-                                    <div className="text-xl font-mono">{timeLeft || tournament.startTime}</div>
+                                <div className="p-6 bg-slate-800/50 backdrop-blur rounded-2xl text-center border border-white/5 relative group overflow-hidden">
+                                    <div className="absolute inset-0 bg-blue-500/5 translate-x-full group-hover:translate-x-0 transition-transform duration-1000"></div>
+                                    <div className="text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] mb-2">Tournament Starts In</div>
+                                    <div className="text-3xl font-mono font-black text-white glow-blue">
+                                        {timeLeft || tournament.startTime}
+                                    </div>
+                                    <div className="mt-4 flex justify-center gap-1">
+                                        <div className="size-1 rounded-full bg-blue-500 animate-pulse"></div>
+                                        <div className="size-1 rounded-full bg-blue-500 animate-pulse [animation-delay:200ms]"></div>
+                                        <div className="size-1 rounded-full bg-blue-500 animate-pulse [animation-delay:400ms]"></div>
+                                    </div>
                                 </div>
                             )}
                         </>
