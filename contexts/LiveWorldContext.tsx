@@ -69,8 +69,9 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
     };
 
     const registerForTournament = async (tournamentId: string) => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error("User not authenticated");
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        console.log('[LIVEWORLD] Checking Auth:', { user, authError });
+        if (!user) throw new Error(`User not authenticated (Error: ${authError?.message || 'No Session'})`);
 
         // 1. Get tournament details (to get buy-in)
         const { data: tournament, error: tError } = await supabase
