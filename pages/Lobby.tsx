@@ -193,13 +193,26 @@ const Lobby: React.FC = () => {
               <p className="text-slate-500 text-[9px] md:text-sm font-bold uppercase tracking-widest mt-0.5">Explore active tables</p>
 
               {/* DIAGNOSTIC OVERLAY */}
-              <div className="mt-2 bg-red-600/20 border border-red-500/30 rounded-md p-1.5 text-[9px] font-mono text-red-100 flex flex-wrap gap-4">
+              <div className="mt-2 bg-red-600/20 border border-red-500/30 rounded-md p-1.5 text-[9px] font-mono text-red-100 flex flex-wrap items-center gap-4">
                 <span>RAW: {safeTournaments.length}</span>
                 <span>FILTERED: {filteredTournaments.length}</span>
                 <span>TAB: {activeTab}</span>
                 <span>ONLINE: {headerOnlinePlayers}</span>
                 <span>TYPES: {Array.from(new Set(safeTournaments.map(t => t.type))).join(', ') || 'NONE'}</span>
-                {safeTournaments.length === 0 && <span className="animate-pulse text-yellow-400">⚠️ SERVER WAKING UP... (WAIT 5S)</span>}
+                {safeTournaments.length === 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="animate-pulse text-yellow-400 font-bold">⚠️ SERVER WAKING UP...</span>
+                    <button
+                      onClick={() => {
+                        const { manualPulse } = useLiveWorld() as any; // Cast for quick access
+                        if (manualPulse) manualPulse();
+                      }}
+                      className="bg-red-500 hover:bg-red-600 text-white px-2 py-0.5 rounded font-black border border-white/20 active:scale-95 transition-all"
+                    >
+                      WAKE UP NOW!
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex flex-wrap gap-1.5 sm:gap-2">

@@ -6,7 +6,8 @@ interface LiveWorldContextType {
     onlinePlayers: number;
     smoothedOnlinePlayers: number;
     activeTables: number;
-    registerForTournament: (tournamentId: string) => Promise<void>;
+    registerForTournament: (tournamentId: string, manualUserId?: string) => Promise<void>;
+    manualPulse: () => Promise<void>;
 }
 
 const LiveWorldContext = createContext<LiveWorldContextType | undefined>(undefined);
@@ -141,6 +142,19 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
         return () => clearInterval(interval);
     }, []);
 
+    const manualPulse = async () => {
+        console.log('[LIVEWORLD] Manual Pulse triggered...');
+        try {
+            await supabase.functions.invoke('poker-simulator', {
+                body: { action: 'tick' }
+            });
+            await fetchTournaments();
+            await fetchOnlinePlayers();
+        } catch (err) {
+            console.error('[LIVEWORLD] Manual Pulse failed:', err);
+        }
+    };
+
     // HEARTBEAT: Ensure the world stays alive
     useEffect(() => {
         const pulse = async () => {
@@ -177,6 +191,7 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
             onlinePlayers,
             registerForTournament,
             activeTables,
+            manualPulse,
             smoothedOnlinePlayers: onlinePlayers // Alias for compatibility
         }}>
             {children}
