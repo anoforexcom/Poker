@@ -165,8 +165,8 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
         // Pulse immediately
         pulse();
 
-        // dynamic interval: faster if empty
-        const pulseInterval = tournaments.length === 0 ? 10000 : 30000;
+        // dynamic interval: faster if empty (2s) to bridge the "waking up" gap
+        const pulseInterval = tournaments.length === 0 ? 2000 : 30000;
         const interval = setInterval(pulse, pulseInterval);
         return () => clearInterval(interval);
     }, [tournaments.length]); // Re-run if length changes to adjust pulse speed
