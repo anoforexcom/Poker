@@ -12,10 +12,16 @@ console.log("   -> Auto-Starting Games...");
 console.log("   -> Populating Bots...");
 
 // Main Loop
+// Main Loop
 async function tick() {
     try {
         await processTournamentStarts();
         await ensureBotsInTournaments();
+        // Run bot moves LOCALLY to prevent freezing
+        await processBotTurns();
+
+        // Still call edge tick for other maintenance (like timeouts or phase transitions if needed)
+        // But we rely on local processBotTurns for actual moves
         await processRunningGames();
     } catch (e) {
         console.error("Critical Error in Tick:", e);
@@ -23,12 +29,96 @@ async function tick() {
 }
 
 async function processRunningGames() {
-    console.log("   -> Pulsing Edge Function (Tick)...");
+    // console.log("   -> Pulsing Edge Function (Tick)...");
+    // Reduced frequency or rely on specific actions. 
+    // For now, keep it to trigger phase transitions the edge function might handle
     const { data, error } = await supabase.functions.invoke('poker-simulator', {
         body: { action: 'tick' }
     });
-    if (error) console.error("Edge Tick Error:", error);
-    else console.log("   -> Pulse Success:", data);
+    if (error) {
+        // console.error("Edge Tick Error:", error); 
+        // Suppress logs to avoid noise
+    }
+}
+
+// ------------------------------------------------------------------
+// BOT LOGIC (LOCAL & ROBUST)
+// ------------------------------------------------------------------
+
+async function processBotTurns() {
+    // Fetch active games where it's a bot's turn
+    const { data: states } = await supabase
+        .from('game_states')
+        .select('*')
+        .not('current_turn_bot_id', 'is', null);
+
+    if (!states || states.length === 0) return;
+
+    // Process parallel
+    await Promise.all(states.map(async (state: any) => {
+        const botId = state.current_turn_bot_id;
+        // console.log(`[BOT] Handling turn for ${botId} in ${state.tournament_id}`);
+
+        // 1. Get Player State
+        const pState = state.player_states[botId];
+        if (!pState) return;
+
+        // 2. Decide Move
+        const currentBet = state.last_raise_amount || 0;
+        const myBet = pState.current_bet || 0;
+        const toCall = currentBet - myBet;
+
+        let action = 'call';
+        let amount = 0;
+
+        // Simple RNG Logic
+        const decision = Math.random();
+
+        // If high call, maybe fold
+        if (toCall > 500 && decision > 0.7) {
+            action = 'fold';
+        }
+        // Small chance to raise if cheap
+        else if (toCall < 100 && decision > 0.85) {
+            action = 'raise';
+            amount = currentBet + Math.floor(Math.random() * 200) + 20; // Random raise
+        }
+
+        if (action === 'call' && toCall === 0) action = 'check';
+
+        // 3. Execute via API
+        const success = await executeMove(state.tournament_id, botId, action, amount);
+
+        // 4. FALLBACK: If failed (e.g. invalid raise), FORCE FOLD/CHECK to unblock
+        if (!success) {
+            console.warn(`[BOT-FIX] Move ${action} failed for ${botId}. Forcing Safe Action.`);
+            const safeAction = toCall === 0 ? 'check' : 'fold';
+            await executeMove(state.tournament_id, botId, safeAction, 0);
+        }
+    }));
+}
+
+async function executeMove(tournamentId: string, playerId: string, action: string, amount: number) {
+    try {
+        const { data, error } = await supabase.functions.invoke('poker-simulator', {
+            body: {
+                action: 'player_move',
+                tournament_id: tournamentId,
+                player_id: playerId,
+                move_type: action,
+                amount: amount
+            }
+        });
+
+        if (error) {
+            console.error(`[EXEC-ERR] ${playerId} ${action}:`, error.message);
+            return false;
+        }
+        return data?.success;
+    } catch (err) {
+        console.error(`[EXEC-FAIL] ${playerId} ${action}:`, err);
+        return false;
+    }
 }
 
 // 1. Start Scheduled Tournaments
@@ -102,7 +192,7 @@ async function ensureBotsInTournaments() {
             .eq('tournament_id', t.id);
 
         const current = count || 0;
-        console.log(`[BOTS] Tournament ${t.name} (${t.id}) has ${current}/${targetPlayers} players`);
+        // console.log(`[BOTS] Tournament ${t.name} (${t.id}) has ${current}/${targetPlayers} players`);
 
         // Urgent if starting soon or running
         const isUrgent = new Date(t.scheduled_start_time).getTime() - Date.now() < 60000 || t.status === 'running';

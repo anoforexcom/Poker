@@ -475,8 +475,8 @@ const GameTable: React.FC = () => {
       }
 
       {/* The Poker Table Rendering */}
-      <div className="flex-1 flex items-center justify-center p-6 md:p-16 lg:p-24 overflow-visible landscape:py-2">
-        <div className="poker-table relative w-full h-full max-h-[75vh] md:max-h-[65vh] max-w-5xl aspect-[2/1] bg-emerald-900 border-2 md:border-[16px] border-[#3a2a1a] flex flex-col items-center justify-center shadow-2xl rounded-[60px] md:rounded-[200px]">
+      <div className="flex-1 flex items-center justify-center p-4 md:p-12 lg:p-16 overflow-visible landscape:py-4">
+        <div className="poker-table relative w-full h-full max-h-[70vh] md:max-h-[60vh] max-w-5xl aspect-[2/1] bg-emerald-900 border-2 md:border-[16px] border-[#3a2a1a] flex flex-col items-center justify-center shadow-2xl rounded-[60px] md:rounded-[150px]">
 
           {/* Table Center: Pot & Cards */}
           <div className="flex flex-col items-center gap-6">
@@ -903,13 +903,13 @@ const ChipStack = ({ amount, size = 'md' }: { amount: number, size?: 'sm' | 'md'
 
 const PlayerSeat = ({ position, name, balance, active, inactive, dealer, currentBet, timeLeft, totalTime }: any) => {
   const positions: any = {
-    'top': '-top-8 md:-top-20 left-1/2 -translate-x-1/2',
-    'top-left': 'top-2 md:top-8 left-[4%] md:left-[10%]',
-    'top-right': 'top-2 md:top-8 right-[4%] md:right-[10%]',
-    'mid-left': 'top-1/2 -translate-y-1/2 -left-10 md:-left-24',
-    'mid-right': 'top-1/2 -translate-y-1/2 -right-10 md:-right-24',
-    'bottom-left': 'bottom-4 md:bottom-16 left-[4%] md:left-[10%]',
-    'bottom-right': 'bottom-4 md:bottom-16 right-[4%] md:right-[10%]',
+    'top': '-top-12 md:-top-24 left-1/2 -translate-x-1/2',
+    'top-left': '-top-4 md:-top-8 left-[-5%] md:left-0',
+    'top-right': '-top-4 md:-top-8 right-[-5%] md:right-0',
+    'mid-left': 'top-1/2 -translate-y-1/2 -left-12 md:-left-28',
+    'mid-right': 'top-1/2 -translate-y-1/2 -right-12 md:-right-28',
+    'bottom-left': 'bottom-0 md:bottom-8 left-[-2%] md:left-[5%]',
+    'bottom-right': 'bottom-0 md:bottom-8 right-[-2%] md:right-[5%]',
   };
 
   return (
