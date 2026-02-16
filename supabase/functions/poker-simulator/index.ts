@@ -460,8 +460,26 @@ async function seedInitialData() {
 }
 
 async function processSimulationTick() {
-    // Check for running tournaments and trigger bot moves
+    // 1. Start Scheduled Tournaments
     const now = new Date();
+    const { data: dueTournaments } = await supabase
+        .from('tournaments')
+        .select('*')
+        .eq('status', 'registering')
+        .lte('scheduled_start_time', now.toISOString());
+
+    if (dueTournaments && dueTournaments.length > 0) {
+        console.log(`[SCHEDULER] Found ${dueTournaments.length} tournaments to start.`);
+        for (const t of dueTournaments) {
+            console.log(`[START] Starting tournament ${t.name} (${t.id})`);
+            // Update status to running
+            await supabase.from('tournaments').update({ status: 'running' }).eq('id', t.id);
+            // Initialize first hand
+            await startNewHand(t.id);
+        }
+    }
+
+    // 2. Process Running Tournaments (Bot Moves)
     const { data: activeTournaments } = await supabase
         .from('tournaments')
         .select('*')
