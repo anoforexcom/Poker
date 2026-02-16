@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import TournamentClock from '../components/TournamentClock';
 import { useLiveWorld } from '../contexts/LiveWorldContext';
 import { useSimulation } from '../contexts/SimulationContext';
 import { useGame } from '../contexts/GameContext';
@@ -320,7 +321,13 @@ const Lobby: React.FC = () => {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 md:gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className={`size-2 rounded-full shrink-0 ${t.status === 'Running' ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-slate-700'}`}></span>
+                        <TournamentClock
+                          startTime={t.scheduledStartTime}
+                          lateRegUntil={t.lateRegUntil}
+                          status={t.status}
+                          size="sm"
+                          className="mr-1"
+                        />
                         <div className="min-w-0 flex-1">
                           <h3 className="text-[11px] xs:text-xs md:text-sm font-black text-white truncate leading-none mb-1">{t.name}</h3>
                           <div className="flex items-center gap-1">
@@ -384,9 +391,14 @@ const Lobby: React.FC = () => {
                 >
                   <div className="p-4">
                     <div className="flex items-start justify-between mb-3">
-                      <span className={`size-2 rounded-full mt-1 ${t.status === 'Running' ? 'bg-blue-500' : 'bg-slate-600'}`}></span>
+                      <TournamentClock
+                        startTime={t.scheduledStartTime}
+                        lateRegUntil={t.lateRegUntil}
+                        status={t.status}
+                        size="md"
+                      />
                       <span className={`text-[9px] font-black uppercase tracking-wider ${getStatusColor(t.status)}`}>
-                        {t.status}
+                        {t.status?.replace('_', ' ')}
                       </span>
                     </div>
 

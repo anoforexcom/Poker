@@ -109,8 +109,13 @@ async function ensureBotsInTournaments() {
 
         if (current < targetPlayers) {
             const needed = targetPlayers - current;
+            // Never fill completely with bots if not running
+            const maxBots = t.status === 'running' ? targetPlayers : targetPlayers - 1;
+
+            if (current >= maxBots) continue;
+
             // Add aggressively if urgent
-            const toAdd = isUrgent ? needed : Math.min(needed, Math.floor(Math.random() * 2) + 1);
+            const toAdd = isUrgent ? (maxBots - current) : Math.min(maxBots - current, Math.floor(Math.random() * 2) + 1);
 
             if (toAdd > 0) {
                 console.log(`[BOTS] Adding ${toAdd} bots to ${t.name}`);
