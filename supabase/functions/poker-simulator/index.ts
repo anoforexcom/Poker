@@ -576,12 +576,38 @@ async function handleBotMove(tournamentId: string, botId: string, state: any) {
 
     if (action === 'call' && toCall === 0) action = 'check';
 
-    await handlePlayerMove({
+    // FIRST ATTEMPT
+    const success = await handlePlayerMove({
         tournament_id: tournamentId,
         player_id: botId,
         action,
         amount
     });
+
+    // FALLBACK IF FAILED (Critical for preventing freezes)
+    if (!success) {
+        console.warn(`[BOT-RESCUE] Bot ${botId} failed to ${action}. Forcing fallback.`);
+
+        // If we tried to raise and failed, try calling/checking
+        if (action === 'raise') {
+            const retrySuccess = await handlePlayerMove({
+                tournament_id: tournamentId,
+                player_id: botId,
+                action: toCall === 0 ? 'check' : 'call',
+                amount: 0
+            });
+            if (retrySuccess) return;
+        }
+
+        // Final Resort: FOLD
+        // If we can't even check/call (maybe broke?), just FOLD to unblock the game
+        await handlePlayerMove({
+            tournament_id: tournamentId,
+            player_id: botId,
+            action: 'fold',
+            amount: 0
+        });
+    }
 }
 
 async function ensureBotsInTournaments() {
