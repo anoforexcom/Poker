@@ -1,31 +1,27 @@
 
-import { supabase } from './utils/supabase';
+import { createClient } from '@supabase/supabase-js';
 
-async function check() {
-    console.log('--- STUCK GAMES CHECK ---');
+// Configuration
+const SUPABASE_URL = 'https://uhykmcwgznkzehxnkrbx.supabase.co';
+const SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoeWttY3dnem5remVoeG5rcmJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5MDE5MzIsImV4cCI6MjA4NjQ3NzkzMn0.GB0GNuTql29hM7u8Hyh8TSvRq24xMAb_jl36FEsfXq8';
 
-    const { data: tournaments, error: tErr } = await supabase.from('tournaments')
-        .select('id, name, status, players_count, type')
-        .eq('status', 'running');
+const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-    if (tErr) console.error('Tournaments Error:', tErr);
-    else {
-        console.log('Running Tournaments:', tournaments?.length);
-        for (const t of tournaments || []) {
-            const { data: state } = await supabase.from('game_states').select('id, phase').eq('tournament_id', t.id).maybeSingle();
-            const { count } = await supabase.from('tournament_participants').select('*', { count: 'exact', head: true }).eq('tournament_id', t.id);
+async function main() {
+    console.log("-> Debugging Stuck Games...");
+    const { data: states, error: stateError } = await supabase
+        .from('game_states')
+        .select('id, tournament_id, current_turn_bot_id, current_turn_user_id, last_raise_amount, phase')
+        .limit(10);
 
-            console.log(`[${t.status}] ${t.name} (${t.id})`);
-            console.log(`   -> Players: ${count} / 2 (min)`);
-            console.log(`   -> GameState: ${state ? `EXISTS (${state.phase})` : 'MISSING'}`);
-
-            if (!state && (count || 0) < 2) {
-                console.log('   !!! STUCK: Needs bots to start because status is already "running" but not enough players.');
-            }
-        }
+    if (stateError) {
+        console.error("Error fetching game states:", stateError);
+    } else {
+        console.log("Current Game States:");
+        states.forEach(s => {
+            console.log(`[${s.tournament_id}] Phase: ${s.phase} | BotTurn: ${s.current_turn_bot_id} | UserTurn: ${s.current_turn_user_id}`);
+        });
     }
-
-    console.log('--- END CHECK ---');
 }
 
-check();
+main();

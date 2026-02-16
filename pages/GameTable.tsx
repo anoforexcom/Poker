@@ -358,7 +358,7 @@ const GameTable: React.FC = () => {
                           <div className="size-8 rounded-full bg-slate-700 overflow-hidden">
                             <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${p.name}`} alt="" />
                           </div>
-                          <span className={`text-sm font-bold ${p.isHuman ? 'text-white' : 'text-slate-300'}`}>{p.name} {p.isHuman && '(You)'}</span>
+                          <span className={`text-sm font-bold ${p.isHuman ? 'text-white' : 'text-slate-300'}`}>{p.name}</span>
                         </div>
                         <span className="text-sm font-black text-white">${p.balance.toLocaleString()}</span>
                       </div>
