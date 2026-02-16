@@ -41,7 +41,7 @@ const Lobby: React.FC = () => {
     if (t.type !== tabToType[activeTab]) return false;
 
     // Safety check for tournament object
-    if (!t || !t.name || typeof t.buyIn !== 'number') return false;
+    if (!t || !t.name || (typeof t.buyIn !== 'number' && isNaN(Number(t.buyIn)))) return false;
 
     // Buy-in filter
     if (filter !== 'ALL') {

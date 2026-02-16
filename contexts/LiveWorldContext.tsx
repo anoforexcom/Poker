@@ -36,10 +36,10 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
                 // Map snake_case database columns to camelCase for frontend components
                 const mappedTournaments = data.map((t: any) => ({
                     ...t,
-                    buyIn: t.buy_in,
-                    prizePool: t.prize_pool,
-                    players: t.players_count,
-                    maxPlayers: t.max_players,
+                    buyIn: Number(t.buy_in || 0),
+                    prizePool: Number(t.prize_pool || 0),
+                    players: t.players_count || 0,
+                    maxPlayers: t.max_players || 6,
                     scheduledStartTime: t.scheduled_start_time,
                     lateRegUntil: t.late_reg_until,
                     currentBlindLevel: t.current_blind_level
