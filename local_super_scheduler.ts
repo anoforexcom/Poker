@@ -127,7 +127,7 @@ async function ensureBotsInTournaments() {
 async function initGame(tournamentId) {
     // Check if state exists
     const { data: existing } = await supabase.from('game_states').select('id').eq('tournament_id', tournamentId).maybeSingle();
-    if (existing) return;
+    if (existing) return false;
 
     console.log(`[GAME] Initializing State for ${tournamentId}`);
 
@@ -139,7 +139,7 @@ async function initGame(tournamentId) {
 
     if (!participants || participants.length < 2) {
         console.warn(`[GAME] Not enough players to start ${tournamentId} (Found: ${participants?.length || 0})`);
-        return;
+        return false;
     }
     console.log(`[GAME] Found ${participants.length} players for ${tournamentId}. Starting...`);
 
@@ -179,7 +179,7 @@ async function initGame(tournamentId) {
     playerStates[pid2].current_bet = bb;
 
     // Insert State
-    await supabase.from('game_states').insert({
+    const { error: insertError } = await supabase.from('game_states').insert({
         tournament_id: tournamentId,
         deck: deck,
         community_cards: [],
@@ -190,6 +190,14 @@ async function initGame(tournamentId) {
         current_turn_user_id: participants[2]?.user_id || (participants[2] ? null : participants[0].user_id),
         current_turn_bot_id: participants[2]?.bot_id || (participants[2] ? null : participants[0].bot_id)
     });
+
+    if (insertError) {
+        console.error(`[GAME] Error inserting state for ${tournamentId}:`, insertError.message);
+        return false;
+    }
+
+    console.log(`[GAME] Successfully started tournament ${tournamentId}`);
+    return true;
 }
 
 

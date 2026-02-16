@@ -90,11 +90,17 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ tournamentId, isMinimized 
                             ) : (
                                 <>
                                     <div className="flex items-center gap-2">
-                                        <span className={`text-xs font-bold ${msg.playerId === 'user' ? 'text-primary' : 'text-slate-400'}`}>
+                                        <span className={`text-[10px] font-black uppercase tracking-tighter ${(() => {
+                                            const colors = ['text-blue-400', 'text-green-400', 'text-purple-400', 'text-yellow-400', 'text-pink-400', 'text-cyan-400'];
+                                            let hash = 0;
+                                            const name = msg.playerName || 'Player';
+                                            for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+                                            return colors[Math.abs(hash) % colors.length];
+                                        })()}`}>
                                             {msg.playerName}
                                         </span>
-                                        <span className="text-[10px] text-slate-600">
-                                            {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        <span className="text-[8px] text-slate-600 font-bold">
+                                            {msg.timestamp?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || ''}
                                         </span>
                                     </div>
                                     <div

@@ -450,7 +450,7 @@ const GameTable: React.FC = () => {
       }
 
       {/* The Poker Table Rendering */}
-      <div className="flex-1 flex items-center justify-center p-1 md:p-12 overflow-hidden landscape:py-2">
+      <div className="flex-1 flex items-center justify-center p-6 md:p-16 lg:p-24 overflow-visible landscape:py-2">
         <div className="poker-table relative w-full h-full max-h-[75vh] md:max-h-[65vh] max-w-5xl aspect-[2/1] bg-emerald-900 border-2 md:border-[16px] border-[#3a2a1a] flex flex-col items-center justify-center shadow-2xl rounded-[60px] md:rounded-[200px]">
 
           {/* Table Center: Pot & Cards */}
@@ -566,21 +566,29 @@ const GameTable: React.FC = () => {
         </div>
       </div>
 
-      {/* Action Footer - Optimized for Mobile */}
-      <footer className="p-1 md:p-8 flex flex-col md:grid md:grid-cols-12 items-center md:items-end gap-1 md:gap-8 bg-gradient-to-t from-background via-background/80 to-transparent z-20 pb-safe w-full">
+      {/* Action Footer - Optimized for Mobile & Repositioned to Right */}
+      <footer className="p-4 md:p-8 flex flex-col md:flex-row items-center md:items-end justify-between gap-4 bg-gradient-to-t from-background via-background/80 to-transparent z-20 pb-safe w-full">
         {/* Chat - Hidden on mobile to save space, but accessible via settings */}
-        <div className="hidden lg:block md:col-span-3 w-full">
-          <div className="bg-background/80 backdrop-blur-lg border border-slate-700 rounded-xl overflow-hidden flex flex-col h-28 md:h-40 shadow-lg">
+        <div className="hidden lg:block w-72">
+          <div className="bg-background/80 backdrop-blur-lg border border-slate-700 rounded-xl overflow-hidden flex flex-col h-32 md:h-48 shadow-lg">
             <div className="p-2 border-b border-slate-700 flex justify-between cursor-pointer hover:bg-white/5 transition" onClick={() => setShowSettings(true)}>
               <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase">Table Chat</span>
               <span className="material-symbols-outlined text-slate-500 text-xs hover:text-white transition">settings</span>
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-1 text-[10px] md:text-[11px] scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
-              {chatHistory.slice(-5).map((msg, idx) => (
-                <p key={idx} className={`${msg.type === 'system' ? 'text-yellow-500 italic' : msg.sender === 'You' ? 'text-primary font-bold' : 'text-slate-300'}`}>
-                  <span className="opacity-50 mr-1 text-[8px]">{msg.sender}:</span> {msg.text}
-                </p>
-              ))}
+              {chatHistory.slice(-10).map((msg, idx) => {
+                // Deterministic color for player names
+                const colors = ['text-blue-400', 'text-green-400', 'text-purple-400', 'text-yellow-400', 'text-pink-400', 'text-cyan-400'];
+                let hash = 0;
+                for (let i = 0; i < msg.sender.length; i++) hash = msg.sender.charCodeAt(i) + ((hash << 5) - hash);
+                const colorClass = colors[Math.abs(hash) % colors.length];
+
+                return (
+                  <p key={idx} className={`${msg.type === 'system' ? 'text-yellow-500 italic' : 'text-slate-300'}`}>
+                    <span className={`${colorClass} font-bold mr-1 text-[8px] uppercase tracking-tighter`}>{msg.sender}:</span> {msg.text}
+                  </p>
+                );
+              })}
             </div>
             {/* Chat Input */}
             <form
@@ -605,90 +613,58 @@ const GameTable: React.FC = () => {
           </div>
         </div>
 
-        {/* Player Cards with Avatar - Hide if observing */}
-        {!isObserver && (
-          <div className="flex items-center gap-3 md:gap-6">
-            {/* User Avatar */}
-            <div className="flex flex-col items-center gap-1 md:gap-2 scale-[0.6] xs:scale-[0.8] md:scale-100 origin-bottom">
-              <div className={`relative size-12 md:size-20 rounded-full border-2 md:border-4 ${currentTurn === 0 ? 'border-amber-400 ring-2 md:ring-8 ring-amber-400/20' : 'border-primary'} bg-slate-700 overflow-hidden shadow-2xl transition-all duration-300`}>
-                {currentTurn === 0 && (
-                  <svg className="absolute inset-0 size-full -rotate-90 pointer-events-none" viewBox="0 0 100 100">
-                    <circle
-                      cx="50" cy="50" r="46"
-                      fill="none"
-                      stroke="#fbbf24"
-                      strokeWidth="8"
-                      strokeDasharray="289"
-                      strokeDashoffset={289 - (289 * turnTimeLeft) / totalTurnTime}
-                      className="transition-all duration-[30ms] linear"
-                    />
-                  </svg>
-                )}
-                <img
-                  className="w-full h-full object-cover"
-                  src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name}`}
-                  alt={user?.name || 'You'}
-                />
+        {/* Center: Player Cards & Balance (Moved slightly left of buttons) */}
+        {!isObserver && activeUser && (
+          <div className="flex items-center gap-6 md:ml-auto">
+            <div className="flex flex-col items-center gap-2">
+              {/* Player Balance and Turn Indicator */}
+              <div className={`relative bg-primary/10 border-2 ${currentTurn === 0 ? 'border-amber-400 animate-pulse ring-4 ring-amber-400/10' : 'border-primary'} backdrop-blur-md px-6 py-2 rounded-2xl flex flex-col items-center shadow-lg shadow-primary/20 min-w-[120px]`}>
+                <span className="text-[8px] font-black uppercase tracking-widest text-primary/70">{currentTurn === 0 ? 'YOUR TURN' : 'ACTING...'}</span>
+                <span className="text-xl font-black text-white font-mono">${activeUser?.balance.toLocaleString()}</span>
               </div>
-              <div className="bg-background/90 backdrop-blur-sm px-2 md:px-3 py-0.5 md:py-1 rounded-lg border border-primary/30 shadow-xl">
-                <p className="text-[8px] md:text-xs font-black text-white tracking-widest uppercase">{user?.name || 'You'}</p>
-              </div>
-            </div>
 
-            {/* Player Cards */}
-            <div className="flex gap-2 md:gap-4">
-              {activeUser?.hand.map((card, i) => (
-                <HeroCard key={i} suit={card.suit} value={card.rank} rotate={i === 0 ? '-rotate-6' : 'rotate-6'} />
-              ))}
-              {(!activeUser?.hand.length) && <div className="text-slate-500 font-bold text-xs">Waiting...</div>}
+              {/* Player Cards */}
+              <div className="flex gap-2">
+                {activeUser?.hand.map((card, i) => (
+                  <HeroCard key={i} suit={card.suit} value={card.rank} rotate={i === 0 ? '-rotate-6' : 'rotate-6'} />
+                ))}
+              </div>
             </div>
           </div>
         )}
 
-        {/* Player Balance and Turn Indicator - Hide if observing */}
+        {/* Right: User Actions */}
         {!isObserver && activeUser && (
-          <div className={`relative bg-primary/10 border-2 ${currentTurn === 0 ? 'border-amber-400 animate-pulse ring-1 md:ring-4 ring-amber-400/10' : 'border-primary'} backdrop-blur-md px-2 md:px-10 py-1 md:py-3 rounded-xl md:rounded-2xl flex flex-col items-center shadow-lg shadow-primary/20`}>
-            <span className="text-[7px] md:text-[10px] font-black uppercase tracking-widest text-primary/70">{currentTurn === 0 ? 'YOUR TURN' : `TURN OF ${players[currentTurn]?.name}`}</span>
-            <div className="flex items-center gap-2">
-              <span className="text-xs md:text-2xl font-black text-white font-mono">${activeUser?.balance.toLocaleString()}</span>
-            </div>
-          </div>
-        )}
-
-        {/* User Actions - Only show if not observing */}
-        {!isObserver && activeUser && (
-          <div className="w-full md:col-span-3 space-y-2 md:space-y-4">
-            <div className="bg-background/80 backdrop-blur-md p-2 md:p-4 rounded-xl border border-slate-700 space-y-2 md:space-y-4">
-              <div className="flex justify-between items-center text-[9px] md:text-[10px] font-bold text-slate-400 gap-2 md:gap-4">
-                <span className="hidden sm:inline">MIN: $20</span>
-                <div className="flex-1 flex items-center bg-slate-800 rounded-lg px-2 border border-primary/30">
-                  <span className="text-primary mr-1">$</span>
+          <div className="w-full md:w-80 space-y-3 bg-black/40 backdrop-blur-md p-4 rounded-3xl border border-white/10 shadow-2xl">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
+                <div className="flex-1 flex items-center bg-zinc-900 rounded-xl px-3 border border-primary/20">
+                  <span className="text-primary mr-1 text-sm">$</span>
                   <input
                     type="number"
                     value={betValue}
                     onChange={(e) => setBetValue(Math.min(activeUser?.balance || 0, Math.max(0, Number(e.target.value))))}
-                    className="bg-transparent border-none text-white text-[10px] md:text-sm font-mono w-full focus:ring-0 p-1"
+                    className="bg-transparent border-none text-white text-sm font-black w-full focus:ring-0 py-2"
                   />
                 </div>
-                <span className="hidden sm:inline">MAX: ${(activeUser?.balance || 0).toLocaleString()}</span>
               </div>
               <input
                 type="range" min="20" max={activeUser?.balance || 100} value={betValue}
                 onChange={(e) => setBetValue(Number(e.target.value))}
-                className="w-full h-1 md:h-1.5 bg-slate-700 rounded-full appearance-none accent-primary cursor-pointer touch-none"
+                className="w-full h-1.5 bg-slate-700 rounded-full appearance-none accent-primary cursor-pointer"
               />
-              <div className="grid grid-cols-4 gap-1 md:gap-2">
-                <button onClick={() => setBetValue(Math.floor(pot / 2))} className="bg-slate-800 hover:bg-slate-700 text-[8px] md:text-[10px] font-bold py-1 md:py-1.5 rounded transition">1/2</button>
-                <button onClick={() => setBetValue(Math.floor(pot * 0.75))} className="bg-slate-800 hover:bg-slate-700 text-[8px] md:text-[10px] font-bold py-1 md:py-1.5 rounded transition">3/4</button>
-                <button onClick={() => setBetValue(pot)} className="bg-slate-800 hover:bg-slate-700 text-[8px] md:text-[10px] font-bold py-1 md:py-1.5 rounded transition">POT</button>
-                <button onClick={() => setBetValue(activeUser?.balance || 0)} className="bg-slate-800 hover:bg-slate-700 text-[8px] md:text-[10px] font-bold py-1 md:py-1.5 rounded transition">ALL-IN</button>
+              <div className="grid grid-cols-4 gap-1.5">
+                <button onClick={() => setBetValue(Math.floor(pot / 2))} className="bg-zinc-800 hover:bg-zinc-700 text-[9px] font-black py-1.5 rounded-lg transition uppercase">1/2</button>
+                <button onClick={() => setBetValue(Math.floor(pot * 0.75))} className="bg-zinc-800 hover:bg-zinc-700 text-[9px] font-black py-1.5 rounded-lg transition uppercase">3/4</button>
+                <button onClick={() => setBetValue(pot)} className="bg-zinc-800 hover:bg-zinc-700 text-[9px] font-black py-1.5 rounded-lg transition uppercase">POT</button>
+                <button onClick={() => setBetValue(activeUser?.balance || 0)} className="bg-primary/20 hover:bg-primary/40 text-[9px] font-black py-1.5 rounded-lg transition uppercase text-primary border border-primary/20 text-white">ALL-IN</button>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-2 md:gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <button
                 disabled={currentTurn !== 0}
                 onClick={() => handlePlayerAction('fold')}
-                className="disabled:opacity-50 disabled:cursor-not-allowed bg-slate-800 hover:bg-red-600 text-white font-black py-2 md:py-4 rounded-lg md:rounded-xl shadow-lg uppercase text-[10px] md:text-sm transition-colors"
+                className="disabled:opacity-20 disabled:grayscale transition-all bg-zinc-800 hover:bg-red-600/50 text-white font-black py-4 rounded-2xl shadow-lg uppercase text-xs border border-white/5"
               >
                 Fold
               </button>
@@ -696,7 +672,7 @@ const GameTable: React.FC = () => {
                 <button
                   disabled={currentTurn !== 0}
                   onClick={() => handlePlayerAction('check')}
-                  className="disabled:opacity-50 disabled:cursor-not-allowed bg-slate-800 hover:bg-green-600 text-white font-black py-2 md:py-4 rounded-lg md:rounded-xl shadow-lg uppercase text-[10px] md:text-sm border-b-2 md:border-b-4 border-slate-900 transition-colors"
+                  className="disabled:opacity-20 disabled:grayscale transition-all bg-zinc-800 hover:bg-emerald-600/50 text-white font-black py-4 rounded-2xl shadow-lg uppercase text-xs border border-white/5"
                 >
                   Check
                 </button>
@@ -704,18 +680,18 @@ const GameTable: React.FC = () => {
                 <button
                   disabled={currentTurn !== 0}
                   onClick={() => handlePlayerAction('call')}
-                  className="disabled:opacity-50 disabled:cursor-not-allowed bg-slate-800 hover:bg-green-600 text-white font-black py-2 md:py-4 rounded-lg md:rounded-xl shadow-lg text-[10px] md:text-sm border-b-2 md:border-b-4 border-slate-900 transition-colors"
+                  className="disabled:opacity-20 disabled:grayscale transition-all bg-zinc-800 hover:bg-emerald-600/50 text-white font-black py-4 rounded-2xl shadow-lg text-xs border border-white/5"
                 >
                   <div className="flex flex-col items-center">
-                    <span className="uppercase leading-none">Call</span>
-                    <span className="text-[8px] md:text-xs leading-none mt-0.5">${activeUser ? currentBet - activeUser.currentBet : 0}</span>
+                    <span className="uppercase text-[10px] opacity-70">Call</span>
+                    <span className="text-sm font-black mt-0.5">${activeUser ? currentBet - activeUser.currentBet : 0}</span>
                   </div>
                 </button>
               )}
               <button
                 disabled={currentTurn !== 0}
                 onClick={() => handlePlayerAction('raise', betValue)}
-                className="disabled:opacity-50 disabled:cursor-not-allowed bg-primary hover:bg-blue-600 text-white font-black py-2 md:py-4 rounded-lg md:rounded-xl shadow-lg uppercase text-[10px] md:text-sm border-b-2 md:border-b-4 border-blue-800 transition-colors"
+                className="disabled:opacity-20 disabled:grayscale transition-all bg-primary hover:brightness-125 text-white font-black py-4 rounded-2xl shadow-xl shadow-primary/20 uppercase text-xs border border-white/10"
               >
                 Raise
               </button>
@@ -774,13 +750,13 @@ const ChipStack = ({ amount, size = 'md' }: { amount: number, size?: 'sm' | 'md'
 
 const PlayerSeat = ({ position, name, balance, active, inactive, dealer, currentBet, timeLeft, totalTime }: any) => {
   const positions: any = {
-    'top': '-top-2 md:-top-12 left-1/2 -translate-x-1/2',
-    'top-left': 'top-0 md:top-4 left-[8%] md:left-[15%]',
-    'top-right': 'top-0 md:top-4 right-[8%] md:right-[15%]',
-    'mid-left': 'top-1/2 -translate-y-1/2 -left-4 md:-left-12',
-    'mid-right': 'top-1/2 -translate-y-1/2 -right-4 md:-right-12',
-    'bottom-left': 'bottom-0 md:bottom-12 left-[8%] md:left-[15%]',
-    'bottom-right': 'bottom-0 md:bottom-12 right-[8%] md:right-[15%]',
+    'top': '-top-8 md:-top-20 left-1/2 -translate-x-1/2',
+    'top-left': 'top-2 md:top-8 left-[4%] md:left-[10%]',
+    'top-right': 'top-2 md:top-8 right-[4%] md:right-[10%]',
+    'mid-left': 'top-1/2 -translate-y-1/2 -left-10 md:-left-24',
+    'mid-right': 'top-1/2 -translate-y-1/2 -right-10 md:-right-24',
+    'bottom-left': 'bottom-4 md:bottom-16 left-[4%] md:left-[10%]',
+    'bottom-right': 'bottom-4 md:bottom-16 right-[4%] md:right-[10%]',
   };
 
   return (
