@@ -98,8 +98,8 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
 
         if (existing) return; // Already registered
 
-        // 3. SECURE PROCESS: CALL V6 RPC (Supports Bypass Accounts)
-        const { data, error: rpcError } = await supabase.rpc('join_or_tick_tournament_v6', {
+        // 3. SECURE PROCESS: CALL V7 RPC (Supports Bypass Accounts + JIT Profiles)
+        const { data, error: rpcError } = await supabase.rpc('join_or_tick_tournament_v7', {
             t_id: tournamentId,
             u_id_param: userId
         });
