@@ -599,7 +599,7 @@ const GameTable: React.FC = () => {
             <div className="absolute inset-0 bg-primary/20 blur-[120px] animate-pulse"></div>
             <div className="size-32 md:size-48 border-b-8 border-r-8 border-primary rounded-full animate-spin [animation-duration:3s]"></div>
             <div className="absolute inset-0 flex items-center justify-center">
-              <img src="/logo.png" className="h-20 w-auto animate-pulse opacity-90 drop-shadow-[0_0_30px_rgba(19,127,236,0.4)]" alt="BestPokerLogo" />
+              <img src="/logo.png" className="h-20 w-auto animate-pulse opacity-90 drop-shadow-[0_0_30px_rgba(19,127,236,0.4)] rounded-full" alt="BestPokerLogo" />
             </div>
           </div>
           <h2 className="text-4xl md:text-6xl font-black text-white italic mb-4 tracking-tighter glow-blue uppercase">Preparing Deck</h2>
