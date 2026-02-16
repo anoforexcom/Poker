@@ -91,41 +91,22 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
 
         if (existing) return; // Already registered
 
-        // 3. SECURE PROCESS: CALL RPC FOR BUY-IN
-        // This function verifies auth.uid(), checks balance, deducts money and creates a transaction.
-        const { error: rpcError } = await supabase.rpc('process_human_buyin', {
-            tournament_id_param: tournamentId,
-            amount_param: tournament.buy_in
+        // 3. SECURE PROCESS: CALL V5 RPC (Cash Game + Robust Logic)
+        const { data, error: rpcError } = await supabase.rpc('join_or_tick_tournament_v5', {
+            t_id: tournamentId
         });
 
         if (rpcError) {
-            console.error('[LIVEWORLD] RPC Buy-in failed:', rpcError);
+            console.error('[LIVEWORLD] RPC Join V2 failed:', rpcError);
             throw rpcError;
         }
 
-        // 4. Manual Join (Redundant if RPC handles it, but let's keep it if RPC only does money)
-        // CHECK RPC DEFINITION: "process_human_buyin" in SQL only does money & transaction.
-        // It does NOT add to tournament_participants.
+        // Handle logical errors from SQL
+        if (data && data.success === false) {
+            throw new Error(data.message || 'Registration failed');
+        }
 
-        // Wait, looking at SQL:
-        // CREATE OR REPLACE FUNCTION process_human_buyin...
-        // ... UPDATE profiles ... INSERT transactions ...
-        // END;
-
-        // IT DOES NOT INSERT INTO PARTICIPANTS!
-        // So the manual insert IS REQUIRED.
-
-        // If manual insert fails, it might be RLS.
-        // "Service Role Full Access Participants" exists, but user is "Public".
-        // "Public participants" policy is shortcuts to "true" for SELECT?
-        // Let's check RLS in FINAL_PRODUCTION_SCHEMA.sql
-
-        // CREATE POLICY "Public participants" ON public.tournament_participants FOR SELECT USING (true);
-        // NO INSERT POLICY FOR PUBLIC USER!!!! 
-
-        // I need to add an INSERT policy for authenticated users.
-
-        console.log('[LIVEWORLD] RPC Buy-in & Join Successful');
+        console.log('[LIVEWORLD] Joined V2 Success:', data);
 
         // Refresh data
         fetchTournaments();
