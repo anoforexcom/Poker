@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { Hand } from "https://esm.sh/pokersolver@2.1.2";
+import pokersolver from "https://esm.sh/pokersolver@2.1.2";
+const { Hand } = pokersolver;
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SERVICE_ROLE_KEY = Deno.env.get('SERVICE_ROLE_KEY') || '';
@@ -32,7 +33,17 @@ async function releaseLock(key: string) {
 
 serve(async (req) => {
     try {
-        const { action, ...payload } = await req.json();
+        let action = 'tick';
+        let payload = {};
+
+        try {
+            const body = await req.json();
+            if (body.action) action = body.action;
+            payload = body;
+        } catch (e) {
+            // Body is empty or not JSON, default to 'tick'
+            console.log('No JSON body provided, defaulting to action: tick');
+        }
 
         // ADVISORY LOCK (Simulation Tick Only)
         // Prevent double execution of the heavy tick logic
