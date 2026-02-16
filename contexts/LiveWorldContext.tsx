@@ -130,6 +130,25 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
         return () => clearInterval(interval);
     }, []);
 
+    // HEARTBEAT: Ensure the world stays alive
+    useEffect(() => {
+        const pulse = async () => {
+            console.log('[LIVEWORLD] Sending Server Pulse...');
+            try {
+                await supabase.functions.invoke('poker-simulator', {
+                    body: { action: 'tick' }
+                });
+            } catch (err) {
+                console.error('[LIVEWORLD] Pulse failed:', err);
+            }
+        };
+
+        // Pulse immediately and then every 30s
+        pulse();
+        const interval = setInterval(pulse, 30000);
+        return () => clearInterval(interval);
+    }, []);
+
     return (
         <LiveWorldContext.Provider value={{
             tournaments,
