@@ -19,7 +19,6 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     const fetchTournaments = async () => {
         try {
-            console.log('[LIVEWORLD] Fetching tournaments...');
             // Filter out finished games early to reduce noise
             const { data, error } = await supabase
                 .from('tournaments')
@@ -28,10 +27,9 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
                 .order('created_at', { ascending: false });
 
             if (error) {
-                console.error('[LIVEWORLD] Error fetching tournaments:', error);
+                console.error('[LIVEWORLD] Error:', error);
                 return;
             }
-            console.log('[LIVEWORLD] Raw data:', data);
 
             if (data) {
                 // Map snake_case database columns to camelCase for frontend components

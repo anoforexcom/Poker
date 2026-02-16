@@ -132,6 +132,31 @@ const GameTable: React.FC = () => {
     totalTurnTime
   } = usePokerGame(gameConfig?.startingStack || 0, updateBalance, gameConfig, id, user.id);
 
+  const [startsIn, setStartsIn] = useState<string>('');
+
+  useEffect(() => {
+    if (!tournament?.scheduledStartTime) {
+      setStartsIn('');
+      return;
+    }
+
+    const timer = setInterval(() => {
+      const now = new Date().getTime();
+      const targetTime = new Date(tournament.scheduledStartTime).getTime();
+      const distance = targetTime - now;
+
+      if (distance < 0) {
+        setStartsIn('Starting soon...');
+      } else {
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        setStartsIn(`${minutes}m ${seconds}s`);
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [tournament?.scheduledStartTime]);
+
   const { addActiveGame } = useGame();
 
   // Multi-game coordination: Add this table to active games on mount
@@ -608,6 +633,12 @@ const GameTable: React.FC = () => {
           </p>
 
           <div className="flex flex-col md:flex-row gap-4 w-full max-w-xl">
+            {startsIn && (
+              <div className="flex-1 bg-primary/10 p-4 rounded-3xl border border-primary/20 backdrop-blur-md animate-pulse">
+                <p className="text-[10px] font-black text-primary-light uppercase tracking-widest mb-1">Starts In</p>
+                <p className="text-3xl font-mono text-white font-black">{startsIn}</p>
+              </div>
+            )}
             <div className="flex-1 bg-white/5 p-4 rounded-3xl border border-white/10 backdrop-blur-md">
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Players Ready</p>
               <p className="text-3xl font-mono text-white font-black">{players?.length || 1} <span className="text-slate-600 text-lg">/ {tournament?.maxPlayers || 9}</span></p>
