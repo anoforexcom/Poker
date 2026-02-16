@@ -68,10 +68,16 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
         }
     };
 
-    const registerForTournament = async (tournamentId: string) => {
+    const registerForTournament = async (tournamentId: string, manualUserId?: string) => {
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         console.log('[LIVEWORLD] Checking Auth:', { user, authError });
-        if (!user) throw new Error(`User not authenticated (Error: ${authError?.message || 'No Session'})`);
+
+        // Use manual GUID if provided (for bypass accounts), else use auth.user().id
+        const userId = user?.id || manualUserId;
+
+        if (!userId) {
+            throw new Error(`User not authenticated (Error: ${authError?.message || 'No Session and no Manual ID'})`);
+        }
 
         // 1. Get tournament details (to get buy-in)
         const { data: tournament, error: tError } = await supabase
@@ -87,18 +93,19 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
             .from('tournament_participants')
             .select('id')
             .eq('tournament_id', tournamentId)
-            .eq('user_id', user.id)
+            .eq('user_id', userId)
             .maybeSingle();
 
         if (existing) return; // Already registered
 
-        // 3. SECURE PROCESS: CALL V5 RPC (Cash Game + Robust Logic)
-        const { data, error: rpcError } = await supabase.rpc('join_or_tick_tournament_v5', {
-            t_id: tournamentId
+        // 3. SECURE PROCESS: CALL V6 RPC (Supports Bypass Accounts)
+        const { data, error: rpcError } = await supabase.rpc('join_or_tick_tournament_v6', {
+            t_id: tournamentId,
+            u_id_param: userId
         });
 
         if (rpcError) {
-            console.error('[LIVEWORLD] RPC Join V2 failed:', rpcError);
+            console.error('[LIVEWORLD] RPC Join V6 failed:', rpcError);
             throw rpcError;
         }
 

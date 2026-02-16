@@ -117,7 +117,7 @@ const TournamentLobby: React.FC = () => {
 
         setIsRegistering(true);
         try {
-            await registerForTournament(tournament.id);
+            await registerForTournament(tournament.id, user.id);
             showAlert('Successfully registered!', 'success');
         } catch (e: any) {
             console.error(e);
