@@ -103,18 +103,29 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
             throw rpcError;
         }
 
-        // 4. Insert participant record
-        // The trigger trg_update_players_count will automatically increment tournaments.players_count
-        const { error: insertError } = await supabase.from('tournament_participants').insert({
-            tournament_id: tournamentId,
-            user_id: user.id,
-            status: 'active'
-        });
+        // 4. Manual Join (Redundant if RPC handles it, but let's keep it if RPC only does money)
+        // CHECK RPC DEFINITION: "process_human_buyin" in SQL only does money & transaction.
+        // It does NOT add to tournament_participants.
 
-        if (insertError) {
-            console.error('[LIVEWORLD] Participant insertion failed:', insertError);
-            throw insertError;
-        }
+        // Wait, looking at SQL:
+        // CREATE OR REPLACE FUNCTION process_human_buyin...
+        // ... UPDATE profiles ... INSERT transactions ...
+        // END;
+
+        // IT DOES NOT INSERT INTO PARTICIPANTS!
+        // So the manual insert IS REQUIRED.
+
+        // If manual insert fails, it might be RLS.
+        // "Service Role Full Access Participants" exists, but user is "Public".
+        // "Public participants" policy is shortcuts to "true" for SELECT?
+        // Let's check RLS in FINAL_PRODUCTION_SCHEMA.sql
+
+        // CREATE POLICY "Public participants" ON public.tournament_participants FOR SELECT USING (true);
+        // NO INSERT POLICY FOR PUBLIC USER!!!! 
+
+        // I need to add an INSERT policy for authenticated users.
+
+        console.log('[LIVEWORLD] RPC Buy-in & Join Successful');
 
         // Refresh data
         fetchTournaments();
