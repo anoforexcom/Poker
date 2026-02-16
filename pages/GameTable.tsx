@@ -764,12 +764,13 @@ const GameTable: React.FC = () => {
                 // Deterministic color for player names
                 const colors = ['text-blue-400', 'text-green-400', 'text-purple-400', 'text-yellow-400', 'text-pink-400', 'text-cyan-400'];
                 let hash = 0;
-                for (let i = 0; i < msg.sender.length; i++) hash = msg.sender.charCodeAt(i) + ((hash << 5) - hash);
+                const senderName = msg.playerName || 'System';
+                for (let i = 0; i < senderName.length; i++) hash = senderName.charCodeAt(i) + ((hash << 5) - hash);
                 const colorClass = colors[Math.abs(hash) % colors.length];
 
                 return (
                   <p key={idx} className={`${msg.type === 'system' ? 'text-yellow-500 italic' : 'text-slate-300'}`}>
-                    <span className={`${colorClass} font-bold mr-1 text-[8px] uppercase tracking-tighter`}>{msg.sender}:</span> {msg.text}
+                    <span className={`${colorClass} font-bold mr-1 text-[8px] uppercase tracking-tighter`}>{senderName}:</span> {msg.message}
                   </p>
                 );
               })}

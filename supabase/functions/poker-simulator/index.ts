@@ -42,7 +42,7 @@ serve(async (req) => {
         }
 
         if (action === 'tick') {
-            const hasLock = await acquireLock('poker_tick_runner', 50); // 50s for safety
+            const hasLock = await acquireLock('poker_tick_runner', 50);
 
             if (!hasLock) {
                 console.warn('⚠️ Tick simulation locked by another instance. Aborting.');
@@ -53,7 +53,7 @@ serve(async (req) => {
                 await processSimulationTick();
                 await ensureOpenTournaments();
                 await ensureBotsInTournaments();
-                return new Response(JSON.stringify({ success: true, message: 'Tick processed' }), { headers: { "Content-Type": "application/json" } });
+                return new Response(JSON.stringify({ success: true, message: 'Tick processed' }));
             } finally {
                 await releaseLock('poker_tick_runner');
             }
@@ -66,11 +66,12 @@ serve(async (req) => {
 
         if (action === 'player_move') {
             const hasMoved = await handlePlayerMove(payload);
-            if (hasMoved) {
-                // REACTIVE ENGINE: Advance the world immediately after player moves
-                await processSimulationTick();
+            if (hasMoved && payload.tournament_id) {
+                // REACTIVE ENGINE: Advance the target tournament immediately
+                // Note: We don't use the global lock here to allow parallel games
+                await processSimulationTick(payload.tournament_id);
             }
-            return new Response(JSON.stringify({ success: hasMoved }), { headers: { "Content-Type": "application/json" } });
+            return new Response(JSON.stringify({ success: hasMoved }));
         }
 
         if (action === 'debug_info') {
@@ -403,20 +404,31 @@ async function startNewHand(tournamentId: string) {
     else await supabase.from('game_states').insert(stateData);
 }
 
-async function processSimulationTick() {
+async function processSimulationTick(targetTournamentId?: string) {
     const now = new Date();
-    const { data: dueTournaments } = await supabase.from('tournaments')
-        .select('*').eq('status', 'registering').lte('scheduled_start_time', now.toISOString());
 
-    if (dueTournaments) {
-        for (const t of dueTournaments) {
-            await supabase.from('tournaments').update({ status: 'running' }).eq('id', t.id);
-            await startNewHand(t.id);
+    // 1. Handle starting tournaments
+    if (!targetTournamentId) {
+        const { data: dueTournaments } = await supabase.from('tournaments')
+            .select('*').eq('status', 'registering').lte('scheduled_start_time', now.toISOString());
+
+        if (dueTournaments) {
+            for (const t of dueTournaments) {
+                await supabase.from('tournaments').update({ status: 'running' }).eq('id', t.id);
+                await startNewHand(t.id);
+            }
         }
     }
 
-    const { data: activeTournaments } = await supabase.from('tournaments').select('*')
-        .neq('status', 'finished').limit(20);
+    // 2. Handle game progression (Bot moves)
+    const query = supabase.from('tournaments').select('*').neq('status', 'finished');
+    if (targetTournamentId) {
+        query.eq('id', targetTournamentId);
+    } else {
+        query.limit(20);
+    }
+
+    const { data: activeTournaments } = await query;
 
     if (activeTournaments) {
         const tickStart = Date.now();
@@ -424,19 +436,26 @@ async function processSimulationTick() {
             if (t.status === 'running' || t.status === 'late_reg') {
                 let moves = 0;
                 while (moves < 100) {
-                    // Safety: Don't exceed 45s of execution to avoid Edge Function timeout
-                    if (Date.now() - tickStart > 45000) {
-                        console.warn('[REACTIVE] Timeout protection: exiting loop early');
-                        break;
-                    }
+                    // Safety: Avoid infinite loops and edge function timeouts
+                    if (Date.now() - tickStart > (targetTournamentId ? 10000 : 45000)) break;
 
                     const { data: state } = await supabase.from('game_states').select('*').eq('tournament_id', t.id).maybeSingle();
                     if (!state) { await startNewHand(t.id); break; }
-                    if (state.phase === 'showdown') { await startNewHand(t.id); break; }
+                    if (state.phase === 'showdown') {
+                        // In showdown, we wait for a manual "next_hand" or handle it if it's all bots
+                        // For real-time feel, if no humans left in hand, auto-start? 
+                        // But for now, we leave it to manual/scheduled tick logic
+                        break;
+                    }
+
                     if (state.current_turn_bot_id) {
-                        await handleBotMove(t.id, state.current_turn_bot_id, state);
+                        const botSuccess = await handleBotMove(t.id, state.current_turn_bot_id, state);
+                        if (!botSuccess) break; // Avoid infinite retry on same bot
                         moves++;
-                    } else break;
+                    } else {
+                        // It's a user's turn or game is paused
+                        break;
+                    }
                 }
             }
         }
@@ -464,7 +483,7 @@ async function ensureOpenTournaments() {
 
 async function handleBotMove(tournamentId: string, botId: string, state: any) {
     const ps = state.player_states[botId];
-    if (!ps) return;
+    if (!ps) return false;
     const toCall = (state.last_raise_amount || 0) - (ps.current_bet || 0);
     let action = 'call';
     let amount = 0;
@@ -476,11 +495,12 @@ async function handleBotMove(tournamentId: string, botId: string, state: any) {
     const success = await handlePlayerMove({ tournament_id: tournamentId, player_id: botId, action, amount });
     if (!success) {
         if (action === 'raise') {
-            await handlePlayerMove({ tournament_id: tournamentId, player_id: botId, action: toCall === 0 ? 'check' : 'call', amount: 0 });
+            return await handlePlayerMove({ tournament_id: tournamentId, player_id: botId, action: toCall === 0 ? 'check' : 'call', amount: 0 });
         } else {
-            await handlePlayerMove({ tournament_id: tournamentId, player_id: botId, action: 'fold', amount: 0 });
+            return await handlePlayerMove({ tournament_id: tournamentId, player_id: botId, action: 'fold', amount: 0 });
         }
     }
+    return true;
 }
 
 async function ensureBotsInTournaments() {
