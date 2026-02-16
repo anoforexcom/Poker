@@ -428,7 +428,7 @@ const Lobby: React.FC = () => {
 
                     <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden mb-3">
                       <div
-                        className={`h-full rounded-full ${t.status === 'Running' ? 'bg-blue-500' : 'bg-poker-green'}`}
+                        className={`h-full rounded-full ${t.status?.toLowerCase() === 'running' ? 'bg-blue-500' : 'bg-poker-green'}`}
                         style={{ width: t.type === 'tournament' ? '100%' : `${(t.players / t.maxPlayers) * 100}%` }}
                       ></div>
                     </div>
@@ -479,7 +479,7 @@ const Lobby: React.FC = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-slate-400">Tournaments Running</span>
                   <span className="text-lg font-bold text-blue-400">
-                    {safeTournaments.filter(t => t && t.status === 'Running').length}
+                    {safeTournaments.filter(t => t && t.status?.toLowerCase() === 'running').length}
                   </span>
                 </div>
               </div>
