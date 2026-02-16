@@ -2,7 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 // Configuration
 const SUPABASE_URL = 'https://uhykmcwgznkzehxnkrbx.supabase.co';
-const SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoeWttY3dnem5remVoeG5rcmJ4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDkwMTkzMiwiZXhwIjoyMDg2NDc3OTMyfQ.lCAQ2GgfamDxu3EgR9Xks2dmd5frvp0K5s9RZs9iHbQ';
+const SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoeWttY3dnem5remVoeG5rcmJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5MDE5MzIsImV4cCI6MjA4NjQ3NzkzMn0.GB0GNuTql29hM7u8Hyh8TSvRq24xMAb_jl36FEsfXq8';
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
@@ -63,8 +63,8 @@ async function processTournamentStarts() {
                 console.log(`[LATE_REG] Expired for ${t.id}, moving to running.`);
                 await supabase.from('tournaments').update({ status: 'running' }).eq('id', t.id);
             }
-            const res = await initGame(t.id);
-            if (res) console.log(`   -> Game state initialized for ${t.id}`);
+            const success = await initGame(t.id);
+            if (success) console.log(`   -> Game state initialized for ${t.id}`);
         }
     }
 }
@@ -93,6 +93,7 @@ async function ensureBotsInTournaments() {
             .eq('tournament_id', t.id);
 
         const current = count || 0;
+        console.log(`[BOTS] Tournament ${t.name} (${t.id}) has ${current}/${targetPlayers} players`);
 
         // Urgent if starting soon or running
         const isUrgent = new Date(t.scheduled_start_time).getTime() - Date.now() < 60000 || t.status === 'running';

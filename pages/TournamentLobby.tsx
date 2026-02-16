@@ -35,38 +35,46 @@ const TournamentLobby: React.FC = () => {
         if (!tournament?.id) return;
 
         const fetchLobbyPlayers = async () => {
-            const { data } = await supabase
+            // 1. Fetch raw participants
+            const { data: participants, error: pError } = await supabase
                 .from('tournament_participants')
-                .select(`
-                    bot_id, user_id,
-                    bots(name),
-                    profiles(name)
-                `)
+                .select('bot_id, user_id, status')
                 .eq('tournament_id', tournament.id)
                 .eq('status', 'active');
 
-            if (data) {
-                const mapped = data.map((p: any) => {
-                    const isBot = !!p.bot_id;
-                    const name = isBot ? (p.bots?.name || 'Bot') : (p.profiles?.name || 'Player');
-                    const playerId = p.bot_id || p.user_id;
+            if (pError || !participants) return;
 
-                    // Deterministic flag
-                    const flags = ['🇺🇸', '🇬🇧', '🇨🇦', '🇩🇪', '🇫🇷', '🇧🇷', '🇦🇷', '🇪🇸', '🇮🇹', '🇯🇵'];
-                    let hash = 0;
-                    for (let i = 0; i < playerId.length; i++) hash = playerId.charCodeAt(i) + ((hash << 5) - hash);
-                    const country = flags[Math.abs(hash) % flags.length];
+            // 2. Extract IDs
+            const botIds = participants.filter(p => p.bot_id).map(p => p.bot_id);
+            const userIds = participants.filter(p => p.user_id).map(p => p.user_id);
 
-                    return {
-                        id: playerId,
-                        name,
-                        isBot,
-                        country,
-                        chips: tournament.startingStack || 10000
-                    };
-                });
-                setLobbyPlayers(mapped);
-            }
+            // 3. Fetch Details
+            const { data: bots } = botIds.length > 0 ? await supabase.from('bots').select('id, name').in('id', botIds) : { data: [] };
+            const { data: profiles } = userIds.length > 0 ? await supabase.from('profiles').select('id, name').in('id', userIds) : { data: [] };
+
+            const botMap = Object.fromEntries((bots || []).map(b => [b.id, b]));
+            const profileMap = Object.fromEntries((profiles || []).map(p => [p.id, p]));
+
+            const mapped = participants.map((p: any) => {
+                const isBot = !!p.bot_id;
+                const pid = p.bot_id || p.user_id;
+                const name = isBot ? (botMap[p.bot_id]?.name || 'Bot') : (profileMap[p.user_id]?.name || 'Player');
+
+                // Deterministic flag
+                const flags = ['🇺🇸', '🇬🇧', '🇨🇦', '🇩🇪', '🇫🇷', '🇧🇷', '🇦🇷', '🇪🇸', '🇮🇹', '🇯🇵'];
+                let hash = 0;
+                for (let i = 0; i < pid.length; i++) hash = pid.charCodeAt(i) + ((hash << 5) - hash);
+                const country = flags[Math.abs(hash) % flags.length];
+
+                return {
+                    id: pid,
+                    name,
+                    isBot,
+                    country,
+                    chips: tournament.startingStack || 10000
+                };
+            });
+            setLobbyPlayers(mapped);
         };
 
         fetchLobbyPlayers();

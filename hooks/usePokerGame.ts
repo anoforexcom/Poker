@@ -50,9 +50,19 @@ const DEFAULT_CONFIG: GameConfig = {
 // Helper to parse "Ah" -> { rank: "A", suit: "h" }
 const parseCard = (cardStr: string): Card => {
     if (!cardStr || cardStr.length < 2) return { rank: '?', suit: '?' } as any;
+    const rank = cardStr[0] as any;
+    const suit = cardStr[1] as any;
+
+    // Calculate numeric value based on rank
+    const rankMap: Record<string, number> = {
+        '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, 'T': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14
+    };
+    const value = rankMap[rank] || 0;
+
     return {
-        rank: cardStr[0] as any,
-        suit: cardStr[1] as any
+        rank,
+        suit,
+        value
     };
 };
 
@@ -100,24 +110,29 @@ export const usePokerGame = (
                 setTimeToNextLevel(60000);
             }
 
-            const { data: participants, error } = await supabase
+            const { data: participants, error: pError } = await supabase
                 .from('tournament_participants')
-                .select(`
-                    id, user_id, bot_id, status, stack,
-                    bots (id, name, avatar),
-                    profiles:user_id (id, name, avatar_url)
-                `)
+                .select('id, user_id, bot_id, status, stack')
                 .eq('tournament_id', tournamentId)
                 .eq('status', 'active');
 
-            if (error) throw error;
+            if (pError) throw pError;
+            if (!participants) return;
+
+            const botIds = participants.filter(p => p.bot_id).map(p => p.bot_id as string);
+            const userIds = participants.filter(p => p.user_id).map(p => p.user_id as string);
+
+            const { data: bots } = botIds.length > 0 ? await supabase.from('bots').select('id, name, avatar').in('id', botIds) : { data: [] };
+            const { data: profiles } = userIds.length > 0 ? await supabase.from('profiles').select('id, name, avatar_url').in('id', userIds) : { data: [] };
+
+            const botMap = Object.fromEntries((bots || []).map(b => [b.id, b]));
+            const profileMap = Object.fromEntries((profiles || []).map(p => [p.id, p]));
 
             if (participants) {
                 // Map to Player Interface
                 let mappedPlayers: Player[] = participants.map((p: any) => {
                     const isBot = !!p.bot_id;
-                    const profile = isBot ? p.bots : p.profiles;
-                    const rawProfile = Array.isArray(profile) ? profile[0] : profile;
+                    const rawProfile = isBot ? botMap[p.bot_id] : profileMap[p.user_id];
                     const pid = p.user_id || p.bot_id;
                     const isHero = pid === currentUserId;
 
@@ -287,7 +302,7 @@ export const usePokerGame = (
                     action: 'player_move',
                     tournament_id: tournamentId,
                     player_id: currentUserId,
-                    action: action,
+                    move_type: action,
                     amount: amount
                 }
             });
