@@ -442,18 +442,32 @@ async function processSimulationTick(targetTournamentId?: string) {
                     const { data: state } = await supabase.from('game_states').select('*').eq('tournament_id', t.id).maybeSingle();
                     if (!state) { await startNewHand(t.id); break; }
                     if (state.phase === 'showdown') {
-                        // In showdown, we wait for a manual "next_hand" or handle it if it's all bots
-                        // For real-time feel, if no humans left in hand, auto-start? 
-                        // But for now, we leave it to manual/scheduled tick logic
+                        // For real-time feel, if it's all bots or we've waited 3s, auto-start next hand
+                        const { data: activeParts } = await supabase.from('tournament_participants').select('*').eq('tournament_id', t.id).eq('status', 'active');
+                        const hasHuman = activeParts?.some(p => p.user_id !== null);
+
+                        if (!hasHuman) {
+                            console.log(`[AUTO-SHOWDOWN] No humans in ${t.id}. Starting next hand.`);
+                            await startNewHand(t.id);
+                        }
                         break;
                     }
 
                     if (state.current_turn_bot_id) {
+                        console.log(`[BOT-TICK] Acting for bot ${state.current_turn_bot_id} in ${t.id}`);
                         const botSuccess = await handleBotMove(t.id, state.current_turn_bot_id, state);
-                        if (!botSuccess) break; // Avoid infinite retry on same bot
+                        if (!botSuccess) {
+                            console.error(`[BOT-FAIL] Bot ${state.current_turn_bot_id} failed to move. Skipping.`);
+                            break;
+                        }
                         moves++;
+                    } else if (state.current_turn_user_id) {
+                        // It's a user's turn - engine waits for their move
+                        break;
                     } else {
-                        // It's a user's turn or game is paused
+                        // Paradoxical state: No turn owner. Fix it.
+                        console.warn(`[ENGINE-RECOVERY] No turn owner in ${t.id}. Restarting hand logic.`);
+                        await startNewHand(t.id);
                         break;
                     }
                 }
