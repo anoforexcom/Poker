@@ -255,7 +255,7 @@ const ProtectedLayout = ({ children }: { children: React.ReactNode }) => {
 
               <div className="flex-1 flex flex-col min-w-0">
                 {!isGameView && <Header onToggle={() => setIsSidebarOpen(!isSidebarOpen)} />}
-                <main className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative ${isGameView ? 'h-full' : 'p-4 md:p-6'}`}>
+                <main className={`flex-1 overflow-auto custom-scrollbar relative ${isGameView ? 'h-full' : 'p-4 md:p-6'}`}>
                   {children}
                 </main>
               </div>
