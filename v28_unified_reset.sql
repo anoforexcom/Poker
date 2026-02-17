@@ -1,13 +1,9 @@
--- UNIFIED HYPER-RESET: FRESH START
--- This script wipes stale games and seeds 100 realistic bots.
-
--- 1. CLEANUP (Deep Purge)
+ALTER TABLE public.bots ADD COLUMN IF NOT EXISTS personality TEXT DEFAULT 'standard';
 TRUNCATE public.tournament_participants CASCADE;
 TRUNCATE public.game_states CASCADE;
 TRUNCATE public.game_hand_history CASCADE;
 DELETE FROM public.bots;
 
--- 2. SEED REALISTIC BOTS (100 Players)
 INSERT INTO public.bots (id, name, personality) VALUES
 (gen_random_uuid(), 'TexasDolly', 'aggressive'),
 (gen_random_uuid(), 'RiverRat', 'standard'),
@@ -41,7 +37,7 @@ INSERT INTO public.bots (id, name, personality) VALUES
 (gen_random_uuid(), 'BubbleBoy', 'passive'),
 (gen_random_uuid(), 'FinalTableF', 'standard'),
 (gen_random_uuid(), 'MainEventMike', 'aggressive'),
-(gen_random_uuid(), 'HighStakesHarry', 'aggressive'),
+(gen_random_uuid(), ' HighStakesHarry', 'aggressive'),
 (gen_random_uuid(), 'NoLimitNick', 'aggressive'),
 (gen_random_uuid(), 'PotLimitPete', 'standard'),
 (gen_random_uuid(), 'SmallBlindS', 'passive'),
@@ -109,13 +105,5 @@ INSERT INTO public.bots (id, name, personality) VALUES
 (gen_random_uuid(), 'Fortuna', 'standard'),
 (gen_random_uuid(), 'Zodiac', 'standard');
 
--- 3. RESET TOURNAMENTS
-UPDATE public.tournaments 
-SET status = 'registering', 
-    players_count = 0, 
-    prize_pool = 0
-WHERE status != 'finished';
-
--- 4. TRIGGER ECOSYSTEM REPAIR
--- Call this once to recreate starting tournaments if needed
+UPDATE public.tournaments SET status = 'registering', players_count = 0, prize_pool = 0 WHERE status != 'finished';
 SELECT public.ensure_active_tournaments();
