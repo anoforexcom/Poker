@@ -500,7 +500,7 @@ const GameTable: React.FC = () => {
       }
 
       {/* The Poker Table Rendering */}
-      <div className="flex-1 flex items-center justify-center p-4 md:p-12 lg:p-16 pt-8 md:pt-16 overflow-visible landscape:py-4">
+      <div className="flex-1 flex items-center justify-center p-4 md:p-8 lg:p-12 pt-16 md:pt-24 overflow-visible landscape:py-4">
         <div className="poker-table relative w-full h-full max-h-[75vh] md:max-h-[65vh] max-w-5xl aspect-[2/1] bg-emerald-900 border-2 md:border-[16px] border-[#3a2a1a] flex flex-col items-center justify-center shadow-2xl rounded-[60px] md:rounded-[150px]">
 
           {/* Table Center: Pot & Cards */}
