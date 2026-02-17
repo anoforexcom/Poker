@@ -47,7 +47,7 @@ const Register: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="min-h-[80vh] bg-background flex items-center justify-center p-4 relative overflow-hidden">
             {/* Background Ambience */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
                 <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-gold/10 rounded-full blur-3xl"></div>
