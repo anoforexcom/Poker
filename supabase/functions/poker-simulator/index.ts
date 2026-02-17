@@ -420,7 +420,12 @@ async function processSimulationTick(targetTournamentId?: string) {
 
         if (dueTournaments) {
             for (const t of dueTournaments) {
+                console.log(`[START-REQ] Tournament ${t.id} is due. Filling bots and launching...`);
+                // FORCE FILL BOTS BEFORE START
+                await fillBotsForTournament(t);
+
                 await supabase.from('tournaments').update({ status: 'running' }).eq('id', t.id);
+                // Trigger the first hand
                 await startNewHand(t.id);
             }
         }
@@ -525,27 +530,30 @@ async function handleBotMove(tournamentId: string, botId: string, state: any) {
 
 async function ensureBotsInTournaments() {
     const { data: ts } = await supabase.from('tournaments').select('*')
-        .or('status.eq.registering,status.eq.late_reg,status.eq.running,status.eq.active').limit(10);
+        .or('status.eq.registering,status.eq.late_reg,status.eq.running,status.eq.active').limit(20);
     if (!ts) return;
-    const resBots = await supabase.from('bots').select('id').limit(50);
-    const bots = resBots?.data;
-    if (!bots || bots.length === 0) return;
     for (const t of ts) {
-        const { count } = await supabase.from('tournament_participants').select('*', { count: 'exact', head: true }).eq('tournament_id', t.id);
-        const needed = (t.max_players || 6) - (count || 0);
-        const isFast = t.type === 'cash' || t.status === 'running' || t.status === 'active' || (new Date(t.scheduled_start_time).getTime() - Date.now() < 30000);
-        const toAdd = isFast ? needed : Math.min(needed, 2);
-        if (toAdd > 0) {
-            const shuffled = bots.sort(() => 0.5 - Math.random());
-            let added = 0;
-            for (const bot of shuffled) {
-                if (added >= toAdd) break;
-                const { error } = await supabase.from('tournament_participants').insert({
-                    tournament_id: t.id, bot_id: bot.id, stack: t.starting_stack || 10000, status: 'active'
-                });
-                if (!error) added++;
-            }
-        }
+        await fillBotsForTournament(t);
+    }
+}
+
+async function fillBotsForTournament(t: any) {
+    const { count } = await supabase.from('tournament_participants').select('*', { count: 'exact', head: true }).eq('tournament_id', t.id);
+    const needed = (t.max_players || 6) - (count || 0);
+    if (needed <= 0) return;
+
+    // Fetch a random subset of bots to satisfy the need
+    const { data: bots } = await supabase.from('bots').select('id').limit(Math.min(needed + 10, 100));
+    if (!bots || bots.length === 0) return;
+
+    const shuffled = bots.sort(() => 0.5 - Math.random());
+    let added = 0;
+    for (const bot of shuffled) {
+        if (added >= needed) break;
+        const { error } = await supabase.from('tournament_participants').insert({
+            tournament_id: t.id, bot_id: bot.id, stack: t.starting_stack || 10000, status: 'active'
+        });
+        if (!error) added++;
     }
 }
 

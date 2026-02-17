@@ -59,7 +59,7 @@ BEGIN
             gen_random_uuid()::text,
             CASE v_i WHEN 1 THEN 'Hyper Turbo #1' WHEN 2 THEN 'Deepstack #2' WHEN 3 THEN 'Speedy #3' WHEN 4 THEN 'Micro #4' WHEN 5 THEN 'DoubleUp #5' ELSE 'Flash #6' END,
             CASE WHEN v_i <= 3 THEN 'tournament' ELSE 'sitgo' END,
-            'registering', 100 * v_i, 0, 0, CASE WHEN v_i > 3 THEN 6 ELSE 9 END,
+            'registering', 100 * v_i, 0, 0, 6, -- SET max_players to 6 for all, players_count to 0 to sync with participant list
             NOW() + interval '5 seconds', -- INÍCIO EM 5 SEGUNDOS
             1, NOW()
         );
