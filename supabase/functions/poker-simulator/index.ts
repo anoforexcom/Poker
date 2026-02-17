@@ -42,8 +42,14 @@ serve(async (req) => {
         }
 
         if (action === 'tick') {
-            const hasLock = await acquireLock('poker_tick_runner', 50);
+            // If tournament_id is provided, it's a reactive trigger (no global lock needed)
+            if (payload.tournament_id) {
+                console.log(`[REACTIVE-TICK] Waking up tournament ${payload.tournament_id}`);
+                await processSimulationTick(payload.tournament_id);
+                return new Response(JSON.stringify({ success: true, message: 'Reactive tick processed' }));
+            }
 
+            const hasLock = await acquireLock('poker_tick_runner', 50);
             if (!hasLock) {
                 console.warn('⚠️ Tick simulation locked by another instance. Aborting.');
                 return new Response(JSON.stringify({ success: false, message: 'Locked' }), { status: 423 });

@@ -1,6 +1,9 @@
 -- REALISTIC POKER BOT NAMES
 -- Replaces generic botxxx with immersive nicknames
 
+-- 1. Ensure schema is ready
+ALTER TABLE public.bots ADD COLUMN IF NOT EXISTS personality TEXT DEFAULT 'standard';
+
 DELETE FROM public.bots WHERE name LIKE 'bot%';
 
 INSERT INTO public.bots (id, name, personality) VALUES
