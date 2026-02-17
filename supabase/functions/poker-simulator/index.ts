@@ -119,9 +119,11 @@ function shuffleDeck(deck: string[]) {
 }
 
 async function handlePlayerMove(payload: any) {
-    const { tournament_id, player_id, action, amount } = payload;
+    const { tournament_id, player_id, amount } = payload;
+    const action = payload.action || payload.move_type; // Handle both namings
     console.log(`[MOVE] ${player_id} performs ${action}`);
 
+    // Fetch state - ensure tournament_id is compared correctly
     const { data: state } = await supabase.from('game_states').select('*').eq('tournament_id', tournament_id).single();
     if (!state) return false;
 
@@ -131,8 +133,9 @@ async function handlePlayerMove(payload: any) {
         return true;
     }
 
-    const isUserTurn = state.current_turn_user_id === player_id;
-    const isBotTurn = state.current_turn_bot_id === player_id;
+    // ID Matching: Flexible comparison (string vs UUID)
+    const isUserTurn = state.current_turn_user_id?.toString() === player_id?.toString();
+    const isBotTurn = state.current_turn_bot_id?.toString() === player_id?.toString();
     if (!isUserTurn && !isBotTurn) {
         console.warn(`[MOVE] Not ${player_id}'s turn`);
         return false;
@@ -228,8 +231,8 @@ async function determineNextStep(tournamentId: string, state: any, playerStates:
         return { next_phase: phases[nextIdx] || 'showdown' };
     }
 
-    const currentTurnId = state.current_turn_user_id || state.current_turn_bot_id;
-    let idx = participants.findIndex(p => (p.user_id || p.bot_id) === currentTurnId);
+    const currentTurnId = (state.current_turn_user_id || state.current_turn_bot_id)?.toString();
+    let idx = participants.findIndex(p => (p.user_id || p.bot_id)?.toString() === currentTurnId);
     if (idx === -1) idx = 0;
 
     let loops = 0;
@@ -302,8 +305,9 @@ async function processShowdown(tournamentId: string, state: any) {
     }
 
     const solvedHands = activePlayers.map(p => {
-        const pid = p.user_id || p.bot_id;
-        const hole = state.player_states[pid].hole_cards;
+        const pid = (p.user_id || p.bot_id);
+        const pState = state.player_states[pid] || state.player_states[pid.toString()];
+        const hole = pState.hole_cards;
         const fullHand = Hand.solve([...hole, ...community]);
         return { id: pid, name: p.bots?.name || p.profiles?.name || 'Player', hand: fullHand, hole_cards: hole };
     });
@@ -313,7 +317,7 @@ async function processShowdown(tournamentId: string, state: any) {
     const winAmount = Math.floor(state.current_pot / winners.length);
 
     for (const w of winners) {
-        const p = participants.find(part => (part.user_id || part.bot_id) === w.id);
+        const p = participants.find(part => (part.user_id || part.bot_id)?.toString() === w.id?.toString());
         if (p) await supabase.rpc('increment_participant_stack', { participant_id: p.id, amount: winAmount });
     }
 
