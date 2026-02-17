@@ -1,9 +1,11 @@
+-- BLOCO 1: LIMPAR E PREPARAR (Executa isto primeiro)
 ALTER TABLE public.bots ADD COLUMN IF NOT EXISTS personality TEXT DEFAULT 'standard';
 TRUNCATE public.tournament_participants CASCADE;
 TRUNCATE public.game_states CASCADE;
 TRUNCATE public.game_hand_history CASCADE;
 DELETE FROM public.bots;
 
+-- BLOCO 2: JOGADORES 1-25
 INSERT INTO public.bots (id, name, personality) VALUES
 (gen_random_uuid(), 'TexasDolly', 'aggressive'),
 (gen_random_uuid(), 'RiverRat', 'standard'),
@@ -29,7 +31,10 @@ INSERT INTO public.bots (id, name, personality) VALUES
 (gen_random_uuid(), 'NutHunter', 'standard'),
 (gen_random_uuid(), 'GTO_Bot', 'standard'),
 (gen_random_uuid(), 'RazzleDazzle', 'aggressive'),
-(gen_random_uuid(), 'SevenDeuce', 'aggressive'),
+(gen_random_uuid(), 'SevenDeuce', 'aggressive');
+
+-- BLOCO 3: JOGADORES 26-50
+INSERT INTO public.bots (id, name, personality) VALUES
 (gen_random_uuid(), 'ShowdownSean', 'standard'),
 (gen_random_uuid(), 'BadBeatBen', 'standard'),
 (gen_random_uuid(), 'QuadsAreReal', 'standard'),
@@ -37,7 +42,7 @@ INSERT INTO public.bots (id, name, personality) VALUES
 (gen_random_uuid(), 'BubbleBoy', 'passive'),
 (gen_random_uuid(), 'FinalTableF', 'standard'),
 (gen_random_uuid(), 'MainEventMike', 'aggressive'),
-(gen_random_uuid(), ' HighStakesHarry', 'aggressive'),
+(gen_random_uuid(), 'HighStakesHarry', 'aggressive'),
 (gen_random_uuid(), 'NoLimitNick', 'aggressive'),
 (gen_random_uuid(), 'PotLimitPete', 'standard'),
 (gen_random_uuid(), 'SmallBlindS', 'passive'),
@@ -54,7 +59,10 @@ INSERT INTO public.bots (id, name, personality) VALUES
 (gen_random_uuid(), 'WildCard', 'aggressive'),
 (gen_random_uuid(), 'SteadyEddy', 'standard'),
 (gen_random_uuid(), 'RockSolid', 'passive'),
-(gen_random_uuid(), 'CallingStation', 'passive'),
+(gen_random_uuid(), 'CallingStation', 'passive');
+
+-- BLOCO 4: JOGADORES 51-75
+INSERT INTO public.bots (id, name, personality) VALUES
 (gen_random_uuid(), 'AceMagnet', 'standard'),
 (gen_random_uuid(), 'BustedDraw', 'aggressive'),
 (gen_random_uuid(), 'NutFlush', 'standard'),
@@ -79,7 +87,10 @@ INSERT INTO public.bots (id, name, personality) VALUES
 (gen_random_uuid(), 'SevenTwoBluff', 'aggressive'),
 (gen_random_uuid(), 'TopSet', 'standard'),
 (gen_random_uuid(), 'MiddlePair', 'passive'),
-(gen_random_uuid(), 'BottomPair', 'passive'),
+(gen_random_uuid(), 'BottomPair', 'passive');
+
+-- BLOCO 5: JOGADORES 76-100 & FINALIZAR
+INSERT INTO public.bots (id, name, personality) VALUES
 (gen_random_uuid(), 'AceKing_4Bet', 'aggressive'),
 (gen_random_uuid(), 'Broadway', 'standard'),
 (gen_random_uuid(), 'WheelStraight', 'standard'),
