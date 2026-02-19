@@ -291,7 +291,6 @@ const AppRoutes = () => {
         <>
           <Route path="/play" element={<ProtectedLayout><Lobby /></ProtectedLayout>} />
           <Route path="/table/:id" element={<ProtectedLayout><GameTable /></ProtectedLayout>} />
-          {/* Tournament route removed */}
           <Route path="/dashboard" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
           <Route path="/academia" element={<ProtectedLayout><Academia /></ProtectedLayout>} />
           <Route path="/community" element={<ProtectedLayout><Community /></ProtectedLayout>} />

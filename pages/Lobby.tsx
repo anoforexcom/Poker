@@ -13,7 +13,6 @@ const Lobby: React.FC = () => {
   const navigate = useNavigate();
   const { user: gameUser, withdraw, activeGames } = useGame();
   const { showAlert } = useNotification();
-  const [isRegistering, setIsRegistering] = useState<string | null>(null);
 
   const filteredTables = tables.filter(t =>
     t.name.toLowerCase().includes(searchQuery.toLowerCase())

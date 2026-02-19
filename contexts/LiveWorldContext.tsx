@@ -15,7 +15,6 @@ interface PokerTable {
 
 interface LiveWorldContextType {
     tables: PokerTable[];
-    tournaments: PokerTable[]; // Keeping this name temporarily for compatibility with Lobby
     onlinePlayers: number;
     activeTables: number;
     manualPulse: () => Promise<void>;
@@ -64,7 +63,6 @@ export const LiveWorldProvider: React.FC<{ children: ReactNode }> = ({ children 
     return (
         <LiveWorldContext.Provider value={{
             tables,
-            tournaments: tables, // Compatibility
             onlinePlayers,
             activeTables: tables.length,
             manualPulse

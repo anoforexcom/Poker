@@ -54,7 +54,7 @@ const FeaturesPage = () => {
             description: 'Join thousands of players from around the world. Create clans, compete in leaderboards, and make friends.',
             benefits: [
                 'Global player base',
-                'Clan tournaments',
+                'Clan leaderboards',
                 'Live chat support',
                 'Community forums'
             ]
@@ -94,13 +94,13 @@ const FeaturesPage = () => {
         },
         {
             icon: 'emoji_events',
-            title: 'Tournaments & Events',
-            description: 'Compete in daily tournaments with guaranteed prize pools, special events, and exclusive high-roller tables.',
+            title: 'High Stakes Action',
+            description: 'Join exclusive high-roller tables, compete for massive pots, and prove your skills in the most intense cash games.',
             benefits: [
-                'Daily freerolls',
-                'Guaranteed prize pools',
-                'Satellite qualifiers',
-                'VIP exclusive events'
+                '24/7 high stakes action',
+                'Large pot tracking',
+                'Professional rake structure',
+                'VIP exclusive tables'
             ]
         },
         {
@@ -121,7 +121,7 @@ const FeaturesPage = () => {
             benefits: [
                 'Tiered rewards system',
                 'Cashback on every hand',
-                'Exclusive tournaments',
+                'Exclusive VIP status',
                 'Personal account manager'
             ]
         },

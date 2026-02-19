@@ -63,7 +63,7 @@ const Dashboard: React.FC = () => {
           trendType="positive"
         />
         <KPIBox
-          title="Tournament Rank"
+          title="Global Rank"
           value={user?.rank || '#1,204'}
           trend="14 spots"
           trendType="positive"

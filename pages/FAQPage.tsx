@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // Extended FAQ data
 const ALL_FAQS = [
     // Getting Started
-    { category: "Getting Started", q: "Is this platform free to play?", a: "Yes! You can start playing for free. We also offer premium tournaments and cash games for verified users." },
+    { category: "Getting Started", q: "Is this platform free to play?", a: "Yes! You can start playing with demo credits. We also offer high stakes cash games for verified users." },
     { category: "Getting Started", q: "How do I create an account?", a: "Click 'Start Playing' on the homepage, fill in your details, verify your email, and you're ready to go!" },
     { category: "Getting Started", q: "What poker variants are available?", a: "Currently we support No-Limit Texas Hold'em. Omaha and Short Deck are in development." },
     { category: "Getting Started", q: "Can I play on mobile?", a: "Yes, BestPoker.Cash is fully responsive and works directly in your mobile browser. Native apps coming soon." },
@@ -28,7 +28,7 @@ const ALL_FAQS = [
     { category: "Gameplay", q: "Is the game fair?", a: "Absolutely. We use a certified RNG (Random Number Generator) and have 24/7 anti-cheat monitoring." },
     { category: "Gameplay", q: "Can I play multiple tables at once?", a: "Yes! Premium members can play up to 6 tables simultaneously." },
     { category: "Gameplay", q: "What are the blinds and buy-ins?", a: "We offer tables from micro stakes ($0.01/$0.02) to high stakes ($25/$50) to suit all bankrolls." },
-    { category: "Gameplay", q: "How does the tournament system work?", a: "Tournaments have scheduled start times, fixed buy-ins, and guaranteed prize pools. Check the Tournaments tab for details." },
+    { category: "Gameplay", q: "What are the rules of the house?", a: "We follow standard TDA and Las Vegas cash game rules. All decisions by the floor are final." },
     { category: "Gameplay", q: "Can I chat with other players?", a: "Yes, each table has a chat feature. Please keep it respectful - our moderators monitor all conversations." },
 
     // Technical Support

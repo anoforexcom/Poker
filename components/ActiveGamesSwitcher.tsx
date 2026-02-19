@@ -7,18 +7,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export const ActiveGamesSwitcher: React.FC = () => {
     const { activeGames, removeActiveGame } = useGame();
-    const { tournaments } = useLiveWorld();
+    const { tables } = useLiveWorld();
     const navigate = useNavigate();
 
     if (!activeGames || activeGames.length === 0) return null;
 
     return (
         <div className="flex gap-2 flex-wrap items-center">
-            <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-tighter mr-1">Tabelas Ativas:</span>
+            <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-tighter mr-1">Active Tables:</span>
             <AnimatePresence>
                 {activeGames.map((id) => {
-                    const tournament = tournaments.find(t => t.id === id);
-                    const name = tournament ? tournament.name : `Mesa ${id.slice(0, 4)}`;
+                    const table = tables.find(t => t.id === id);
+                    const name = table ? table.name : `Table ${id.slice(0, 4)}`;
 
                     return (
                         <motion.div
