@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../utils/supabase';
+import { db } from '../../utils/firebase';
+import { collection, query, orderBy, getDocs, doc, updateDoc } from 'firebase/firestore';
 
 const AdminUsers: React.FC = () => {
     const [users, setUsers] = useState<any[]>([]);
@@ -8,12 +9,17 @@ const AdminUsers: React.FC = () => {
 
     const fetchUsers = async () => {
         setLoading(true);
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-        if (data) setUsers(data);
+        try {
+            const q = query(collection(db, 'profiles'), orderBy('createdAt', 'desc'));
+            const querySnapshot = await getDocs(q);
+            const loadedUsers: any[] = [];
+            querySnapshot.forEach((doc) => {
+                loadedUsers.push({ id: doc.id, ...doc.data() });
+            });
+            setUsers(loadedUsers);
+        } catch (err) {
+            console.error('Error fetching users:', err);
+        }
         setLoading(false);
     };
 
@@ -22,14 +28,18 @@ const AdminUsers: React.FC = () => {
     }, []);
 
     const filteredUsers = users.filter(u =>
-        u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.id.toLowerCase().includes(searchTerm.toLowerCase())
+        (u.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (u.id || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const updateBalance = async (userId: string, currentBalance: number, amount: number) => {
-        const newBalance = currentBalance + amount;
-        const { error } = await supabase.from('profiles').update({ balance: newBalance }).eq('id', userId);
-        if (!error) fetchUsers();
+        const newBalance = (currentBalance || 0) + amount;
+        try {
+            await updateDoc(doc(db, 'profiles', userId), { balance: newBalance });
+            fetchUsers();
+        } catch (err) {
+            console.error('Error updating balance:', err);
+        }
     };
 
     return (

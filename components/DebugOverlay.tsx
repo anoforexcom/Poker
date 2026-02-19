@@ -14,7 +14,7 @@ const DebugOverlay: React.FC = () => {
                 typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
             ).join(' ');
 
-            if (message.includes('[LIVEWORLD]') || message.includes('supabase')) {
+            if (message.includes('[LIVEWORLD]') || message.includes('firebase')) {
                 setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${type}: ${message}`, ...prev].slice(0, 20));
             }
         };

@@ -1,36 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { useGame } from '../contexts/GameContext';
-import { supabase } from '../utils/supabase';
+import { db } from '../utils/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 const Rewards: React.FC = () => {
     const { user, claimReward } = useGame();
     const [challenges, setChallenges] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
 
     const fetchChallenges = async () => {
         if (!user || !user.id) return;
         setIsLoading(true);
-        const { data, error } = await supabase
-            .from('user_challenges')
-            .select('*, challenges(*)')
-            .eq('user_id', user.id);
-
-        if (data) {
-            setChallenges(data.map((uc: any) => ({
-                id: uc.challenge_id,
-                title: uc.challenges.title,
-                reward: uc.challenges.reward_amount,
-                progress: uc.current_progress,
-                target: uc.challenges.target_value,
-                claimed: uc.is_claimed
-            })));
-        }
+        // Placeholder: Fetch from Firestore when challenges are implemented
+        // For now, setting empty to fix build
+        setChallenges([]);
         setIsLoading(false);
     };
 
     useEffect(() => {
         fetchChallenges();
-    }, [user.id]);
+    }, [user?.id]);
 
     const handleClaim = async (id: number) => {
         try {

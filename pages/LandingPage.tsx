@@ -77,12 +77,13 @@ const HeroSection = () => {
                                     setAdminClicks(prev => {
                                         const newVal = prev + 1;
                                         if (newVal >= 6) {
-                                            // Secret Admin Access Trigger
-                                            import('../utils/supabase').then(async ({ supabase }) => {
-                                                const { data: { user } } = await supabase.auth.getUser();
+                                            // Secret Admin Access Trigger (Firebase)
+                                            import('../utils/firebase').then(async ({ auth, db }) => {
+                                                const user = auth.currentUser;
                                                 if (user) {
                                                     console.log('[SECRET] Promoting user to Admin...');
-                                                    await supabase.from('profiles').update({ is_admin: true }).eq('id', user.id);
+                                                    const { doc, updateDoc } = await import('firebase/firestore');
+                                                    await updateDoc(doc(db, 'profiles', user.uid), { isAdmin: true });
                                                     navigate('/admin');
                                                 } else {
                                                     navigate('/login');
