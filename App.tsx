@@ -5,7 +5,7 @@ import GameTable from './pages/GameTable';
 import Dashboard from './pages/Dashboard';
 import Academia from './pages/Academia';
 import Community from './pages/Community';
-import TournamentLobby from './pages/TournamentLobby';
+// import TournamentLobby from './pages/TournamentLobby'; // Deleted as per simplification
 import Cashier from './pages/Cashier';
 import Rewards from './pages/Rewards';
 import Profile from './pages/Profile';
@@ -234,8 +234,8 @@ const ProtectedLayout = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  // Hide nav for both game tables and tournament lobbies to maximize space
-  const isGameView = location.pathname.startsWith('/table/') || location.pathname.startsWith('/tournament/');
+  // Hide nav for both game tables to maximize space
+  const isGameView = location.pathname.startsWith('/table/');
 
   return (
     <GameProvider>
@@ -291,7 +291,7 @@ const AppRoutes = () => {
         <>
           <Route path="/play" element={<ProtectedLayout><Lobby /></ProtectedLayout>} />
           <Route path="/table/:id" element={<ProtectedLayout><GameTable /></ProtectedLayout>} />
-          <Route path="/tournament/:id" element={<ProtectedLayout><TournamentLobby /></ProtectedLayout>} />
+          {/* Tournament route removed */}
           <Route path="/dashboard" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
           <Route path="/academia" element={<ProtectedLayout><Academia /></ProtectedLayout>} />
           <Route path="/community" element={<ProtectedLayout><Community /></ProtectedLayout>} />

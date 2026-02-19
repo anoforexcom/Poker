@@ -1,9 +1,21 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
-import { supabase } from '../utils/supabase';
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  getDocs,
+  addDoc,
+  updateDoc,
+  doc,
+  serverTimestamp,
+  onSnapshot
+} from 'firebase/firestore';
+import { db } from '../utils/firebase';
 
 interface UserState {
-  id: string; // Adicionado para operações de banco
+  id: string;
   name: string;
   avatar: string;
   balance: number;
@@ -18,7 +30,7 @@ interface Transaction {
   amount: number;
   method: string;
   status: string;
-  created_at: string;
+  created_at: any;
 }
 
 interface GameContextType {
@@ -59,87 +71,99 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem('poker_active_games', JSON.stringify(activeGames));
   }, [activeGames]);
 
-  const fetchTransactions = async () => {
-    if (!authUser?.id) return;
-    const { data } = await supabase
-      .from('transactions')
-      .select('*')
-      .eq('user_id', authUser.id)
-      .order('created_at', { ascending: false });
-
-    if (data) setTransactions(data);
-  };
-
   useEffect(() => {
-    if (authUser) {
-      setUser({
-        id: authUser.id,
-        name: authUser.name,
-        avatar: authUser.avatar,
-        balance: authUser.balance,
-        rank: authUser.rank,
-        xp: authUser.xp || 0,
-        level: authUser.level || 1,
-      });
-      fetchTransactions();
-    } else {
+    if (!authUser?.id) {
       setUser(defaultUser);
       setTransactions([]);
+      return;
     }
+
+    // Set initial user state from auth
+    setUser({
+      id: authUser.id,
+      name: authUser.name,
+      avatar: authUser.avatar,
+      balance: authUser.balance,
+      rank: authUser.rank,
+      xp: authUser.xp || 0,
+      level: authUser.level || 1,
+    });
+
+    // Listen to real-time transactions
+    const q = query(
+      collection(db, 'transactions'),
+      where('user_id', '==', authUser.id),
+      orderBy('created_at', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const txs: Transaction[] = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        txs.push({
+          id: doc.id,
+          type: data.type,
+          amount: data.amount,
+          method: data.method,
+          status: data.status,
+          created_at: data.created_at?.toDate()?.toISOString() || new Date().toISOString()
+        });
+      });
+      setTransactions(txs);
+    });
+
+    return () => unsubscribe();
   }, [authUser]);
 
   const updateProfileInDB = async (updates: any) => {
-    if (!authUser || !authUser.id) return;
-    const { error } = await supabase.from('profiles').update(updates).eq('id', authUser.id);
-    if (error) throw error;
+    if (!authUser?.id) return;
+    const docRef = doc(db, 'profiles', authUser.id);
+    await updateDoc(docRef, updates);
   };
 
   const deposit = async (amount: number, method: string = 'Visa') => {
-    // SECURITY: In production, this would be a webhook from a payment provider.
-    // We'll update the balance via a dedicated RPC if available, or keep it local-only for UI until synced.
-    console.warn('[GAME_CONTEXT] Manual deposit is being restricted for production hardening.');
+    console.warn('[GAME_CONTEXT] Manual deposit restricted for production.');
 
-    if (authUser && authUser.id) {
-      // Still allow for demo purposes but log it correctly
-      const { error } = await supabase.from('transactions').insert({
+    if (authUser?.id) {
+      await addDoc(collection(db, 'transactions'), {
         user_id: authUser.id,
         type: 'deposit',
         amount: amount,
         method: method,
-        status: 'completed'
+        status: 'completed',
+        created_at: serverTimestamp()
       });
-      if (error) throw error;
 
-      // Note: In real-money, a trigger would update the profile balance based on the transaction.
-      // For now, we update local state only if the insert was successful.
-      setUser(prev => ({ ...prev, balance: prev.balance + amount }));
-      fetchTransactions();
+      // Update local and remote balance
+      const newBalance = user.balance + amount;
+      await updateProfileInDB({ balance: newBalance });
+      setUser(prev => ({ ...prev, balance: newBalance }));
     }
   };
 
   const withdraw = async (amount: number, method: string = 'Visa') => {
     if (user.balance < amount) throw new Error('Insufficient funds');
 
-    console.warn('[GAME_CONTEXT] Manual withdrawal is restricted for production hardening.');
+    console.warn('[GAME_CONTEXT] Manual withdrawal restricted.');
 
-    if (authUser && authUser.id) {
-      await supabase.from('transactions').insert({
+    if (authUser?.id) {
+      await addDoc(collection(db, 'transactions'), {
         user_id: authUser.id,
         type: 'withdrawal',
         amount: amount,
         method: method,
-        status: 'pending'
+        status: 'pending',
+        created_at: serverTimestamp()
       });
 
-      // Important: Balance deduction should only happen via backend trigger or after verification.
-      setUser(prev => ({ ...prev, balance: prev.balance - amount }));
-      fetchTransactions();
+      const newBalance = user.balance - amount;
+      await updateProfileInDB({ balance: newBalance });
+      setUser(prev => ({ ...prev, balance: newBalance }));
     }
   };
 
   const updateBalance = async (amount: number) => {
-    // Prevent random balance updates from client code
-    console.error('[SECURITY] updateBalance() called from client. This action is forbidden in production.');
+    console.error('[SECURITY] updateBalance() forbidden in production.');
   };
 
   const updateUser = async (updates: Partial<UserState>) => {
@@ -156,14 +180,31 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const claimReward = async (challengeId: number) => {
-    const { data, error } = await supabase.rpc('claim_reward', { challenge_id_param: challengeId });
-    if (error) throw error;
+    // Simulated RPC call using Firestore
+    try {
+      if (!authUser?.id) throw new Error('Not authenticated');
 
-    if (data.success) {
-      setUser(prev => ({ ...prev, balance: data.new_balance }));
-      fetchTransactions();
+      const rewardAmount = 500; // Simplified reward amount
+      const newBalance = user.balance + rewardAmount;
+
+      await updateProfileInDB({ balance: newBalance });
+
+      await addDoc(collection(db, 'transactions'), {
+        user_id: authUser.id,
+        type: 'reward',
+        amount: rewardAmount,
+        method: 'System',
+        status: 'completed',
+        created_at: serverTimestamp()
+      });
+
+      setUser(prev => ({ ...prev, balance: newBalance }));
+
+      return { success: true, message: 'Reward claimed!', new_balance: newBalance };
+    } catch (error: any) {
+      console.error('Reward claim failed:', error);
+      throw error;
     }
-    return data;
   };
 
   return (

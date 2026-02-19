@@ -1,5 +1,19 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '../utils/supabase';
+import {
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged,
+    updateProfile as updateFirebaseProfile
+} from 'firebase/auth';
+import {
+    doc,
+    getDoc,
+    setDoc,
+    updateDoc,
+    serverTimestamp
+} from 'firebase/firestore';
+import { auth, db } from '../utils/firebase';
 
 interface User {
     id: string;
@@ -27,23 +41,21 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
-    const [isLoading, setIsLoading] = useState(true); // Initial boot loading
-    const [isProcessing, setIsProcessing] = useState(false); // Action loading (login/register)
+    const [isLoading, setIsLoading] = useState(true);
+    const [isProcessing, setIsProcessing] = useState(false);
 
-    const fetchProfile = async (userId: string, email: string, retries = 3) => {
-        console.log(`[AUTH_CONTEXT] Fetching profile for: ${userId} (Attempts left: ${retries})`);
+    const fetchProfile = async (userId: string, email: string) => {
+        console.log(`[AUTH_CONTEXT] Fetching Firestore profile for: ${userId}`);
 
-        for (let i = 0; i <= retries; i++) {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', userId)
-                .maybeSingle();
+        try {
+            const docRef = doc(db, 'profiles', userId);
+            const docSnap = await getDoc(docRef);
 
-            if (data) {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
                 console.log('[AUTH_CONTEXT] Profile found:', data.name);
                 return {
-                    id: data.id,
+                    id: userId,
                     name: data.name,
                     email: email,
                     avatar: data.avatar_url,
@@ -53,88 +65,73 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     level: data.level || 1,
                     isAdmin: data.is_admin || false
                 };
+            } else {
+                console.warn('[AUTH_CONTEXT] Profile not found for', userId);
+                return null;
             }
-
-            if (error) {
-                console.error('[AUTH_CONTEXT] Error fetching profile:', error);
-            }
-
-            if (i < retries) {
-                console.log(`[AUTH_CONTEXT] Profile not found yet, retrying in ${1000 * (i + 1)}ms...`);
-                await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
-            }
+        } catch (error) {
+            console.error('[AUTH_CONTEXT] Error fetching profile:', error);
+            return null;
         }
+    };
 
-        console.warn(`[AUTH_CONTEXT] Profile not found for ${userId} after retries. Creating/Upserting manually...`);
-
+    const ensureProfileExists = async (userId: string, email: string, name?: string) => {
         try {
-            const { data, error } = await supabase
-                .from('profiles')
-                .upsert({
-                    id: userId,
-                    name: email.split('@')[0], // Fallback name
+            const docRef = doc(db, 'profiles', userId);
+            const docSnap = await getDoc(docRef);
+
+            if (!docSnap.exists()) {
+                console.log('[AUTH_CONTEXT] Creating new profile...');
+                const profileData = {
+                    name: name || email.split('@')[0],
                     avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
                     balance: 10000,
                     rank: 'Bronze',
-                    is_admin: false
-                })
-                .select()
-                .maybeSingle();
-
-            if (data) {
-                return {
-                    id: data.id,
-                    name: data.name,
-                    email: email,
-                    avatar: data.avatar_url,
-                    balance: data.balance,
-                    rank: data.rank,
-                    xp: data.xp || 0,
-                    level: data.level || 1,
-                    isAdmin: data.is_admin || false
+                    is_admin: false,
+                    xp: 0,
+                    level: 1,
+                    created_at: serverTimestamp()
                 };
+                await setDoc(docRef, profileData);
+                return { id: userId, email, ...profileData, isAdmin: false, avatar: profileData.avatar_url };
             }
-            if (error) throw error;
-        } catch (err) {
-            console.error('[AUTH_CONTEXT] Manual profile creation failed:', err);
-        }
 
-        return null;
+            const data = docSnap.data();
+            return {
+                id: userId,
+                name: data.name,
+                email: email,
+                avatar: data.avatar_url,
+                balance: data.balance,
+                rank: data.rank,
+                xp: data.xp || 0,
+                level: data.level || 1,
+                isAdmin: data.is_admin || false
+            };
+        } catch (error) {
+            console.error('[AUTH_CONTEXT] Profile creation failed:', error);
+            return null;
+        }
     };
 
     useEffect(() => {
-        const initAuth = async () => {
-            try {
-                const { data: { session } } = await supabase.auth.getSession();
-                if (session?.user) {
-                    const profile = await fetchProfile(session.user.id, session.user.email || '');
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+            if (firebaseUser) {
+                const profile = await fetchProfile(firebaseUser.uid, firebaseUser.email || '');
+                if (profile) {
                     setUser(profile);
+                } else {
+                    // This could happen if auth exists but profile doc was deleted
+                    const newProfile = await ensureProfileExists(firebaseUser.uid, firebaseUser.email || '');
+                    setUser(newProfile as User);
                 }
-            } catch (err) {
-                console.error('[AUTH_CONTEXT] Initialization error:', err);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        initAuth();
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('[AUTH_CONTEXT] Auth event:', event);
-
-            if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || (event === 'INITIAL_SESSION' && session)) {
-                if (session?.user) {
-                    const profile = await fetchProfile(session.user.id, session.user.email || '');
-                    setUser(profile);
-                }
-            } else if (event === 'SIGNED_OUT') {
+            } else {
                 setUser(null);
             }
-
             setIsLoading(false);
         });
 
-        return () => subscription.unsubscribe();
+        return () => unsubscribe();
     }, []);
 
     const login = async (email: string, password: string) => {
@@ -155,16 +152,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     isAdmin: true
                 };
                 setUser(testUser);
-                setIsProcessing(false);
                 return;
             }
 
-            const { error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            });
-            if (error) throw error;
+            await signInWithEmailAndPassword(auth, email, password);
         } catch (err) {
+            console.error('[AUTH_CONTEXT] Login error:', err);
             throw err;
         } finally {
             setIsProcessing(false);
@@ -174,49 +167,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const register = async (name: string, email: string, password: string) => {
         setIsProcessing(true);
         try {
-            const { data, error } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: {
-                        name: name,
-                    }
-                }
-            });
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const firebaseUser = userCredential.user;
 
-            if (error) throw error;
+            await updateFirebaseProfile(firebaseUser, { displayName: name });
 
-            console.log('[AUTH_CONTEXT] SignUp successful, ensuring profile exists...');
-
-            if (data.user) {
-                const profileData = {
-                    id: data.user.id,
-                    name: name,
-                    avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user.id}`,
-                    balance: 10000,
-                    rank: 'Bronze',
-                    is_admin: false
-                };
-
-                const { error: profileError } = await supabase
-                    .from('profiles')
-                    .upsert(profileData);
-
-                if (profileError) {
-                    console.warn('[AUTH_CONTEXT] Manual profile upsert warning:', profileError);
-                }
-
-                // Immediately set user locally to trigger navigation
-                setUser({
-                    ...profileData,
-                    email: email,
-                    avatar: profileData.avatar_url,
-                    xp: 0,
-                    level: 1,
-                    isAdmin: false
-                });
+            const profile = await ensureProfileExists(firebaseUser.uid, email, name);
+            if (profile) {
+                setUser(profile as User);
             }
         } catch (err) {
+            console.error('[AUTH_CONTEXT] Registration error:', err);
             throw err;
         } finally {
             setIsProcessing(false);
@@ -224,12 +185,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const logout = async () => {
-        await supabase.auth.signOut();
+        await signOut(auth);
         setUser(null);
     };
 
     const continueAsGuest = async () => {
-        const guestId = '00000000-0000-0000-0000-000000000002'; // Valid UUID for Guest
+        const guestId = 'guest_' + Math.random().toString(36).substr(2, 9);
         const guestUser: User = {
             id: guestId,
             name: 'Demo Guest',
@@ -242,19 +203,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             isAdmin: false
         };
 
-        try {
-            // Ensure guest profile exists in DB so foreign keys work
-            await supabase.from('profiles').upsert({
-                id: guestUser.id,
-                name: guestUser.name,
-                avatar_url: guestUser.avatar,
-                balance: guestUser.balance,
-                rank: guestUser.rank
-            });
-        } catch (err) {
-            console.warn('[AUTH_CONTEXT] Guest persistence failed (might be expected in demo):', err);
-        }
-
+        // For guests, we don't necessarily persist to Firestore in this version
+        // unless they convert to a real account, but keeping consistency with old logic:
         setUser(guestUser);
         setIsLoading(false);
     };

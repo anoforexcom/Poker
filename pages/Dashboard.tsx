@@ -121,6 +121,22 @@ const Dashboard: React.FC = () => {
       </div>
 
       <div className="col-span-12 lg:col-span-4 space-y-6">
+        {/* PLAY NOW CARD */}
+        <div className="bg-gradient-to-br from-primary to-blue-700 rounded-xl p-6 shadow-lg border border-white/10 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+            <span className="material-symbols-outlined text-6xl">videogame_asset</span>
+          </div>
+          <h3 className="text-xl font-black text-white mb-2 uppercase italic tracking-tighter">Ready to Play?</h3>
+          <p className="text-blue-100 text-xs mb-6 leading-relaxed opacity-80">Join the active High Stakes Cash Game and prove your skills against other players.</p>
+          <button
+            onClick={() => navigate('/table/main_table')}
+            className="w-full bg-white text-primary py-3 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-blue-50 transition-all shadow-xl active:scale-95 flex items-center justify-center gap-2"
+          >
+            <span className="material-symbols-outlined">play_arrow</span>
+            Play Now
+          </button>
+        </div>
+
         <div className="bg-surface border border-border-dark rounded-xl p-6 shadow-sm">
           <h3 className="text-lg font-bold text-white mb-6">Learning Progress</h3>
           <div className="space-y-6">
