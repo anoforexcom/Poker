@@ -30,6 +30,7 @@ import { ChatProvider } from './contexts/ChatContext';
 import { SimulationProvider } from './contexts/SimulationContext';
 import { ActiveGamesSwitcher } from './components/ActiveGamesSwitcher';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
+import { NotificationProvider } from './contexts/NotificationContext';
 
 // Scroll to top on route change
 const ScrollToTop = () => {
@@ -319,7 +320,6 @@ const AppRoutes = () => {
   );
 };
 
-import { NotificationProvider } from './contexts/NotificationContext';
 
 
 const App: React.FC = () => {

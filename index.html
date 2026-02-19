@@ -32,6 +32,36 @@
                 }
             }
         }
+
+        // --- Visual Error Reporter for Debugging ---
+        window.onerror = function (message, source, lineno, colno, error) {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.position = 'fixed';
+            errorDiv.style.top = '0';
+            errorDiv.style.left = '0';
+            errorDiv.style.width = '100%';
+            errorDiv.style.background = 'red';
+            errorDiv.style.color = 'white';
+            errorDiv.style.padding = '20px';
+            errorDiv.style.zIndex = '99999';
+            errorDiv.style.fontFamily = 'monospace';
+            errorDiv.innerHTML = '<strong>RUNTIME ERROR:</strong> ' + message + '<br><small>' + source + ' (line ' + lineno + ')</small>';
+            document.body.appendChild(errorDiv);
+        };
+        window.onunhandledrejection = function (event) {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.position = 'fixed';
+            errorDiv.style.bottom = '0';
+            errorDiv.style.left = '0';
+            errorDiv.style.width = '100%';
+            errorDiv.style.background = 'orange';
+            errorDiv.style.color = 'black';
+            errorDiv.style.padding = '20px';
+            errorDiv.style.zIndex = '99999';
+            errorDiv.style.fontFamily = 'monospace';
+            errorDiv.innerHTML = '<strong>UNHANDLED REJECTION:</strong> ' + event.reason;
+            document.body.appendChild(errorDiv);
+        };
     </script>
     <style>
         .custom-scrollbar::-webkit-scrollbar {
@@ -71,17 +101,6 @@
             }
         }
     </style>
-    <script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "react-router-dom": "https://esm.sh/react-router-dom@^7.13.0",
-    "recharts": "https://esm.sh/recharts@^3.7.0"
-  }
-}
-</script>
 </head>
 
 <body>

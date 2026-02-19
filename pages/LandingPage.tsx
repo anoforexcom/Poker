@@ -22,7 +22,7 @@ const FadeIn = ({ children, delay = 0, className = "" }: { children: React.React
 // --- Mock Data ---
 
 const FAQS = [
-    { q: "Is this platform free to play?", a: "Yes! You can start playing for free. We also offer premium tournaments and cash games for verified users." },
+    { q: "Is this platform free to play?", a: "Yes! You can start playing with demo credits. We also offer high stakes cash games for verified users." },
     { q: "How do I withdraw my winnings?", a: "Withdrawals are processed instantly via crypto or typically within 24 hours for bank transfers." },
     { q: "Is the game fair?", a: "Absolutely. We use a certified RNG (Random Number Generator) and have 24/7 anti-cheat monitoring." },
     { q: "Can I play on mobile?", a: "Yes, BestPoker.Cash is fully responsive and works directly in your mobile browser. Native apps coming soon." },
@@ -32,7 +32,7 @@ const FAQS = [
 const TESTIMONIALS = [
     { name: "Alex K.", role: "Pro Player", text: "The interface is slick effectively basically zero lag. Best platform I've used in years.", avatar: "https://i.pravatar.cc/150?u=alex" },
     { name: "Sarah J.", role: "Casual Player", text: "I love the community features. Learning from others has improved my game significantly.", avatar: "https://i.pravatar.cc/150?u=sarah" },
-    { name: "Mike T.", role: "Tournament Grinder", text: "The tournament structures are fantastic. Great prize pools and smooth gameplay.", avatar: "https://i.pravatar.cc/150?u=mike" },
+    { name: "Mike T.", role: "Cash Game Pro", text: "The cash game action is non-stop. Great stakes and smooth gameplay at every table.", avatar: "https://i.pravatar.cc/150?u=mike" },
     { name: "Emily R.", role: "Newbie", text: "Very beginner friendly. The academia section helped me understand the basics quickly.", avatar: "https://i.pravatar.cc/150?u=emily" },
     { name: "David L.", role: "High Roller", text: "Security is top notch. I feel safe depositing large amounts here.", avatar: "https://i.pravatar.cc/150?u=david" },
 ];

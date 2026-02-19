@@ -61,7 +61,7 @@ const Footer = () => {
                         <h3 className="text-white font-bold mb-4">Platform</h3>
                         <ul className="space-y-2">
                             <li><Link to="/" className="text-slate-400 hover:text-primary text-sm transition-colors">Home</Link></li>
-                            <li><Link to="/tournaments" className="text-slate-400 hover:text-primary text-sm transition-colors">Tournaments</Link></li>
+                            <li><Link to="/play" className="text-slate-400 hover:text-primary text-sm transition-colors">Play Now</Link></li>
                             <li><Link to="/features" className="text-slate-400 hover:text-primary text-sm transition-colors">Features</Link></li>
                             <li><Link to="/download" className="text-slate-400 hover:text-primary text-sm transition-colors">Download App</Link></li>
                         </ul>
