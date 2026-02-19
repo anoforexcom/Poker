@@ -322,7 +322,26 @@ const AppRoutes = () => {
 
 
 
+import { isConfigValid } from './utils/firebase';
+
 const App: React.FC = () => {
+  if (!isConfigValid) {
+    return (
+      <div className="h-screen w-full bg-[#0a0f1a] flex items-center justify-center p-6 text-center">
+        <div className="max-w-md w-full bg-surface border border-red-500/30 p-8 rounded-3xl shadow-2xl">
+          <span className="material-symbols-outlined text-6xl text-red-500 mb-4">warning</span>
+          <h1 className="text-2xl font-bold text-white mb-4 italic">Configuration Required</h1>
+          <p className="text-slate-400 text-sm leading-relaxed mb-6">
+            The Firebase API Key is missing or invalid. Please check your Vercel Environment Variables.
+          </p>
+          <div className="bg-black/30 p-4 rounded-xl text-left font-mono text-xs text-blue-400 border border-white/5 break-all">
+            Fallback activated: Using internal credentials.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <HashRouter>
       <ScrollToTop />
