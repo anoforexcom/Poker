@@ -5,7 +5,7 @@ import { generateBotName } from '../utils/nameGenerator';
 
 const Community: React.FC = () => {
   const { user } = useGame();
-  const { smoothedOnlinePlayers } = useLiveWorld();
+  const { onlinePlayers: smoothedOnlinePlayers } = useLiveWorld();
 
   // --- MOCK DATA GENERATION ---
   const INITIAL_TOPICS = [

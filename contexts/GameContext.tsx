@@ -110,6 +110,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         });
       });
       setTransactions(txs);
+    }, (error) => {
+      console.warn('[GameContext] Transaction query failed (likely missing Firestore index):', error.message);
+      setTransactions([]);
     });
 
     return () => unsubscribe();
