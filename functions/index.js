@@ -16,10 +16,41 @@ exports.pokerGame = onCall(async (request) => {
 
     if (action === "start") {
         table = new Table();
-        table.addPlayer({ id: playerId, stack: 5000, isBot: false });
 
-        for (let i = 1; i <= 5; i++) {
-            table.addPlayer({ id: "bot" + i, stack: 5000, isBot: true });
+        // Fetch human player info if available
+        let humanName = "You";
+        let humanAvatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${playerId}`;
+
+        try {
+            const profileDoc = await db.collection("profiles").doc(playerId).get();
+            if (profileDoc.exists) {
+                const profileData = profileDoc.data();
+                humanName = profileData.name || humanName;
+                humanAvatar = profileData.avatar_url || humanAvatar;
+            }
+        } catch (e) {
+            console.error("Error fetching profile for start:", e);
+        }
+
+        table.addPlayer({
+            id: playerId,
+            name: humanName,
+            avatar: humanAvatar,
+            stack: 10000,
+            isBot: false
+        });
+
+        // Add 5 bots
+        const botNames = ["Alice", "Bob", "Charlie", "David", "Eve"];
+        for (let i = 0; i < 5; i++) {
+            const botId = "bot_" + (i + 1);
+            table.addPlayer({
+                id: botId,
+                name: botNames[i],
+                avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${botId}`,
+                stack: 10000,
+                isBot: true
+            });
         }
 
         table.startHand();
