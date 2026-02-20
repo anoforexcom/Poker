@@ -130,10 +130,55 @@ export const usePokerGame = (
 
     const deckRef = useRef<Card[]>([]);
     const isInitialized = useRef(false);
+    const turnTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const sb = config.smallBlind || 10;
     const bb = config.bigBlind || 20;
     const startStack = config.startingStack || 10000;
+
+    // ─── Turn Timer with Auto-Fold ──────────────────────────────
+    useEffect(() => {
+        // Clear previous timer
+        if (turnTimerRef.current) {
+            clearInterval(turnTimerRef.current);
+            turnTimerRef.current = null;
+        }
+
+        // Only start timer when it's human's turn
+        const isHumanTurn = currentTurn >= 0 && players[currentTurn]?.isHuman && phase !== 'showdown' && phase !== 'waiting';
+        if (!isHumanTurn) {
+            setTurnTimeLeft(30);
+            return;
+        }
+
+        setTurnTimeLeft(30);
+        turnTimerRef.current = setInterval(() => {
+            setTurnTimeLeft(prev => {
+                if (prev <= 1) {
+                    // Time's up — auto-fold (or check if no bet to call)
+                    if (turnTimerRef.current) clearInterval(turnTimerRef.current);
+                    turnTimerRef.current = null;
+                    console.log('[POKER_CLIENT] Time expired! Auto-folding.');
+                    setTimeout(() => {
+                        if (currentBetState === 0) {
+                            handlePlayerAction('check');
+                        } else {
+                            handlePlayerAction('fold');
+                        }
+                    }, 100);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => {
+            if (turnTimerRef.current) {
+                clearInterval(turnTimerRef.current);
+                turnTimerRef.current = null;
+            }
+        };
+    }, [currentTurn, phase]);
 
     // ─── Initialize Table with Bots ─────────────────────────────
     useEffect(() => {

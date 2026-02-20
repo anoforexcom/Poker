@@ -211,6 +211,20 @@ const GameTable: React.FC = () => {
   const [activeLobbyTab, setActiveLobbyTab] = useState<'info' | 'players' | 'payouts'>('info');
   const [showOrientationPrompt, setShowOrientationPrompt] = useState(false);
   const [showGameSwitcher, setShowGameSwitcher] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+
+  // Track unread messages when chat is closed
+  useEffect(() => {
+    if (!showChat && chatHistory.length > 0) {
+      setUnreadMessages(prev => prev + 1);
+    }
+  }, [chatHistory.length]);
+
+  // Clear unread when chat opens
+  useEffect(() => {
+    if (showChat) setUnreadMessages(0);
+  }, [showChat]);
 
   // Detect mobile and orientation
   useEffect(() => {
@@ -252,35 +266,11 @@ const GameTable: React.FC = () => {
 
       <div className="absolute top-4 right-4 md:top-6 md:right-8 z-20 flex gap-2 md:gap-4">
         <button
-          onClick={() => {
-            try {
-              console.log('[UI_DEBUG] Toggle Switcher:', !showGameSwitcher);
-              setShowGameSwitcher(!showGameSwitcher);
-            } catch (e) {
-              console.error('[UI_ERROR] Failed to toggle GameSwitcher:', e);
-            }
-          }}
-          className="bg-black/60 hover:bg-black/80 size-9 md:size-12 rounded-xl text-white transition-all border border-white/10 flex items-center justify-center shadow-2xl backdrop-blur-md group relative"
-          title="Alternar Mesas"
+          onClick={handleLeaveTable}
+          className="bg-black/60 hover:bg-red-600/60 size-9 md:size-12 rounded-xl text-white transition-all border border-white/10 flex items-center justify-center shadow-2xl backdrop-blur-md group"
+          title="Leave Table"
         >
-          <span className="material-symbols-outlined text-lg md:text-2xl group-hover:rotate-12 transition-transform">layers</span>
-          <span className="absolute -top-1 -right-1 bg-primary text-[8px] font-black px-1.5 py-0.5 rounded-full border border-white/20 animate-pulse">
-            {(activeGames || []).length}
-          </span>
-        </button>
-        <button
-          onClick={() => {
-            try {
-              console.log('[UI_DEBUG] Open Lobby Modal');
-              setShowLobbyModal(true);
-            } catch (e) {
-              console.error('[UI_ERROR] Failed to open LobbyModal:', e);
-            }
-          }}
-          className="bg-primary/20 hover:bg-primary/30 px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all border border-primary/30 flex items-center gap-1.5 md:gap-2 text-white shadow-xl backdrop-blur-md group"
-        >
-          <span className="material-symbols-outlined text-sm md:text-base group-hover:rotate-180 transition-transform duration-500">grid_view</span>
-          <span className="hidden xs:inline">LOBBY</span>
+          <span className="material-symbols-outlined text-lg md:text-2xl group-hover:scale-110 transition-transform">logout</span>
         </button>
       </div>
 
@@ -509,7 +499,7 @@ const GameTable: React.FC = () => {
 
       {/* The Poker Table Rendering */}
       <div className="flex-1 flex items-center justify-center p-4 md:p-8 lg:p-12 pt-16 md:pt-24 overflow-visible landscape:py-4">
-        <div className="poker-table relative w-full h-full max-h-[75vh] md:max-h-[65vh] max-w-5xl aspect-[2/1] bg-emerald-900 border-2 md:border-[16px] border-[#3a2a1a] flex flex-col items-center justify-center shadow-2xl rounded-[60px] md:rounded-[150px]">
+        <div className="poker-table relative w-full h-full max-h-[55vh] md:max-h-[50vh] max-w-3xl aspect-[2.2/1] bg-gradient-to-b from-emerald-800 to-emerald-950 border-2 md:border-[12px] border-[#3a2a1a] flex flex-col items-center justify-center shadow-2xl rounded-[50%] ring-4 ring-[#2a1a0a]/50">
 
           {/* Table Center: Pot & Cards */}
           <div className="flex flex-col items-center gap-6">
@@ -635,228 +625,155 @@ const GameTable: React.FC = () => {
       </div>
 
 
-      {/* Action Controls (Floating Bottom-Right) */}
-      {!isObserver && activeUser && (
-        <div className="absolute bottom-8 right-8 z-[80] flex flex-col items-end gap-5 animate-scale-in origin-bottom-right">
-          {(!phase || phase === 'showdown') ? (
-            <button
-              onClick={startNewHand}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white font-black px-12 py-6 rounded-3xl shadow-[0_20px_50px_rgba(16,185,129,0.3)] flex items-center gap-3 group transition-all active:scale-95 hover:-translate-y-1"
-            >
-              <span className="material-symbols-outlined text-2xl group-hover:rotate-180 transition-transform duration-500">refresh</span>
-              <span className="text-xl">NEXT HAND</span>
-            </button>
-          ) : (
-            currentTurn !== -1 && players[currentTurn]?.id === user.id ? (
-              <div className="flex flex-col items-end gap-6">
-                {/* Bet Slider Panel */}
-                <div className="bg-slate-900/90 backdrop-blur-2xl p-8 rounded-[40px] border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.5)] w-80 md:w-96">
-                  <div className="flex justify-between items-center mb-6">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Wager</span>
-                      <span className="text-3xl font-black text-white font-mono leading-none">${betValue.toLocaleString()}</span>
-                    </div>
-                    <div className="bg-primary/20 px-3 py-1 rounded-full border border-primary/30">
-                      <span className="text-[10px] font-black text-primary uppercase">{((betValue / (activeUser?.balance || 1)) * 100).toFixed(0)}% STACK</span>
-                    </div>
-                  </div>
 
-                  <input
-                    type="range" min={gameConfig?.bigBlind || 20} max={activeUser?.balance || 1000} step={gameConfig?.smallBlind || 10}
-                    value={betValue} onChange={(e) => setBetValue(Number(e.target.value))}
-                    className="w-full h-4 bg-slate-800 rounded-full appearance-none cursor-pointer accent-primary mb-6"
-                  />
 
-                  <div className="grid grid-cols-4 gap-2">
-                    {[2, 3, 5].map(mult => (
-                      <button
-                        key={mult}
-                        onClick={() => setBetValue((gameConfig?.bigBlind || 20) * mult)}
-                        className="bg-white/5 hover:bg-white/10 py-2 rounded-xl text-[10px] font-black text-slate-400 transition-colors uppercase"
-                      >
-                        {mult}x BB
-                      </button>
-                    ))}
-                    <button
-                      onClick={() => setBetValue(activeUser?.balance || 0)}
-                      className="bg-red-500/10 hover:bg-red-500/20 py-2 rounded-xl text-[10px] font-black text-red-500 transition-colors uppercase"
-                    >
-                      All-In
-                    </button>
-                  </div>
-                </div>
+      {/* Chat Icon Button (Bottom Left) */}
+      <button
+        onClick={() => setShowChat(!showChat)}
+        className="fixed bottom-6 left-6 z-[90] bg-slate-900/90 backdrop-blur-xl size-12 rounded-full border border-white/10 shadow-2xl flex items-center justify-center text-white hover:bg-slate-800 transition-all active:scale-90 group"
+      >
+        <span className="material-symbols-outlined text-xl group-hover:scale-110 transition-transform">{showChat ? 'close' : 'chat'}</span>
+        {!showChat && unreadMessages > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-black min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1 border-2 border-slate-900 animate-bounce">
+            {unreadMessages > 9 ? '9+' : unreadMessages}
+          </span>
+        )}
+      </button>
 
-                {/* Action Buttons */}
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => handlePlayerAction('fold')}
-                    className="bg-slate-800 hover:bg-slate-700 text-slate-400 font-bold px-10 py-5 rounded-3xl border border-slate-700 shadow-xl transition-all active:scale-95 hover:text-white"
-                  >
-                    FOLD
-                  </button>
-                  <button
-                    onClick={() => handlePlayerAction(currentBet > 0 ? 'call' : 'check')}
-                    className="bg-white/5 hover:bg-white/10 text-white font-black px-12 py-5 rounded-3xl border border-white/10 shadow-xl transition-all active:scale-95"
-                  >
-                    {currentBet > 0 ? `CALL $${currentBet.toLocaleString()}` : 'CHECK'}
-                  </button>
-                  <button
-                    onClick={() => handlePlayerAction('raise', betValue)}
-                    className="bg-primary hover:brightness-110 text-white font-black px-16 py-5 rounded-3xl shadow-[0_20px_40px_rgba(37,99,235,0.3)] transition-all active:scale-95 flex items-center gap-3 relative overflow-hidden group"
-                  >
-                    <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-                    <span className="material-symbols-outlined text-xl relative z-10">payments</span>
-                    <span className="text-xl relative z-10">{currentBet > 0 ? 'RAISE' : 'BET'}</span>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              // Not user turn - Show status
-              <div className="bg-black/60 backdrop-blur-xl px-8 py-5 rounded-full border border-white/10 shadow-2xl flex items-center gap-4">
-                <div className="size-3 bg-amber-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(245,158,11,0.5)]"></div>
-                <span className="text-sm font-black text-white uppercase tracking-widest italic opacity-80">
-                  {players[currentTurn]?.name || 'Opponent'}'s Turn...
-                </span>
-              </div>
-            )
-          )}
-        </div>
-      )}
-
-      <footer className="p-4 md:p-8 flex flex-col md:flex-row items-center md:items-end justify-between gap-4 bg-gradient-to-t from-background via-background/80 to-transparent z-20 pb-safe w-full">
-        {/* Chat - Optimized */}
-        <div className="w-80">
-          <div className="bg-black/40 backdrop-blur-2xl border border-white/5 rounded-3xl overflow-hidden flex flex-col h-40 md:h-56 shadow-2xl">
+      {/* Chat Panel (Collapsible) */}
+      {showChat && (
+        <div className="fixed bottom-20 left-6 z-[85] w-72 md:w-80 animate-scale-in origin-bottom-left">
+          <div className="bg-slate-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl overflow-hidden flex flex-col h-64 shadow-2xl">
             <div className="p-3 border-b border-white/5 flex justify-between items-center bg-white/5">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Live Table Chat</span>
-              <div className="flex gap-2">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Live Chat</span>
+              <div className="flex items-center gap-2">
                 <div className="size-2 rounded-full bg-emerald-500 animate-pulse"></div>
                 <span className="text-[8px] font-bold text-emerald-500/80 uppercase">Online</span>
               </div>
             </div>
-            {/* ... rest of chat history is the same ... */}
-            <div className="flex-1 overflow-y-auto p-2 space-y-1 text-[10px] md:text-[11px] scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
-              {chatHistory.slice(-10).map((msg, idx) => {
-                // Deterministic color for player names
+            <div className="flex-1 overflow-y-auto p-2 space-y-1 text-[10px] md:text-[11px]">
+              {chatHistory.slice(-20).map((msg, idx) => {
                 const colors = ['text-blue-400', 'text-green-400', 'text-purple-400', 'text-yellow-400', 'text-pink-400', 'text-cyan-400'];
                 let hash = 0;
                 const senderName = msg.playerName || 'System';
                 for (let i = 0; i < senderName.length; i++) hash = senderName.charCodeAt(i) + ((hash << 5) - hash);
                 const colorClass = colors[Math.abs(hash) % colors.length];
-
                 return (
                   <p key={idx} className={`${msg.type === 'system' ? 'text-yellow-500 italic' : 'text-slate-300'}`}>
-                    <span className={`${colorClass} font-bold mr-1 text-[8px] uppercase tracking-tighter`}>{senderName}:</span> {msg.message}
+                    <span className={`${colorClass} font-bold mr-1 text-[8px] uppercase`}>{senderName}:</span> {msg.message}
                   </p>
                 );
               })}
             </div>
-            {/* Chat Input */}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 const input = e.currentTarget.elements.namedItem('message') as HTMLInputElement;
-                if (input.value.trim()) {
-                  handleSendMessage(input.value);
-                  input.value = '';
-                }
+                if (input.value.trim()) { handleSendMessage(input.value); input.value = ''; }
               }}
-              className="p-1 border-t border-slate-700 bg-slate-800/50"
+              className="p-2 border-t border-white/5 bg-black/30"
             >
-              <input
-                name="message"
-                type="text"
-                placeholder="Type a message..."
-                className="w-full bg-transparent border-none text-white text-[10px] focus:ring-0 placeholder:text-slate-600 px-2 py-1"
-                autoComplete="off"
-              />
+              <input name="message" type="text" placeholder="Type..." className="w-full bg-slate-800/50 border border-white/5 text-white text-xs rounded-lg px-3 py-2 focus:ring-1 focus:ring-primary outline-none placeholder:text-slate-600" autoComplete="off" />
             </form>
           </div>
         </div>
+      )}
 
-        {/* Center: Player Cards & Balance (Moved slightly left of buttons) */}
+      {/* Bottom Bar: Player Cards + Action Buttons */}
+      <footer className="w-full z-[80] bg-gradient-to-t from-[#050a15] via-[#050a15]/95 to-transparent pb-safe">
         {!isObserver && activeUser && (
-          <div className="flex items-center gap-6 md:ml-auto">
-            <div className="flex flex-col items-center gap-2">
-              {/* Player Balance and Turn Indicator */}
-              <div className={`relative bg-primary/10 border-2 ${currentTurn === 0 ? 'border-amber-400 animate-pulse ring-4 ring-amber-400/10' : 'border-primary'} backdrop-blur-md px-6 py-2 rounded-2xl flex flex-col items-center shadow-lg shadow-primary/20 min-w-[120px]`}>
-                <span className="text-[8px] font-black uppercase tracking-widest text-primary/70">{currentTurn === 0 ? 'YOUR TURN' : 'ACTING...'}</span>
-                <span className="text-xl font-black text-white font-mono">${activeUser?.balance.toLocaleString()}</span>
-              </div>
+          <div className="max-w-4xl mx-auto px-4 py-3 flex flex-col items-center gap-3">
 
-              {/* Player Cards */}
-              <div className="flex gap-2">
-                {activeUser?.hand.map((card, i) => (
-                  <HeroCard key={i} suit={card.suit} value={card.rank} rotate={i === 0 ? '-rotate-6' : 'rotate-6'} />
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Right: User Actions */}
-        {!isObserver && activeUser && (
-          <div className="w-full md:w-80 space-y-3 bg-black/40 backdrop-blur-md p-4 rounded-3xl border border-white/10 shadow-2xl">
-            <div className="space-y-3">
-              <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
-                <div className="flex-1 flex items-center bg-zinc-900 rounded-xl px-3 border border-primary/20">
-                  <span className="text-primary mr-1 text-sm">$</span>
-                  <input
-                    type="number"
-                    value={betValue}
-                    onChange={(e) => setBetValue(Math.min(activeUser?.balance || 0, Math.max(0, Number(e.target.value))))}
-                    className="bg-transparent border-none text-white text-sm font-black w-full focus:ring-0 py-2"
+            {/* Turn Timer Bar */}
+            {currentTurn >= 0 && players[currentTurn]?.id === user.id && (
+              <div className="w-full max-w-md">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-amber-400 animate-pulse">Your Turn</span>
+                  <span className={`text-xs font-black font-mono ${turnTimeLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-white'}`}>{turnTimeLeft}s</span>
+                </div>
+                <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-1000 linear ${turnTimeLeft <= 5 ? 'bg-red-500' : turnTimeLeft <= 10 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                    style={{ width: `${(turnTimeLeft / totalTurnTime) * 100}%` }}
                   />
                 </div>
               </div>
-              <input
-                type="range" min="20" max={activeUser?.balance || 100} value={betValue}
-                onChange={(e) => setBetValue(Number(e.target.value))}
-                className="w-full h-1.5 bg-slate-700 rounded-full appearance-none accent-primary cursor-pointer"
-              />
-              <div className="grid grid-cols-4 gap-1.5">
-                <button onClick={() => setBetValue(Math.floor(pot / 2))} className="bg-zinc-800 hover:bg-zinc-700 text-[9px] font-black py-1.5 rounded-lg transition uppercase">1/2</button>
-                <button onClick={() => setBetValue(Math.floor(pot * 0.75))} className="bg-zinc-800 hover:bg-zinc-700 text-[9px] font-black py-1.5 rounded-lg transition uppercase">3/4</button>
-                <button onClick={() => setBetValue(pot)} className="bg-zinc-800 hover:bg-zinc-700 text-[9px] font-black py-1.5 rounded-lg transition uppercase">POT</button>
-                <button onClick={() => setBetValue(activeUser?.balance || 0)} className="bg-primary/20 hover:bg-primary/40 text-[9px] font-black py-1.5 rounded-lg transition uppercase text-primary border border-primary/20 text-white">ALL-IN</button>
+            )}
+
+            {/* Player Cards + Balance Row */}
+            <div className="flex items-center gap-4">
+              <div className="flex gap-1.5">
+                {activeUser?.hand.map((card, i) => (
+                  <HeroCard key={i} suit={card.suit} value={card.rank} rotate={i === 0 ? '-rotate-3' : 'rotate-3'} />
+                ))}
+              </div>
+              <div className="bg-black/60 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10">
+                <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">Stack</span>
+                <p className="text-lg font-black text-white font-mono">${activeUser?.balance.toLocaleString()}</p>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+
+            {/* Action Buttons Row */}
+            {(!phase || phase === 'showdown') ? (
               <button
-                disabled={currentTurn !== 0}
-                onClick={() => handlePlayerAction('fold')}
-                className="disabled:opacity-20 disabled:grayscale transition-all bg-zinc-800 hover:bg-red-600/50 text-white font-black py-4 rounded-2xl shadow-lg uppercase text-xs border border-white/5"
+                onClick={startNewHand}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-black px-10 py-3 rounded-2xl shadow-lg flex items-center gap-2 transition-all active:scale-95"
               >
-                Fold
+                <span className="material-symbols-outlined group-hover:rotate-180 transition-transform">refresh</span>
+                NEXT HAND
               </button>
-              {currentBet === 0 || (activeUser && activeUser.currentBet === currentBet) ? (
-                <button
-                  disabled={currentTurn !== 0}
-                  onClick={() => handlePlayerAction('check')}
-                  className="disabled:opacity-20 disabled:grayscale transition-all bg-zinc-800 hover:bg-emerald-600/50 text-white font-black py-4 rounded-2xl shadow-lg uppercase text-xs border border-white/5"
-                >
-                  Check
-                </button>
-              ) : (
-                <button
-                  disabled={currentTurn !== 0}
-                  onClick={() => handlePlayerAction('call')}
-                  className="disabled:opacity-20 disabled:grayscale transition-all bg-zinc-800 hover:bg-emerald-600/50 text-white font-black py-4 rounded-2xl shadow-lg text-xs border border-white/5"
-                >
-                  <div className="flex flex-col items-center">
-                    <span className="uppercase text-[10px] opacity-70">Call</span>
-                    <span className="text-sm font-black mt-0.5">${activeUser ? currentBet - activeUser.currentBet : 0}</span>
-                  </div>
-                </button>
-              )}
-              <button
-                disabled={currentTurn !== 0}
-                onClick={() => handlePlayerAction('raise', betValue)}
-                className="disabled:opacity-20 disabled:grayscale transition-all bg-primary hover:brightness-125 text-white font-black py-4 rounded-2xl shadow-xl shadow-primary/20 uppercase text-xs border border-white/10"
-              >
-                Raise
-              </button>
-            </div>
+            ) : currentTurn >= 0 && players[currentTurn]?.id === user.id ? (
+              <div className="flex flex-col items-center gap-2 w-full max-w-lg">
+                {/* Bet controls */}
+                <div className="flex items-center gap-2 w-full">
+                  <span className="text-primary font-black text-sm">$</span>
+                  <input
+                    type="range" min={gameConfig?.bigBlind || 20} max={activeUser?.balance || 1000} step={gameConfig?.smallBlind || 10}
+                    value={betValue} onChange={(e) => setBetValue(Number(e.target.value))}
+                    className="flex-1 h-1.5 bg-slate-700 rounded-full appearance-none accent-primary cursor-pointer"
+                  />
+                  <span className="text-white font-black text-sm font-mono min-w-[60px] text-right">${betValue}</span>
+                </div>
+                <div className="grid grid-cols-4 gap-1.5 w-full">
+                  <button onClick={() => setBetValue(Math.floor(pot / 2))} className="bg-zinc-800 hover:bg-zinc-700 text-[9px] font-black py-1.5 rounded-lg transition uppercase text-slate-300">1/2</button>
+                  <button onClick={() => setBetValue(Math.floor(pot * 0.75))} className="bg-zinc-800 hover:bg-zinc-700 text-[9px] font-black py-1.5 rounded-lg transition uppercase text-slate-300">3/4</button>
+                  <button onClick={() => setBetValue(pot)} className="bg-zinc-800 hover:bg-zinc-700 text-[9px] font-black py-1.5 rounded-lg transition uppercase text-slate-300">POT</button>
+                  <button onClick={() => setBetValue(activeUser?.balance || 0)} className="bg-red-500/20 hover:bg-red-500/30 text-[9px] font-black py-1.5 rounded-lg transition uppercase text-red-400 border border-red-500/20">ALL-IN</button>
+                </div>
+                {/* Main action buttons */}
+                <div className="grid grid-cols-3 gap-2 w-full">
+                  <button
+                    onClick={() => handlePlayerAction('fold')}
+                    className="bg-zinc-800 hover:bg-red-600/40 text-white font-black py-3 rounded-xl shadow-lg uppercase text-xs border border-white/5 transition-all active:scale-95"
+                  >Fold</button>
+                  {currentBet === 0 || (activeUser && activeUser.currentBet === currentBet) ? (
+                    <button
+                      onClick={() => handlePlayerAction('check')}
+                      className="bg-zinc-800 hover:bg-emerald-600/40 text-white font-black py-3 rounded-xl shadow-lg uppercase text-xs border border-white/5 transition-all active:scale-95"
+                    >Check</button>
+                  ) : (
+                    <button
+                      onClick={() => handlePlayerAction('call')}
+                      className="bg-zinc-800 hover:bg-emerald-600/40 text-white font-black py-3 rounded-xl shadow-lg text-xs border border-white/5 transition-all active:scale-95"
+                    >
+                      <span className="uppercase text-[10px] opacity-70">Call</span>
+                      <span className="block text-sm font-black">${activeUser ? currentBet - activeUser.currentBet : 0}</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handlePlayerAction('raise', betValue)}
+                    className="bg-primary hover:brightness-125 text-white font-black py-3 rounded-xl shadow-xl shadow-primary/20 uppercase text-xs border border-white/10 transition-all active:scale-95"
+                  >Raise</button>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-black/50 backdrop-blur-md px-6 py-3 rounded-full border border-white/10 flex items-center gap-3">
+                <div className="size-2.5 bg-amber-500 rounded-full animate-pulse"></div>
+                <span className="text-xs font-black text-white uppercase tracking-widest opacity-80">
+                  {players[currentTurn]?.name || 'Opponent'}'s Turn...
+                </span>
+              </div>
+            )}
           </div>
         )}
       </footer>
@@ -971,11 +888,11 @@ const PlayerSeat = ({ position, name, balance, active, inactive, dealer, current
 const HeroCard = ({ suit, value, rotate }: any) => {
   const getSuitColor = (s: string) => {
     switch (s) {
-      case 'hearts': return 'text-red-500';
-      case 'diamonds': return 'text-blue-500';
-      case 'clubs': return 'text-green-500';
-      case 'spades': return 'text-slate-900';
-      default: return 'text-slate-900';
+      case 'hearts': return 'text-red-600';
+      case 'diamonds': return 'text-red-600';
+      case 'clubs': return 'text-gray-900';
+      case 'spades': return 'text-gray-900';
+      default: return 'text-gray-900';
     }
   };
 
