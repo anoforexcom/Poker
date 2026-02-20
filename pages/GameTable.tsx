@@ -6,7 +6,7 @@ import { useSimulation } from '../contexts/SimulationContext';
 import { useLiveWorld } from '../contexts/LiveWorldContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { BlindStructureType } from '../utils/blindStructure';
-import { ActiveGamesSwitcher } from '../components/ActiveGamesSwitcher';
+// Single table app — ActiveGamesSwitcher removed
 import { OrientationPrompt } from '../components/OrientationPrompt';
 
 import { useChat } from '../contexts/ChatContext';
@@ -530,32 +530,7 @@ const GameTable: React.FC = () => {
         )
       }
 
-      {/* Active Games Switcher Overlay */}
-      {
-        showGameSwitcher && (
-          <div className="absolute top-16 right-4 md:top-20 md:right-8 z-50 w-64 md:w-72 animate-scale-in origin-top-right">
-            <div className="bg-[#0f172a]/95 border border-white/10 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl">
-              <div className="p-4 border-b border-white/5 flex justify-between items-center bg-white/5">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Your Tables</span>
-                <button onClick={() => setShowGameSwitcher(false)} className="text-slate-500 hover:text-white transition">
-                  <span className="material-symbols-outlined text-base">close</span>
-                </button>
-              </div>
-              <div className="p-2">
-                <ActiveGamesSwitcher />
-              </div>
-              <div className="p-3 bg-black/20 text-center">
-                <button
-                  onClick={() => navigate('/play')}
-                  className="text-[9px] font-black text-primary hover:text-white transition uppercase tracking-widest"
-                >
-                  + Open New Table
-                </button>
-              </div>
-            </div>
-          </div>
-        )
-      }
+      {/* Game Switcher removed — single table app */}
 
       {/* Settings Modal (Simple) */}
       {
@@ -584,15 +559,15 @@ const GameTable: React.FC = () => {
       }
 
       {/* The Poker Table Rendering */}
-      <div className="flex-1 flex items-center justify-center p-4 md:p-8 lg:p-12 pt-16 md:pt-24 overflow-visible landscape:py-4">
-        <div className="poker-table relative w-full h-full max-h-[55vh] md:max-h-[50vh] max-w-3xl aspect-[2.2/1] bg-gradient-to-b from-emerald-800 to-emerald-950 border-2 md:border-[12px] border-[#3a2a1a] flex flex-col items-center justify-center shadow-2xl rounded-[50%] ring-4 ring-[#2a1a0a]/50">
+      <div className="flex-1 flex items-center justify-center px-2 py-2 md:p-8 lg:p-12 pt-14 md:pt-24 overflow-visible">
+        <div className="poker-table relative w-full h-full max-h-[40vh] md:max-h-[50vh] max-w-3xl aspect-[2/1] md:aspect-[2.2/1] bg-gradient-to-b from-emerald-800 to-emerald-950 border-4 md:border-[12px] border-[#3a2a1a] flex flex-col items-center justify-center shadow-2xl rounded-[50%] ring-2 md:ring-4 ring-[#2a1a0a]/50">
 
           {/* Table Center: Pot & Cards */}
           <div className="flex flex-col items-center gap-6">
-            <div className="flex flex-col items-center gap-2">
-              <div className="bg-black/40 backdrop-blur-md px-6 py-2 rounded-full border border-white/10 flex flex-col items-center">
-                <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Total Pot</span>
-                <span className="text-2xl font-black text-white">${pot.toLocaleString()}</span>
+            <div className="flex flex-col items-center gap-1 md:gap-2">
+              <div className="bg-black/40 backdrop-blur-md px-3 py-1 md:px-6 md:py-2 rounded-full border border-white/10 flex flex-col items-center">
+                <span className="text-slate-400 text-[8px] md:text-[10px] font-bold uppercase tracking-widest">Total Pot</span>
+                <span className="text-base md:text-2xl font-black text-white">${pot.toLocaleString()}</span>
               </div>
 
               {/* Side Pots */}
@@ -608,13 +583,13 @@ const GameTable: React.FC = () => {
               )}
             </div>
 
-            <div className="flex gap-1 md:gap-3 h-16 md:h-28 items-center">
+            <div className="flex gap-0.5 md:gap-3 h-12 md:h-28 items-center">
               {communityCards.map((card, i) => (
                 <HeroCard key={i} suit={card.suit} value={card.rank} />
               ))}
               {Array.from({ length: 5 - communityCards.length }).map((_, i) => (
-                <div key={`empty-${i}`} className="w-10 h-14 md:w-20 md:h-28 bg-slate-100/10 border-2 border-dashed border-white/20 rounded-lg flex items-center justify-center">
-                  <span className="material-symbols-outlined text-white/20 text-sm">help</span>
+                <div key={`empty-${i}`} className="w-8 h-11 md:w-20 md:h-28 bg-slate-100/10 border border-dashed border-white/20 rounded-md md:rounded-lg flex items-center justify-center">
+                  <span className="material-symbols-outlined text-white/20 text-[10px] md:text-sm">help</span>
                 </div>
               ))}
             </div>
@@ -768,7 +743,7 @@ const GameTable: React.FC = () => {
       {/* Bottom Bar: Player Cards + Action Buttons */}
       <footer className="w-full z-[80] bg-gradient-to-t from-[#050a15] via-[#050a15]/95 to-transparent pb-safe">
         {!isObserver && activeUser && (
-          <div className="max-w-4xl mx-auto px-4 py-3 flex flex-col items-center gap-3">
+          <div className="max-w-4xl mx-auto px-2 md:px-4 py-2 md:py-3 flex flex-col items-center gap-2 md:gap-3">
 
             {/* Turn Timer Bar */}
             {currentTurn >= 0 && players[currentTurn]?.id === user.id && (
@@ -786,16 +761,15 @@ const GameTable: React.FC = () => {
               </div>
             )}
 
-            {/* Player Cards + Balance Row */}
-            <div className="flex items-center gap-4">
-              <div className="flex gap-1.5">
+            <div className="flex items-center gap-2 md:gap-4">
+              <div className="flex gap-1">
                 {activeUser?.hand.map((card, i) => (
                   <HeroCard key={i} suit={card.suit} value={card.rank} rotate={i === 0 ? '-rotate-3' : 'rotate-3'} />
                 ))}
               </div>
-              <div className="bg-black/60 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10">
-                <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">Stack</span>
-                <p className="text-lg font-black text-white font-mono">${activeUser?.balance.toLocaleString()}</p>
+              <div className="bg-black/60 backdrop-blur-md px-2 py-1 md:px-4 md:py-2 rounded-lg md:rounded-xl border border-white/10">
+                <span className="text-[7px] md:text-[8px] font-black uppercase tracking-widest text-slate-500">Stack</span>
+                <p className="text-sm md:text-lg font-black text-white font-mono">${activeUser?.balance.toLocaleString()}</p>
               </div>
             </div>
 
@@ -809,46 +783,45 @@ const GameTable: React.FC = () => {
                 NEXT HAND
               </button>
             ) : currentTurn >= 0 && players[currentTurn]?.id === user.id ? (
-              <div className="flex flex-col items-center gap-2 w-full max-w-lg">
+              <div className="flex flex-col items-center gap-1.5 md:gap-2 w-full max-w-lg">
                 {/* Bet controls */}
-                <div className="flex items-center gap-2 w-full">
-                  <span className="text-primary font-black text-sm">$</span>
+                <div className="flex items-center gap-1.5 md:gap-2 w-full">
+                  <span className="text-primary font-black text-xs md:text-sm">$</span>
                   <input
                     type="range" min={gameConfig?.bigBlind || 20} max={activeUser?.balance || 1000} step={gameConfig?.smallBlind || 10}
                     value={betValue} onChange={(e) => setBetValue(Number(e.target.value))}
-                    className="flex-1 h-1.5 bg-slate-700 rounded-full appearance-none accent-primary cursor-pointer"
+                    className="flex-1 h-1 md:h-1.5 bg-slate-700 rounded-full appearance-none accent-primary cursor-pointer"
                   />
-                  <span className="text-white font-black text-sm font-mono min-w-[60px] text-right">${betValue}</span>
+                  <span className="text-white font-black text-xs font-mono min-w-[50px] md:min-w-[60px] text-right">${betValue}</span>
                 </div>
-                <div className="grid grid-cols-4 gap-1.5 w-full">
-                  <button onClick={() => setBetValue(Math.floor(pot / 2))} className="bg-zinc-800 hover:bg-zinc-700 text-[9px] font-black py-1.5 rounded-lg transition uppercase text-slate-300">1/2</button>
-                  <button onClick={() => setBetValue(Math.floor(pot * 0.75))} className="bg-zinc-800 hover:bg-zinc-700 text-[9px] font-black py-1.5 rounded-lg transition uppercase text-slate-300">3/4</button>
-                  <button onClick={() => setBetValue(pot)} className="bg-zinc-800 hover:bg-zinc-700 text-[9px] font-black py-1.5 rounded-lg transition uppercase text-slate-300">POT</button>
-                  <button onClick={() => setBetValue(activeUser?.balance || 0)} className="bg-red-500/20 hover:bg-red-500/30 text-[9px] font-black py-1.5 rounded-lg transition uppercase text-red-400 border border-red-500/20">ALL-IN</button>
+                <div className="grid grid-cols-4 gap-1 w-full">
+                  <button onClick={() => setBetValue(Math.floor(pot / 2))} className="bg-zinc-800 hover:bg-zinc-700 text-[8px] md:text-[9px] font-black py-1 md:py-1.5 rounded-md md:rounded-lg transition uppercase text-slate-300">1/2</button>
+                  <button onClick={() => setBetValue(Math.floor(pot * 0.75))} className="bg-zinc-800 hover:bg-zinc-700 text-[8px] md:text-[9px] font-black py-1 md:py-1.5 rounded-md md:rounded-lg transition uppercase text-slate-300">3/4</button>
+                  <button onClick={() => setBetValue(pot)} className="bg-zinc-800 hover:bg-zinc-700 text-[8px] md:text-[9px] font-black py-1 md:py-1.5 rounded-md md:rounded-lg transition uppercase text-slate-300">POT</button>
+                  <button onClick={() => setBetValue(activeUser?.balance || 0)} className="bg-red-500/20 hover:bg-red-500/30 text-[8px] md:text-[9px] font-black py-1 md:py-1.5 rounded-md md:rounded-lg transition uppercase text-red-400 border border-red-500/20">ALL-IN</button>
                 </div>
-                {/* Main action buttons */}
-                <div className="grid grid-cols-3 gap-2 w-full">
+                <div className="grid grid-cols-3 gap-1.5 md:gap-2 w-full">
                   <button
                     onClick={() => handlePlayerAction('fold')}
-                    className="bg-zinc-800 hover:bg-red-600/40 text-white font-black py-3 rounded-xl shadow-lg uppercase text-xs border border-white/5 transition-all active:scale-95"
+                    className="bg-zinc-800 hover:bg-red-600/40 text-white font-black py-2.5 md:py-3 rounded-lg md:rounded-xl shadow-lg uppercase text-[10px] md:text-xs border border-white/5 transition-all active:scale-95"
                   >Fold</button>
                   {currentBet === 0 || (activeUser && activeUser.currentBet === currentBet) ? (
                     <button
                       onClick={() => handlePlayerAction('check')}
-                      className="bg-zinc-800 hover:bg-emerald-600/40 text-white font-black py-3 rounded-xl shadow-lg uppercase text-xs border border-white/5 transition-all active:scale-95"
+                      className="bg-zinc-800 hover:bg-emerald-600/40 text-white font-black py-2.5 md:py-3 rounded-lg md:rounded-xl shadow-lg uppercase text-[10px] md:text-xs border border-white/5 transition-all active:scale-95"
                     >Check</button>
                   ) : (
                     <button
                       onClick={() => handlePlayerAction('call')}
-                      className="bg-zinc-800 hover:bg-emerald-600/40 text-white font-black py-3 rounded-xl shadow-lg text-xs border border-white/5 transition-all active:scale-95"
+                      className="bg-zinc-800 hover:bg-emerald-600/40 text-white font-black py-2.5 md:py-3 rounded-lg md:rounded-xl shadow-lg text-[10px] md:text-xs border border-white/5 transition-all active:scale-95"
                     >
-                      <span className="uppercase text-[10px] opacity-70">Call</span>
-                      <span className="block text-sm font-black">${activeUser ? currentBet - activeUser.currentBet : 0}</span>
+                      <span className="uppercase text-[8px] md:text-[10px] opacity-70">Call</span>
+                      <span className="block text-xs md:text-sm font-black">${activeUser ? currentBet - activeUser.currentBet : 0}</span>
                     </button>
                   )}
                   <button
                     onClick={() => handlePlayerAction('raise', betValue)}
-                    className="bg-primary hover:brightness-125 text-white font-black py-3 rounded-xl shadow-xl shadow-primary/20 uppercase text-xs border border-white/10 transition-all active:scale-95"
+                    className="bg-primary hover:brightness-125 text-white font-black py-2.5 md:py-3 rounded-lg md:rounded-xl shadow-xl shadow-primary/20 uppercase text-[10px] md:text-xs border border-white/10 transition-all active:scale-95"
                   >Raise</button>
                 </div>
               </div>
@@ -914,18 +887,18 @@ const ChipStack = ({ amount, size = 'md' }: { amount: number, size?: 'sm' | 'md'
 
 const PlayerSeat = ({ position, name, balance, active, inactive, dealer, currentBet, timeLeft, totalTime }: any) => {
   const positions: any = {
-    'top': '-top-8 md:-top-16 left-1/2 -translate-x-1/2',
-    'top-left': 'top-0 md:-top-4 left-[-2%] md:left-0',
-    'top-right': 'top-0 md:-top-4 right-[-2%] md:right-0',
-    'mid-left': 'top-1/2 -translate-y-1/2 -left-8 md:-left-24',
-    'mid-right': 'top-1/2 -translate-y-1/2 -right-8 md:-right-24',
-    'bottom-left': 'bottom-0 md:bottom-8 left-0 md:left-[5%]',
-    'bottom-right': 'bottom-0 md:bottom-8 right-0 md:right-[5%]',
+    'top': '-top-6 md:-top-16 left-1/2 -translate-x-1/2',
+    'top-left': '-top-2 md:-top-4 left-[5%] md:left-0',
+    'top-right': '-top-2 md:-top-4 right-[5%] md:right-0',
+    'mid-left': 'top-[40%] -translate-y-1/2 -left-4 md:-left-24',
+    'mid-right': 'top-[40%] -translate-y-1/2 -right-4 md:-right-24',
+    'bottom-left': '-bottom-2 md:bottom-8 left-[10%] md:left-[5%]',
+    'bottom-right': '-bottom-2 md:bottom-8 right-[10%] md:right-[5%]',
   };
 
   return (
-    <div className={`absolute ${positions[position]} flex flex-col items-center gap-0.5 md:gap-2 z-10 transition-all duration-500 scale-[0.45] xs:scale-[0.6] sm:scale-[0.8] md:scale-100`}>
-      <div className={`relative size-14 md:size-24 rounded-full border-2 md:border-4 ${active ? 'border-amber-400 ring-2 md:ring-8 ring-amber-400/20 scale-110' : 'border-slate-800'} bg-slate-700 overflow-hidden ${inactive ? 'grayscale opacity-50' : ''} transition-all duration-300 shadow-xl`}>
+    <div className={`absolute ${positions[position]} flex flex-col items-center gap-0 md:gap-2 z-10 transition-all duration-500 scale-[0.55] sm:scale-[0.7] md:scale-100`}>
+      <div className={`relative size-10 md:size-24 rounded-full border-2 md:border-4 ${active ? 'border-amber-400 ring-2 md:ring-8 ring-amber-400/20 scale-110' : 'border-slate-800'} bg-slate-700 overflow-hidden ${inactive ? 'grayscale opacity-50' : ''} transition-all duration-300 shadow-xl`}>
         {active && timeLeft > 0 && (
           <svg className="absolute inset-0 size-full -rotate-90 pointer-events-none" viewBox="0 0 100 100">
             <circle
@@ -943,14 +916,9 @@ const PlayerSeat = ({ position, name, balance, active, inactive, dealer, current
       </div>
 
       {/* Player Info with Stack */}
-      <div className={`bg-background/95 backdrop-blur-sm px-4 py-2 rounded-lg text-center border-2 ${inactive ? 'border-slate-800' : active ? 'border-primary' : 'border-slate-700'} min-w-[100px] shadow-lg`}>
-        <p className={`text-xs font-bold ${inactive ? 'text-slate-600' : 'text-white'} truncate mb-1`}>{name}</p>
-
-        {/* Chip Stack Display */}
-        <div className="flex items-center justify-center gap-2 mb-1">
-          <ChipStack amount={Number(balance)} size="sm" />
-          <p className={`text-sm font-black ${inactive ? 'text-slate-600' : 'text-gold'}`}>${Number(balance).toLocaleString()}</p>
-        </div>
+      <div className={`bg-background/95 backdrop-blur-sm px-2 py-1 md:px-4 md:py-2 rounded-md md:rounded-lg text-center border ${inactive ? 'border-slate-800' : active ? 'border-primary' : 'border-slate-700'} min-w-[60px] md:min-w-[100px] shadow-lg`}>
+        <p className={`text-[9px] md:text-xs font-bold ${inactive ? 'text-slate-600' : 'text-white'} truncate`}>{name}</p>
+        <p className={`text-[10px] md:text-sm font-black ${inactive ? 'text-slate-600' : 'text-gold'}`}>${Number(balance).toLocaleString()}</p>
       </div>
 
       {/* Dealer Button */}
@@ -1003,10 +971,10 @@ const HeroCard = ({ suit, value, rotate }: any) => {
   }
 
   return (
-    <div className={`w-12 h-18 md:w-20 md:h-28 bg-white rounded-lg md:rounded-xl border-2 border-primary flex flex-col p-1 md:p-2 items-center justify-between shadow-2xl transform transition-transform md:hover:-translate-y-2 cursor-pointer ${rotate} ${getSuitColor(suit)}`}>
-      <span className="text-base md:text-2xl font-black self-start leading-none tracking-tighter">{value}{getSuitSymbol(suit)}</span>
-      <span className="text-xl md:text-4xl">{getSuitSymbol(suit)}</span>
-      <span className="text-base md:text-2xl font-black self-end leading-none tracking-tighter rotate-180">{value}{getSuitSymbol(suit)}</span>
+    <div className={`w-8 h-12 md:w-20 md:h-28 bg-white rounded-md md:rounded-xl border border-primary/80 md:border-2 md:border-primary flex flex-col p-0.5 md:p-2 items-center justify-between shadow-2xl transform transition-transform md:hover:-translate-y-2 cursor-pointer ${rotate} ${getSuitColor(suit)}`}>
+      <span className="text-[10px] md:text-2xl font-black self-start leading-none tracking-tighter">{value}{getSuitSymbol(suit)}</span>
+      <span className="text-sm md:text-4xl">{getSuitSymbol(suit)}</span>
+      <span className="text-[10px] md:text-2xl font-black self-end leading-none tracking-tighter rotate-180">{value}{getSuitSymbol(suit)}</span>
     </div>
   );
 };
