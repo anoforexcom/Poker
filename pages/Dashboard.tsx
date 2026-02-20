@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAuth } from '../contexts/AuthContext';
+import { useGame } from '../contexts/GameContext';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
+  const { activeGames } = useGame();
   const navigate = useNavigate();
   const [timeframe, setTimeframe] = useState<'1W' | '1M' | '1Y'>('1M');
   const [chartData, setChartData] = useState<any[]>([]);
@@ -121,21 +123,42 @@ const Dashboard: React.FC = () => {
       </div>
 
       <div className="col-span-12 lg:col-span-4 space-y-6">
-        {/* PLAY NOW CARD */}
-        <div className="bg-gradient-to-br from-primary to-blue-700 rounded-xl p-6 shadow-lg border border-white/10 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-            <span className="material-symbols-outlined text-6xl">videogame_asset</span>
+        {/* PLAY / RETURN TO TABLE */}
+        {activeGames.length > 0 ? (
+          <div className="bg-gradient-to-br from-amber-600 to-amber-800 rounded-xl p-6 shadow-lg border border-amber-400/20 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+              <span className="material-symbols-outlined text-6xl">casino</span>
+            </div>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="size-2.5 bg-green-400 rounded-full animate-pulse"></div>
+              <span className="text-amber-200 text-[10px] font-black uppercase tracking-widest">Game in Progress</span>
+            </div>
+            <h3 className="text-xl font-black text-white mb-2 uppercase italic tracking-tighter">You have an active hand!</h3>
+            <p className="text-amber-100 text-xs mb-6 leading-relaxed opacity-80">Get back to the table before the timer runs out.</p>
+            <button
+              onClick={() => navigate('/table/main_table')}
+              className="w-full bg-white text-amber-700 py-3 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-amber-50 transition-all shadow-xl active:scale-95 flex items-center justify-center gap-2"
+            >
+              <span className="material-symbols-outlined">arrow_back</span>
+              Return to Table
+            </button>
           </div>
-          <h3 className="text-xl font-black text-white mb-2 uppercase italic tracking-tighter">Ready to Play?</h3>
-          <p className="text-blue-100 text-xs mb-6 leading-relaxed opacity-80">Join the active High Stakes Cash Game and prove your skills against other players.</p>
-          <button
-            onClick={() => navigate('/table/main_table')}
-            className="w-full bg-white text-primary py-3 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-blue-50 transition-all shadow-xl active:scale-95 flex items-center justify-center gap-2"
-          >
-            <span className="material-symbols-outlined">play_arrow</span>
-            Play Now
-          </button>
-        </div>
+        ) : (
+          <div className="bg-gradient-to-br from-primary to-blue-700 rounded-xl p-6 shadow-lg border border-white/10 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+              <span className="material-symbols-outlined text-6xl">videogame_asset</span>
+            </div>
+            <h3 className="text-xl font-black text-white mb-2 uppercase italic tracking-tighter">Ready to Play?</h3>
+            <p className="text-blue-100 text-xs mb-6 leading-relaxed opacity-80">Join the Cash Game table and test your skills against other players.</p>
+            <button
+              onClick={() => navigate('/table/main_table')}
+              className="w-full bg-white text-primary py-3 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-blue-50 transition-all shadow-xl active:scale-95 flex items-center justify-center gap-2"
+            >
+              <span className="material-symbols-outlined">play_arrow</span>
+              Play Now
+            </button>
+          </div>
+        )}
 
         <div className="bg-surface border border-border-dark rounded-xl p-6 shadow-sm">
           <h3 className="text-lg font-bold text-white mb-6">Learning Progress</h3>

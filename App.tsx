@@ -28,7 +28,7 @@ import { LiveWorldProvider } from './contexts/LiveWorldContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ChatProvider } from './contexts/ChatContext';
 import { SimulationProvider } from './contexts/SimulationContext';
-import { ActiveGamesSwitcher } from './components/ActiveGamesSwitcher';
+// ActiveGamesSwitcher removed — single table app
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import { NotificationProvider } from './contexts/NotificationContext';
 
@@ -132,10 +132,6 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
           </div>
         )}
 
-        {/* Active Games Switcher in Sidebar */}
-        <div className="mt-8 pt-6 border-t border-white/5">
-          <ActiveGamesSwitcher />
-        </div>
       </nav>
 
       <div className="p-4 border-t border-border-dark mt-auto">
@@ -256,9 +252,30 @@ const ProtectedLayout = ({ children }: { children: React.ReactNode }) => {
 
               <div className="flex-1 flex flex-col min-w-0">
                 {!isGameView && <Header onToggle={() => setIsSidebarOpen(!isSidebarOpen)} />}
-                <main className={`flex-1 overflow-auto custom-scrollbar relative ${isGameView ? 'h-full' : 'p-4 md:p-6'}`}>
+                <main className={`flex-1 overflow-auto custom-scrollbar relative ${isGameView ? 'h-full' : 'pb-20 md:pb-6'}`}>
                   {children}
                 </main>
+
+                {/* Mobile Bottom Nav */}
+                {!isGameView && (
+                  <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface/95 backdrop-blur-lg border-t border-border-dark flex items-center justify-around py-2 safe-area-bottom">
+                    {[
+                      { name: 'Play', path: '/play', icon: 'casino' },
+                      { name: 'Learn', path: '/academia', icon: 'menu_book' },
+                      { name: 'Home', path: '/dashboard', icon: 'grid_view' },
+                      { name: 'Community', path: '/community', icon: 'groups' },
+                      { name: 'Profile', path: '/profile', icon: 'person' },
+                    ].map(item => {
+                      const active = location.pathname === item.path || (item.path === '/play' && location.pathname.startsWith('/table'));
+                      return (
+                        <Link key={item.path} to={item.path} className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-colors ${active ? 'text-primary' : 'text-slate-500'}`}>
+                          <span className="material-symbols-outlined text-xl">{item.icon}</span>
+                          <span className="text-[9px] font-bold uppercase tracking-wider">{item.name}</span>
+                        </Link>
+                      );
+                    })}
+                  </nav>
+                )}
               </div>
             </div>
           </ChatProvider>
