@@ -142,6 +142,7 @@ export const usePokerGame = (
                 setPot(data.pots ? data.pots.reduce((sum: number, p: any) => sum + p.amount, 0) : 0);
                 setPhase(data.phase || 'waiting');
                 setLastRaiseAmount(data.currentBet || 0);
+                setCurrentTurn(data.activePlayerIndex !== undefined ? data.activePlayerIndex : -1);
 
                 // More aggressive Auto-start
                 const needsInitialStart = !data.players || data.players.length === 0;

@@ -258,17 +258,31 @@ const GameTable: React.FC = () => {
 
       <div className="absolute top-4 right-4 md:top-6 md:right-8 z-20 flex gap-2 md:gap-4">
         <button
-          onClick={() => setShowGameSwitcher(!showGameSwitcher)}
+          onClick={() => {
+            try {
+              console.log('[UI_DEBUG] Toggle Switcher:', !showGameSwitcher);
+              setShowGameSwitcher(!showGameSwitcher);
+            } catch (e) {
+              console.error('[UI_ERROR] Failed to toggle GameSwitcher:', e);
+            }
+          }}
           className="bg-black/60 hover:bg-black/80 size-9 md:size-12 rounded-xl text-white transition-all border border-white/10 flex items-center justify-center shadow-2xl backdrop-blur-md group relative"
           title="Alternar Mesas"
         >
           <span className="material-symbols-outlined text-lg md:text-2xl group-hover:rotate-12 transition-transform">layers</span>
           <span className="absolute -top-1 -right-1 bg-primary text-[8px] font-black px-1.5 py-0.5 rounded-full border border-white/20 animate-pulse">
-            {activeGames.length}
+            {(activeGames || []).length}
           </span>
         </button>
         <button
-          onClick={() => setShowLobbyModal(true)}
+          onClick={() => {
+            try {
+              console.log('[UI_DEBUG] Open Lobby Modal');
+              setShowLobbyModal(true);
+            } catch (e) {
+              console.error('[UI_ERROR] Failed to open LobbyModal:', e);
+            }
+          }}
           className="bg-primary/20 hover:bg-primary/30 px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all border border-primary/30 flex items-center gap-1.5 md:gap-2 text-white shadow-xl backdrop-blur-md group"
         >
           <span className="material-symbols-outlined text-sm md:text-base group-hover:rotate-180 transition-transform duration-500">grid_view</span>

@@ -15,6 +15,7 @@ class Table {
             this.communityCards = [];
             this.phase = "waiting";
             this.dealerPosition = 0;
+            this.activePlayerIndex = -1;
             this.smallBlind = 10;
             this.bigBlind = 20;
             this.minRaise = 20;
@@ -29,6 +30,7 @@ class Table {
         this.communityCards = state.communityCards || [];
         this.phase = state.phase || "waiting";
         this.dealerPosition = state.dealerPosition || 0;
+        this.activePlayerIndex = state.activePlayerIndex !== undefined ? state.activePlayerIndex : -1;
         this.smallBlind = state.smallBlind || 10;
         this.bigBlind = state.bigBlind || 20;
         this.minRaise = state.minRaise || 20;
@@ -43,6 +45,7 @@ class Table {
             communityCards: this.communityCards,
             phase: this.phase,
             dealerPosition: this.dealerPosition,
+            activePlayerIndex: this.activePlayerIndex,
             smallBlind: this.smallBlind,
             bigBlind: this.bigBlind,
             minRaise: this.minRaise
@@ -82,6 +85,10 @@ class Table {
         });
 
         this.postBlinds();
+
+        // UTG (Under The Gun) starts preflop: dealer + 3
+        this.activePlayerIndex = (this.dealerPosition + 3) % this.players.length;
+        this.ensureValidActivePlayer();
     }
 
     postBlinds() {
@@ -101,7 +108,6 @@ class Table {
         player.currentBet += betAmount;
         player.totalHandBet += betAmount;
 
-        // Add to main pot (side pots handled at end of round or when all-in happens)
         this.pots[0].amount += betAmount;
 
         if (player.stack === 0) {
@@ -110,11 +116,16 @@ class Table {
     }
 
     playerAction(player, action, amount = 0) {
+        const playerIdx = this.players.findIndex(p => p.id === player.id);
+        if (playerIdx !== this.activePlayerIndex) {
+            console.warn(`[TABLE] Action by ${player.id} out of turn! Expected index ${this.activePlayerIndex}, got ${playerIdx}`);
+            // In a strict engine we'd return here, but let's be lenient for now
+        }
+
         player.acted = true;
 
         if (action === "fold") {
             player.hasFolded = true;
-            // Remove from all pots
             this.pots.forEach(pot => {
                 pot.eligiblePlayers = pot.eligiblePlayers.filter(id => id !== player.id);
             });
@@ -134,7 +145,6 @@ class Table {
             this.minRaise = Math.max(this.bigBlind, raiseAmount);
             this.bet(player, diff);
 
-            // Reset "acted" for other players since bet increased
             this.players.forEach(p => {
                 if (p.id !== player.id && !p.hasFolded && !p.isAllIn) {
                     p.acted = false;
@@ -145,22 +155,40 @@ class Table {
         if (action === "check") {
             // nada
         }
+
+        this.advanceTurn();
     }
 
-    // Side pot calculation logic
+    ensureValidActivePlayer() {
+        const startIdx = this.activePlayerIndex;
+        while (this.players[this.activePlayerIndex].hasFolded || this.players[this.activePlayerIndex].isAllIn) {
+            this.activePlayerIndex = (this.activePlayerIndex + 1) % this.players.length;
+            if (this.activePlayerIndex === startIdx) break; // All folded or all-in
+        }
+    }
+
+    advanceTurn() {
+        // Check if betting round is over
+        const activePlayers = this.players.filter(p => !p.hasFolded && !p.isAllIn);
+        const everyoneActed = activePlayers.every(p => p.acted && p.currentBet === this.currentBet);
+
+        if (everyoneActed || activePlayers.length <= 1) {
+            this.nextPhase();
+        } else {
+            // Move to next player
+            this.activePlayerIndex = (this.activePlayerIndex + 1) % this.players.length;
+            this.ensureValidActivePlayer();
+        }
+    }
+
     calculateSidePots() {
-        // Collect all chips from current round into pots
-        // This is a simplified version: in a full engine, we'd do this carefully
-        // For now, let's just handle the all-in case at end of round
         const activePlayers = this.players.filter(p => !p.hasFolded);
         const allInPlayers = activePlayers.filter(p => p.isAllIn).sort((a, b) => a.totalHandBet - b.totalHandBet);
 
         if (allInPlayers.length === 0) return;
 
-        // Reset pots and recalculate based on totalHandBet
         const newPots = [];
         let processedBet = 0;
-
         const sortedPlayers = [...activePlayers].sort((a, b) => a.totalHandBet - b.totalHandBet);
 
         sortedPlayers.forEach((p, i) => {
@@ -201,16 +229,18 @@ class Table {
         else if (this.phase === "river") {
             this.phase = "showdown";
             this.handleShowdown();
+            return;
         }
+
+        // Post-flop: active player is the first one after dealer
+        this.activePlayerIndex = (this.dealerPosition + 1) % this.players.length;
+        this.ensureValidActivePlayer();
     }
 
     handleShowdown() {
-        // Process each pot from side pots to main pot
         this.pots.forEach(pot => {
             if (pot.amount <= 0) return;
-
             const eligiblePlayers = this.players.filter(p => pot.eligiblePlayers.includes(p.id) && !p.hasFolded);
-
             if (eligiblePlayers.length === 0) return;
 
             let bestValue = -1;
@@ -229,17 +259,15 @@ class Table {
             if (winners.length > 0) {
                 const winPerPlayer = Math.floor(pot.amount / winners.length);
                 winners.forEach(w => w.stack += winPerPlayer);
-
-                // Handle remainder
                 const remainder = pot.amount % winners.length;
-                if (remainder > 0) {
-                    winners[0].stack += remainder;
-                }
+                if (remainder > 0) winners[0].stack += remainder;
             }
         });
 
         this.pots = [{ amount: 0, eligiblePlayers: [] }];
         this.phase = "waiting";
+        this.activePlayerIndex = -1;
+        this.dealerPosition = (this.dealerPosition + 1) % this.players.length;
     }
 
 }

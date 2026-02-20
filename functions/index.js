@@ -1,7 +1,7 @@
 const { onCall } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 const { Table } = require("./engine/table");
-const { botDecision } = require("./bots");
+const { botDecision } = require("./engine/bots");
 
 admin.initializeApp();
 
@@ -84,14 +84,31 @@ exports.pokerGame = onCall(async (request) => {
 });
 
 function processBots(table) {
-    table.players.forEach(player => {
-        if (player.isBot && !player.hasFolded && !player.isAllIn) {
-            const decision = botDecision(player, table);
-            if (decision) {
-                table.playerAction(player, decision.action, decision.amount);
-            }
+    let loopLimit = 10; // Safety break
+    while (loopLimit > 0) {
+        if (table.phase === "waiting" || table.phase === "showdown") break;
+
+        const activeIdx = table.activePlayerIndex;
+        if (activeIdx < 0 || activeIdx >= table.players.length) break;
+
+        const currentPlayer = table.players[activeIdx];
+        if (!currentPlayer.isBot) {
+            console.log(`[POKER_FUNCTIONS] Waiting for human player: ${currentPlayer.id}`);
+            break;
         }
-    });
+
+        console.log(`[POKER_FUNCTIONS] Processing bot action for: ${currentPlayer.name}`);
+        const decision = botDecision(currentPlayer, table);
+        if (decision) {
+            console.log(`[POKER_FUNCTIONS] Bot ${currentPlayer.name} decided: ${decision.action}`);
+            table.playerAction(currentPlayer, decision.action, decision.amount);
+        } else {
+            console.warn(`[POKER_FUNCTIONS] Bot ${currentPlayer.name} failed to make a decision!`);
+            table.playerAction(currentPlayer, "fold"); // Fallback
+        }
+
+        loopLimit--;
+    }
 }
 
 function serializeTable(table) {
