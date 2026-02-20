@@ -34,16 +34,7 @@ const Lobby: React.FC = () => {
               <h2 className="text-xl md:text-3xl font-black text-white tracking-tighter font-display uppercase italic text-primary">Cash Lobby</h2>
               <p className="text-slate-500 text-[9px] md:text-sm font-bold uppercase tracking-widest mt-0.5">High Stakes Action</p>
             </div>
-            <div className="flex flex-wrap gap-1.5 sm:gap-2">
-              <div className="bg-emerald-500/10 text-emerald-400 text-[9px] font-black px-3 py-1.5 rounded-lg border border-emerald-500/20 flex items-center gap-1.5 shadow-sm">
-                <span className="size-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-                {activeTables} <span className="hidden xs:inline">ACTIVE TABLES</span>
-              </div>
-              <div className="bg-primary/10 text-primary-light text-[9px] font-black px-3 py-1.5 rounded-lg border border-primary/20 flex items-center gap-1.5 shadow-sm">
-                <span className="size-1.5 bg-primary-light rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]"></span>
-                {onlinePlayers.toLocaleString()} <span className="hidden xs:inline">PLAYERS ONLINE</span>
-              </div>
-            </div>
+            {/* Counters removed to simplify UI as requested */}
           </div>
         </div>
 

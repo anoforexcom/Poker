@@ -290,7 +290,7 @@ const AppRoutes = () => {
       {/* Protected Routes */}
       {isAuthenticated ? (
         <>
-          <Route path="/play" element={<ProtectedLayout><Lobby /></ProtectedLayout>} />
+          <Route path="/play" element={<Navigate to="/table/main_table" replace />} />
           <Route path="/table/:id" element={<ProtectedLayout><GameTable /></ProtectedLayout>} />
           <Route path="/dashboard" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
           <Route path="/academia" element={<ProtectedLayout><Academia /></ProtectedLayout>} />

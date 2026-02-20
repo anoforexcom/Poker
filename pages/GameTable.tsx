@@ -565,18 +565,6 @@ const GameTable: React.FC = () => {
               </div>
             )}
 
-            {/* Waiting for Players Overlay */}
-            {players.length < 2 && !winners.length && (
-              <div className="absolute inset-0 flex items-center justify-center z-30 bg-black/20 rounded-[200px]">
-                <div className="bg-slate-900/90 backdrop-blur-md p-8 rounded-3xl border border-white/10 text-center animate-pulse shadow-2xl">
-                  <div className="size-16 rounded-full border-4 border-primary border-t-transparent animate-spin mx-auto mb-4"></div>
-                  <h3 className="text-xl font-black text-white uppercase italic tracking-tighter">Waiting for Players</h3>
-                  <p className="text-slate-400 text-xs mt-2 max-w-[200px] leading-relaxed">
-                    Opponents are joining the tournament. <br /> <span className="text-gold font-bold">The game will start automatically soon.</span>
-                  </p>
-                </div>
-              </div>
-            )}
 
             {/* Human current bet chips on table */}
             {!isObserver && activeUser && activeUser.currentBet > 0 && (
@@ -617,47 +605,6 @@ const GameTable: React.FC = () => {
         </div>
       </div>
 
-      {/* NEW: Professional Waiting Overlay */}
-      {(players.length < 2) && (
-        <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-[#0a0f1a]/95 backdrop-blur-xl p-8 text-center animate-fade-in">
-          <div className="relative mb-12">
-            <div className="absolute inset-0 bg-primary/20 blur-[120px] animate-pulse"></div>
-            <div className="size-32 md:size-48 border-b-8 border-r-8 border-primary rounded-full animate-spin [animation-duration:3s]"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <img src="/logo.png" className="h-20 w-auto animate-pulse opacity-90 drop-shadow-[0_0_30px_rgba(19,127,236,0.4)] rounded-full" alt="BestPokerLogo" />
-            </div>
-          </div>
-          <h2 className="text-4xl md:text-6xl font-black text-white italic mb-4 tracking-tighter glow-blue uppercase">Preparing Deck</h2>
-          <p className="text-slate-400 max-w-md text-sm md:text-lg font-medium leading-relaxed mb-10 opacity-80">
-            Waiting for more participants to join the table. <br /> The action starts as soon as the quota is met.
-          </p>
-
-          <div className="flex flex-col md:flex-row gap-4 w-full max-w-xl">
-            {startsIn && (
-              <div className="flex-1 bg-primary/10 p-4 rounded-3xl border border-primary/20 backdrop-blur-md animate-pulse">
-                <p className="text-[10px] font-black text-primary-light uppercase tracking-widest mb-1">Starts In</p>
-                <p className="text-3xl font-mono text-white font-black">{startsIn}</p>
-              </div>
-            )}
-            <div className="flex-1 bg-white/5 p-4 rounded-3xl border border-white/10 backdrop-blur-md">
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Players Ready</p>
-              <p className="text-3xl font-mono text-white font-black">{players?.length || 1} <span className="text-slate-600 text-lg">/ {tournament?.maxPlayers || 9}</span></p>
-            </div>
-            <div className="flex-1 bg-white/5 p-4 rounded-3xl border border-white/10 backdrop-blur-md">
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Buy-In</p>
-              <p className="text-3xl font-mono text-gold font-black">${tournament?.buyIn?.toLocaleString() || '0'}</p>
-            </div>
-          </div>
-
-          <button
-            onClick={() => navigate('/play')}
-            className="mt-16 group flex items-center gap-3 px-8 py-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 transition-all active:scale-95"
-          >
-            <span className="material-symbols-outlined text-slate-500 group-hover:text-red-400 transition-colors">logout</span>
-            <span className="text-xs font-black text-slate-400 uppercase tracking-widest group-hover:text-white transition-colors">Return to Lobby</span>
-          </button>
-        </div>
-      )}
 
       {/* Action Controls (Floating Bottom-Right) */}
       {!isObserver && activeUser && (
