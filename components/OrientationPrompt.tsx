@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 export const OrientationPrompt: React.FC = () => {
     const [isPortrait, setIsPortrait] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+    const [dismissed, setDismissed] = useState(false);
 
     useEffect(() => {
         const checkOrientation = () => {
@@ -23,7 +24,7 @@ export const OrientationPrompt: React.FC = () => {
         };
     }, []);
 
-    if (!isMobile || !isPortrait) return null;
+    if (!isMobile || !isPortrait || dismissed) return null;
 
     return (
         <div className="fixed inset-0 z-[100] bg-[#0a0f1a] flex flex-col items-center justify-center p-6 text-center animate-fade-in">
@@ -42,10 +43,18 @@ export const OrientationPrompt: React.FC = () => {
                 For the best gaming experience, please use <span className="text-primary font-bold">Landscape Mode (Horizontal)</span>.
             </p>
 
-            <div className="mt-8 flex gap-2">
-                <div className="size-2 bg-primary rounded-full animate-pulse"></div>
-                <div className="size-2 bg-primary/60 rounded-full animate-pulse delay-75"></div>
-                <div className="size-2 bg-primary/30 rounded-full animate-pulse delay-150"></div>
+            <div className="mt-8 flex flex-col gap-4 w-full max-w-[200px]">
+                <div className="flex justify-center gap-2">
+                    <div className="size-2 bg-primary rounded-full animate-pulse"></div>
+                    <div className="size-2 bg-primary/60 rounded-full animate-pulse delay-75"></div>
+                    <div className="size-2 bg-primary/30 rounded-full animate-pulse delay-150"></div>
+                </div>
+                <button
+                    onClick={() => setDismissed(true)}
+                    className="mt-4 px-6 py-2 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+                >
+                    Play in Portrait
+                </button>
             </div>
         </div>
     );

@@ -221,7 +221,6 @@ const GameTable: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showLobbyModal, setShowLobbyModal] = useState(false);
   const [activeLobbyTab, setActiveLobbyTab] = useState<'info' | 'players' | 'payouts'>('info');
-  const [showOrientationPrompt, setShowOrientationPrompt] = useState(false);
   const [showGameSwitcher, setShowGameSwitcher] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
@@ -238,23 +237,10 @@ const GameTable: React.FC = () => {
     if (showChat) setUnreadMessages(0);
   }, [showChat]);
 
-  // Detect mobile and orientation
+  // Clear unread when chat opens
   useEffect(() => {
-    const checkOrientation = () => {
-      const isMobile = window.innerWidth < 768;
-      const isPortrait = window.innerHeight > window.innerWidth;
-      setShowOrientationPrompt(isMobile && isPortrait);
-    };
-
-    checkOrientation();
-    window.addEventListener('resize', checkOrientation);
-    window.addEventListener('orientationchange', checkOrientation);
-
-    return () => {
-      window.removeEventListener('resize', checkOrientation);
-      window.removeEventListener('orientationchange', checkOrientation);
-    };
-  }, []);
+    if (showChat) setUnreadMessages(0);
+  }, [showChat]);
 
 
   return (
@@ -562,8 +548,8 @@ const GameTable: React.FC = () => {
       }
 
       {/* The Poker Table Rendering */}
-      <div className="flex-1 flex items-center justify-center px-2 py-2 md:p-8 lg:p-12 pt-14 md:pt-24 overflow-visible">
-        <div className="poker-table relative w-full h-full max-h-[40vh] md:max-h-[50vh] max-w-3xl aspect-[2/1] md:aspect-[2.2/1] bg-gradient-to-b from-emerald-800 to-emerald-950 border-4 md:border-[12px] border-[#3a2a1a] flex flex-col items-center justify-center shadow-2xl rounded-[50%] ring-2 md:ring-4 ring-[#2a1a0a]/50">
+      <div className="flex-1 flex items-center justify-center px-2 py-2 md:p-8 lg:p-12 pt-14 md:pt-24 overflow-visible h-full">
+        <div className="poker-table relative w-full h-full max-h-[60vh] md:max-h-[50vh] max-w-3xl aspect-[1.8/1] md:aspect-[2.2/1] bg-gradient-to-b from-emerald-800 to-emerald-950 border-4 md:border-[12px] border-[#3a2a1a] flex flex-col items-center justify-center shadow-2xl rounded-[150px] md:rounded-[50%] ring-2 md:ring-4 ring-[#2a1a0a]/50">
 
           {/* Table Center: Pot & Cards */}
           <div className="flex flex-col items-center gap-6">
