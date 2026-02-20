@@ -1,19 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
-import { db } from '../utils/firebase';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
-    doc,
-    onSnapshot,
-    collection,
-    query,
-    where,
-    getDocs,
-    getDoc
-} from 'firebase/firestore';
-import { Card, HandRank } from '../utils/pokerLogic';
+    Card, createDeck, shuffleDeck, dealCards,
+    evaluateHand, compareHands, HandRank, HandRanking
+} from '../utils/pokerLogic';
 import { BlindStructureType } from '../utils/blindStructure';
 
-export type GamePhase = 'pre-flop' | 'flop' | 'turn' | 'river' | 'showdown';
+export type GamePhase = 'waiting' | 'pre-flop' | 'flop' | 'turn' | 'river' | 'showdown';
 
 export interface Player {
     id: string;
@@ -28,6 +20,7 @@ export interface Player {
     isDealer?: boolean;
     hasActed?: boolean;
     totalContribution: number;
+    isAllIn?: boolean;
 }
 
 export interface SidePot {
@@ -52,44 +45,80 @@ const DEFAULT_CONFIG: GameConfig = {
     smallBlind: 10,
     bigBlind: 20,
     ante: 0,
-    startingStack: 1000,
-    maxPlayers: 5,
+    startingStack: 10000,
+    maxPlayers: 6,
     blindStructureType: 'regular'
 };
 
-// Helper to parse "Ah" -> { rank: "A", suit: "h" }
-const parseCard = (cardStr: string): Card => {
-    if (!cardStr || cardStr.length < 2) return { rank: '?', suit: '?' } as any;
-    const rank = cardStr[0] as any;
-    const suit = cardStr[1] as any;
+const BOT_NAMES = ['Alice', 'Bob', 'Charlie', 'David', 'Eve'];
+const BOT_AVATARS = BOT_NAMES.map((_, i) => `https://api.dicebear.com/7.x/avataaars/svg?seed=bot_${i + 1}`);
 
-    // Calculate numeric value based on rank
-    const rankMap: Record<string, number> = {
-        '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, 'T': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14
-    };
-    const value = rankMap[rank] || 0;
+// ─── Bot Decision AI ───────────────────────────────────────────────
+function botDecision(bot: Player, communityCards: Card[], currentBet: number, pot: number, bigBlind: number): { action: string; amount: number } {
+    if (bot.isFolded || bot.isAllIn) return { action: 'check', amount: 0 };
 
-    return {
-        rank,
-        suit,
-        value
-    };
-};
+    const toCall = currentBet - bot.currentBet;
+    const stack = bot.balance;
 
+    // Pre-flop
+    if (communityCards.length === 0) {
+        const r1 = bot.hand[0]?.value || 0;
+        const r2 = bot.hand[1]?.value || 0;
+        const isPair = r1 === r2;
+        const isHigh = r1 >= 10 || r2 >= 10;
+
+        if (isPair && r1 >= 12) return { action: 'raise', amount: bigBlind * 3 };
+        if (isPair || isHigh) {
+            if (toCall === 0) return { action: 'check', amount: 0 };
+            return { action: 'call', amount: 0 };
+        }
+        if (toCall === 0) return { action: 'check', amount: 0 };
+        if (toCall > bigBlind * 3) return { action: 'fold', amount: 0 };
+        return { action: 'call', amount: 0 };
+    }
+
+    // Post-flop — evaluate hand strength
+    const handResult = evaluateHand(bot.hand, communityCards);
+
+    if (handResult.ranking >= HandRanking.THREE_OF_KIND) {
+        // Strong hand: raise
+        if (Math.random() > 0.3) {
+            return { action: 'raise', amount: Math.max(bigBlind, Math.floor(pot * 0.5)) };
+        }
+        if (toCall === 0) return { action: 'check', amount: 0 };
+        return { action: 'call', amount: 0 };
+    }
+
+    if (handResult.ranking >= HandRanking.ONE_PAIR) {
+        // Medium hand: call or check
+        if (toCall > stack * 0.3) return { action: 'fold', amount: 0 };
+        if (toCall === 0) return { action: 'check', amount: 0 };
+        return { action: 'call', amount: 0 };
+    }
+
+    // Weak hand
+    if (toCall === 0) {
+        if (Math.random() < 0.1) return { action: 'raise', amount: bigBlind };
+        return { action: 'check', amount: 0 };
+    }
+    if (toCall < pot * 0.15 && Math.random() < 0.25) return { action: 'call', amount: 0 };
+    return { action: 'fold', amount: 0 };
+}
+
+// ─── Main Hook ─────────────────────────────────────────────────────
 export const usePokerGame = (
     initialUserBalance: number,
     updateGlobalBalance: (amount: number) => void,
     config: GameConfig = DEFAULT_CONFIG,
-    tableId: string = 'main_table', // Default to main_table used in function
+    tableId: string = 'main_table',
     currentUserId?: string
 ) => {
-    const [gameState, setGameState] = useState<any>(null);
+    const [players, setPlayers] = useState<Player[]>([]);
     const [communityCards, setCommunityCards] = useState<Card[]>([]);
     const [pot, setPot] = useState(0);
-    const [phase, setPhase] = useState<GamePhase>('pre-flop');
+    const [phase, setPhase] = useState<GamePhase>('waiting');
     const [currentTurn, setCurrentTurn] = useState<number>(-1);
-    const [lastRaiseAmount, setLastRaiseAmount] = useState(0);
-    const [players, setPlayers] = useState<Player[]>([]);
+    const [currentBetState, setCurrentBetState] = useState(0);
     const [sidePots, setSidePots] = useState<SidePot[]>([]);
     const [winners, setWinners] = useState<Player[]>([]);
     const [winningHand, setWinningHand] = useState<HandRank | null>(null);
@@ -97,110 +126,479 @@ export const usePokerGame = (
     const [totalTurnTime] = useState(30);
     const [blindLevel, setBlindLevel] = useState(1);
     const [timeToNextLevel, setTimeToNextLevel] = useState(0);
+    const [dealerPosition, setDealerPosition] = useState(0);
 
+    const deckRef = useRef<Card[]>([]);
+    const isInitialized = useRef(false);
 
-    const [isInitializing, setIsInitializing] = useState(false);
+    const sb = config.smallBlind || 10;
+    const bb = config.bigBlind || 20;
+    const startStack = config.startingStack || 10000;
 
-    // Unified Subscription and Auto-Start
+    // ─── Initialize Table with Bots ─────────────────────────────
     useEffect(() => {
-        if (!tableId) {
-            console.error('[POKER_GAME] No tableId provided!');
-            return;
+        if (isInitialized.current || !currentUserId) return;
+        isInitialized.current = true;
+
+        console.log('[POKER_CLIENT] Initializing table with bots for user:', currentUserId);
+
+        const initialPlayers: Player[] = [
+            {
+                id: currentUserId,
+                name: 'You',
+                avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUserId}`,
+                balance: startStack,
+                hand: [],
+                isFolded: false,
+                currentBet: 0,
+                isHuman: true,
+                isActive: true,
+                isDealer: false,
+                hasActed: false,
+                totalContribution: 0,
+                isAllIn: false,
+            },
+            ...BOT_NAMES.map((name, i) => ({
+                id: `bot_${i + 1}`,
+                name,
+                avatar: BOT_AVATARS[i],
+                balance: startStack,
+                hand: [] as Card[],
+                isFolded: false,
+                currentBet: 0,
+                isHuman: false,
+                isActive: true,
+                isDealer: false,
+                hasActed: false,
+                totalContribution: 0,
+                isAllIn: false,
+            }))
+        ];
+
+        setPlayers(initialPlayers);
+
+        // Auto-start first hand after a short delay
+        setTimeout(() => {
+            startHandWithPlayers(initialPlayers, 0);
+        }, 500);
+    }, [currentUserId]);
+
+    // ─── Start a New Hand ───────────────────────────────────────
+    const startHandWithPlayers = useCallback((currentPlayers: Player[], dealer: number) => {
+        console.log('[POKER_CLIENT] Starting new hand. Dealer:', dealer);
+
+        // Create and shuffle deck
+        const deck = shuffleDeck(createDeck());
+        deckRef.current = deck;
+
+        // Deal 2 cards to each player
+        let deckIdx = 0;
+        const updatedPlayers = currentPlayers.map((p, i) => ({
+            ...p,
+            hand: [deck[deckIdx++], deck[deckIdx++]],
+            isFolded: false,
+            currentBet: 0,
+            hasActed: false,
+            totalContribution: 0,
+            isAllIn: false,
+            isDealer: i === dealer,
+            isActive: p.balance > 0,
+        }));
+
+        // Remove used cards from deck
+        deckRef.current = deck.slice(deckIdx);
+
+        // Post blinds
+        const sbIdx = (dealer + 1) % updatedPlayers.length;
+        const bbIdx = (dealer + 2) % updatedPlayers.length;
+
+        const sbAmount = Math.min(sb, updatedPlayers[sbIdx].balance);
+        updatedPlayers[sbIdx].balance -= sbAmount;
+        updatedPlayers[sbIdx].currentBet = sbAmount;
+        updatedPlayers[sbIdx].totalContribution = sbAmount;
+
+        const bbAmount = Math.min(bb, updatedPlayers[bbIdx].balance);
+        updatedPlayers[bbIdx].balance -= bbAmount;
+        updatedPlayers[bbIdx].currentBet = bbAmount;
+        updatedPlayers[bbIdx].totalContribution = bbAmount;
+
+        const initialPot = sbAmount + bbAmount;
+
+        // UTG is dealer + 3
+        const utgIdx = (dealer + 3) % updatedPlayers.length;
+
+        setPlayers(updatedPlayers);
+        setCommunityCards([]);
+        setPot(initialPot);
+        setPhase('pre-flop');
+        setCurrentBetState(bb);
+        setCurrentTurn(utgIdx);
+        setWinners([]);
+        setWinningHand(null);
+        setSidePots([]);
+        setDealerPosition(dealer);
+
+        console.log(`[POKER_CLIENT] Hand started. SB: ${updatedPlayers[sbIdx].name}, BB: ${updatedPlayers[bbIdx].name}, UTG: ${updatedPlayers[utgIdx].name}`);
+
+        // If UTG is a bot, schedule bot actions
+        if (!updatedPlayers[utgIdx].isHuman) {
+            setTimeout(() => {
+                processBotTurns(updatedPlayers, [], initialPot, bb, utgIdx, 'pre-flop', dealer);
+            }, 800);
+        }
+    }, [sb, bb]);
+
+    // ─── Process Bot Turns Sequentially ─────────────────────────
+    const processBotTurns = useCallback((
+        currentPlayers: Player[],
+        currentCommunity: Card[],
+        currentPot: number,
+        bet: number,
+        turnIdx: number,
+        currentPhase: GamePhase,
+        dealer: number
+    ) => {
+        let pArr = [...currentPlayers.map(p => ({ ...p }))];
+        let potAcc = currentPot;
+        let betAcc = bet;
+        let idx = turnIdx;
+        let phaseAcc = currentPhase;
+        let community = [...currentCommunity];
+        let botActionsCount = 0;
+
+        const processNext = () => {
+            // Safety limit
+            if (botActionsCount > 30) {
+                console.warn('[POKER_CLIENT] Bot loop limit reached');
+                setPlayers(pArr);
+                setPot(potAcc);
+                setCurrentBetState(betAcc);
+                setCurrentTurn(idx);
+                setPhase(phaseAcc);
+                setCommunityCards(community);
+                return;
+            }
+
+            // Check if hand is over (only 1 player left)
+            const activePlayers = pArr.filter(p => !p.isFolded && p.isActive);
+            if (activePlayers.length <= 1) {
+                // Last man standing wins
+                const winner = activePlayers[0];
+                if (winner) {
+                    winner.balance += potAcc;
+                    setPlayers([...pArr]);
+                    setPot(0);
+                    setWinners([winner]);
+                    setPhase('showdown');
+                    setCommunityCards(community);
+                    setCurrentTurn(-1);
+                }
+                return;
+            }
+
+            const player = pArr[idx];
+
+            // Skip folded/inactive/all-in players
+            if (!player || player.isFolded || !player.isActive || player.isAllIn) {
+                idx = (idx + 1) % pArr.length;
+                botActionsCount++;
+                processNext();
+                return;
+            }
+
+            // If it's a human player, stop and let them act
+            if (player.isHuman) {
+                setPlayers([...pArr]);
+                setPot(potAcc);
+                setCurrentBetState(betAcc);
+                setCurrentTurn(idx);
+                setPhase(phaseAcc);
+                setCommunityCards(community);
+                return;
+            }
+
+            // Bot decision
+            const decision = botDecision(player, community, betAcc, potAcc, bb);
+            console.log(`[POKER_CLIENT] Bot ${player.name}: ${decision.action}${decision.amount ? ` $${decision.amount}` : ''}`);
+
+            if (decision.action === 'fold') {
+                player.isFolded = true;
+                player.hasActed = true;
+            } else if (decision.action === 'call') {
+                const toCall = Math.min(betAcc - player.currentBet, player.balance);
+                player.balance -= toCall;
+                player.currentBet += toCall;
+                player.totalContribution += toCall;
+                potAcc += toCall;
+                player.hasActed = true;
+                if (player.balance === 0) player.isAllIn = true;
+            } else if (decision.action === 'raise') {
+                const raiseAmt = decision.amount;
+                const newBet = betAcc + raiseAmt;
+                const toCall = Math.min(newBet - player.currentBet, player.balance);
+                player.balance -= toCall;
+                player.currentBet += toCall;
+                player.totalContribution += toCall;
+                potAcc += toCall;
+                betAcc = newBet;
+                player.hasActed = true;
+                if (player.balance === 0) player.isAllIn = true;
+                // Reset hasActed for others since bet changed
+                pArr.forEach(p => {
+                    if (p.id !== player.id && !p.isFolded && !p.isAllIn) p.hasActed = false;
+                });
+            } else {
+                // check
+                player.hasActed = true;
+            }
+
+            // Update UI periodically
+            setPlayers([...pArr]);
+            setPot(potAcc);
+            setCurrentBetState(betAcc);
+
+            // Check if betting round is over
+            const stillActive = pArr.filter(p => !p.isFolded && p.isActive && !p.isAllIn);
+            const allActed = stillActive.every(p => p.hasActed && p.currentBet === betAcc);
+
+            if (allActed || stillActive.length <= 1) {
+                // Advance phase
+                const result = advancePhase(pArr, community, potAcc, phaseAcc, dealer);
+                pArr = result.players;
+                community = result.community;
+                potAcc = result.pot;
+                phaseAcc = result.phase;
+                betAcc = 0;
+                idx = result.nextTurn;
+
+                setPlayers([...pArr]);
+                setCommunityCards([...community]);
+                setPot(potAcc);
+                setPhase(phaseAcc);
+                setCurrentBetState(0);
+                setCurrentTurn(idx);
+
+                if (phaseAcc === 'showdown' || phaseAcc === 'waiting') {
+                    return; // Hand is done
+                }
+
+                // Continue processing if next player is a bot
+                if (idx >= 0 && !pArr[idx].isHuman && !pArr[idx].isFolded) {
+                    botActionsCount++;
+                    setTimeout(processNext, 600);
+                    return;
+                }
+                return;
+            }
+
+            // Move to next player
+            idx = (idx + 1) % pArr.length;
+            botActionsCount++;
+            setTimeout(processNext, 600);
+        };
+
+        processNext();
+    }, [bb]);
+
+    // ─── Advance Phase (flop / turn / river / showdown) ─────────
+    const advancePhase = useCallback((
+        currentPlayers: Player[],
+        currentCommunity: Card[],
+        currentPot: number,
+        currentPhase: GamePhase,
+        dealer: number
+    ): { players: Player[], community: Card[], pot: number, phase: GamePhase, nextTurn: number } => {
+
+        const pArr = currentPlayers.map(p => ({
+            ...p,
+            currentBet: 0,
+            hasActed: false,
+        }));
+
+        let community = [...currentCommunity];
+        let newPhase: GamePhase;
+
+        if (currentPhase === 'pre-flop') {
+            community = [deckRef.current.shift()!, deckRef.current.shift()!, deckRef.current.shift()!];
+            newPhase = 'flop';
+        } else if (currentPhase === 'flop') {
+            community.push(deckRef.current.shift()!);
+            newPhase = 'turn';
+        } else if (currentPhase === 'turn') {
+            community.push(deckRef.current.shift()!);
+            newPhase = 'river';
+        } else {
+            // Showdown
+            newPhase = 'showdown';
+            return handleShowdown(pArr, community, currentPot, dealer);
         }
 
-        console.log(`[POKER_GAME] Initializing subscription for: ${tableId} (User: ${currentUserId})`);
+        // Find first active player after dealer
+        let nextTurn = (dealer + 1) % pArr.length;
+        let safety = 0;
+        while ((pArr[nextTurn].isFolded || pArr[nextTurn].isAllIn || !pArr[nextTurn].isActive) && safety < pArr.length) {
+            nextTurn = (nextTurn + 1) % pArr.length;
+            safety++;
+        }
 
-        const unsubscribe = onSnapshot(doc(db, 'tables', tableId), (snapshot) => {
-            if (snapshot.exists()) {
-                const data = snapshot.data();
-                console.log(`[POKER_GAME] Snapshot received for ${tableId}. Phase: ${data.phase}, Players: ${data.players?.length || 0}`);
+        return { players: pArr, community, pot: currentPot, phase: newPhase, nextTurn };
+    }, []);
 
-                setGameState(data);
+    // ─── Handle Showdown ────────────────────────────────────────
+    const handleShowdown = useCallback((
+        currentPlayers: Player[],
+        community: Card[],
+        currentPot: number,
+        dealer: number
+    ): { players: Player[], community: Card[], pot: number, phase: GamePhase, nextTurn: number } => {
 
-                // Map Players from consolidated "players" array
-                if (data.players && data.players.length > 0) {
-                    const mappedPlayers: Player[] = data.players.map((p: any, i: number) => ({
-                        id: p.id,
-                        name: p.name || 'Player',
-                        avatar: p.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
-                        balance: p.stack || 0,
-                        hand: (p.cards || []).map(parseCard),
-                        isFolded: p.hasFolded || false,
-                        currentBet: p.currentBet || 0,
-                        isHuman: !p.isBot,
-                        isActive: true,
-                        isDealer: i === data.dealerPosition,
-                        totalContribution: p.totalHandBet || 0
-                    }));
-                    setPlayers(mappedPlayers);
-                } else {
-                    console.warn(`[POKER_GAME] Table has no players!`);
-                    setPlayers([]);
-                }
+        const activePlayers = currentPlayers.filter(p => !p.isFolded && p.isActive);
 
-                setCommunityCards((data.communityCards || []).map(parseCard));
-                setPot(data.pots ? data.pots.reduce((sum: number, p: any) => sum + p.amount, 0) : 0);
-                setPhase(data.phase || 'waiting');
-                setLastRaiseAmount(data.currentBet || 0);
-                setCurrentTurn(data.activePlayerIndex !== undefined ? data.activePlayerIndex : -1);
+        if (activePlayers.length === 0) {
+            return { players: currentPlayers, community, pot: currentPot, phase: 'showdown' as GamePhase, nextTurn: -1 };
+        }
 
-                // More aggressive Auto-start
-                const needsInitialStart = !data.players || data.players.length === 0;
-                const isWaiting = data.phase === 'waiting';
+        // Evaluate hands
+        let bestHand: HandRank | null = null;
+        let winnerList: Player[] = [];
 
-                if ((needsInitialStart || isWaiting) && currentUserId && !data.isStarting && !isInitializing) {
-                    console.log('[POKER_GAME] Triggering auto-start (Start action)...');
-                    setIsInitializing(true);
-                    handlePlayerAction('start').finally(() => {
-                        // Keep initialized for a bit to avoid bounce
-                        setTimeout(() => setIsInitializing(false), 3000);
-                    });
-                }
-            } else {
-                console.warn(`[POKER_GAME] Table document ${tableId} not found. Triggering initialization...`);
-                if (currentUserId && !isInitializing) {
-                    setIsInitializing(true);
-                    handlePlayerAction('start').finally(() => {
-                        setTimeout(() => setIsInitializing(false), 3000);
-                    });
+        activePlayers.forEach(p => {
+            if (p.hand.length >= 2 && community.length >= 3) {
+                const handRank = evaluateHand(p.hand, community);
+                if (!bestHand || compareHands(handRank, bestHand) > 0) {
+                    bestHand = handRank;
+                    winnerList = [p];
+                } else if (bestHand && compareHands(handRank, bestHand) === 0) {
+                    winnerList.push(p);
                 }
             }
         });
 
-        return () => unsubscribe();
-    }, [tableId, currentUserId, isInitializing]);
-
-    // Handle Player Action via Cloud Function
-    const handlePlayerAction = async (action: string, amount: number = 0) => {
-        if (!currentUserId) {
-            console.error('[POKER_GAME] Cannot call action without currentUserId');
-            return;
-        }
-
-        const functions = getFunctions();
-        const pokerGame = httpsCallable(functions, 'pokerGame');
-
-        try {
-            console.log(`[ACTION] Calling Cloud Function: ${action} (${amount})`);
-            const result = await pokerGame({
-                action,
-                amount,
-                playerId: currentUserId,
-                tableId
+        // Award pot
+        if (winnerList.length > 0) {
+            const share = Math.floor(currentPot / winnerList.length);
+            winnerList.forEach(w => {
+                const idx = currentPlayers.findIndex(p => p.id === w.id);
+                if (idx >= 0) currentPlayers[idx].balance += share;
             });
-
-            if (result.data && (result.data as any).success) {
-                console.log('[ACTION] Success:', (result.data as any).tableState);
-            } else {
-                const error = (result.data as any).error;
-                console.error('[ACTION] Server Error:', error);
-                // Notification handled by UI if needed
-            }
-        } catch (err) {
-            console.error('[ACTION] Call failed:', err);
         }
-    };
 
+        setWinners(winnerList);
+        setWinningHand(bestHand);
+
+        console.log(`[POKER_CLIENT] Showdown! Winners: ${winnerList.map(w => w.name).join(', ')} | Hand: ${bestHand?.name}`);
+
+        return { players: currentPlayers, community, pot: 0, phase: 'showdown' as GamePhase, nextTurn: -1 };
+    }, []);
+
+    // ─── Human Player Action ────────────────────────────────────
+    const handlePlayerAction = useCallback(async (action: string, amount: number = 0) => {
+        if (!currentUserId) return;
+
+        console.log(`[POKER_CLIENT] Human action: ${action} (${amount})`);
+
+        setPlayers(prevPlayers => {
+            const pArr = prevPlayers.map(p => ({ ...p }));
+            const playerIdx = pArr.findIndex(p => p.id === currentUserId);
+            if (playerIdx < 0) return prevPlayers;
+
+            const player = pArr[playerIdx];
+
+            if (action === 'fold') {
+                player.isFolded = true;
+                player.hasActed = true;
+            } else if (action === 'call') {
+                const toCall = Math.min(currentBetState - player.currentBet, player.balance);
+                player.balance -= toCall;
+                player.currentBet += toCall;
+                player.totalContribution += toCall;
+                setPot(prev => prev + toCall);
+                player.hasActed = true;
+                if (player.balance === 0) player.isAllIn = true;
+            } else if (action === 'raise') {
+                const raiseAmt = amount || bb;
+                const newBet = currentBetState + raiseAmt;
+                const toCall = Math.min(newBet - player.currentBet, player.balance);
+                player.balance -= toCall;
+                player.currentBet += toCall;
+                player.totalContribution += toCall;
+                setPot(prev => prev + toCall);
+                setCurrentBetState(newBet);
+                player.hasActed = true;
+                if (player.balance === 0) player.isAllIn = true;
+                // Reset hasActed for others
+                pArr.forEach(p => {
+                    if (p.id !== player.id && !p.isFolded && !p.isAllIn) p.hasActed = false;
+                });
+            } else if (action === 'check') {
+                player.hasActed = true;
+            }
+
+            // After human action, continue with bots
+            setTimeout(() => {
+                // Get latest state
+                setPlayers(latestPlayers => {
+                    setPot(latestPot => {
+                        setCurrentBetState(latestBet => {
+                            setPhase(latestPhase => {
+                                setCommunityCards(latestCommunity => {
+                                    const nextIdx = (playerIdx + 1) % latestPlayers.length;
+
+                                    // Check if round is over
+                                    const stillActive = latestPlayers.filter(p => !p.isFolded && p.isActive && !p.isAllIn);
+                                    const allActed = stillActive.every(p => p.hasActed && p.currentBet === latestBet);
+
+                                    if (allActed || stillActive.length <= 1) {
+                                        const result = advancePhase(latestPlayers, latestCommunity, latestPot, latestPhase, dealerPosition);
+                                        setPlayers([...result.players]);
+                                        setCommunityCards([...result.community]);
+                                        setPot(result.pot);
+                                        setPhase(result.phase);
+                                        setCurrentBetState(0);
+                                        setCurrentTurn(result.nextTurn);
+
+                                        if (result.phase !== 'showdown' && result.phase !== 'waiting' && result.nextTurn >= 0) {
+                                            const nextP = result.players[result.nextTurn];
+                                            if (nextP && !nextP.isHuman && !nextP.isFolded) {
+                                                setTimeout(() => {
+                                                    processBotTurns(result.players, result.community, result.pot, 0, result.nextTurn, result.phase, dealerPosition);
+                                                }, 600);
+                                            }
+                                        }
+                                    } else {
+                                        // Continue to next player
+                                        processBotTurns(latestPlayers, latestCommunity, latestPot, latestBet, nextIdx, latestPhase, dealerPosition);
+                                    }
+
+                                    return latestCommunity;
+                                });
+                                return latestPhase;
+                            });
+                            return latestBet;
+                        });
+                        return latestPot;
+                    });
+                    return latestPlayers;
+                });
+            }, 300);
+
+            return pArr;
+        });
+    }, [currentUserId, currentBetState, bb, dealerPosition, advancePhase, processBotTurns]);
+
+    // ─── Start New Hand ─────────────────────────────────────────
+    const startNewHand = useCallback(() => {
+        setPlayers(prevPlayers => {
+            const newDealer = (dealerPosition + 1) % prevPlayers.length;
+            setDealerPosition(newDealer);
+            setTimeout(() => {
+                startHandWithPlayers(prevPlayers, newDealer);
+            }, 100);
+            return prevPlayers;
+        });
+    }, [dealerPosition, startHandWithPlayers]);
+
+    // ─── Return API ─────────────────────────────────────────────
     return {
         players,
         communityCards,
@@ -208,18 +606,18 @@ export const usePokerGame = (
         sidePots,
         phase,
         currentTurn,
-        dealerPosition: 0,
+        dealerPosition,
         turnTimeLeft,
         timeToNextLevel,
         blindLevel,
         handlePlayerAction,
-        currentPlayer: players[currentTurn],
+        currentPlayer: currentTurn >= 0 ? players[currentTurn] : undefined,
         maxPlayers: config.maxPlayers,
-        startNewHand: () => handlePlayerAction('next_hand'),
-        currentBet: lastRaiseAmount,
+        startNewHand,
+        currentBet: currentBetState,
         winners,
         winningHand,
-        isTournamentMode: false, // Always cash now
+        isTournamentMode: config.mode !== 'cash',
         totalTurnTime
     };
 };

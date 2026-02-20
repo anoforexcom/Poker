@@ -158,6 +158,7 @@ const GameTable: React.FC = () => {
   }, [tournament?.scheduledStartTime]);
 
   const { addActiveGame } = useGame();
+  const activeUser = players.find(p => p.id === user.id);
 
   // Multi-game coordination: Add this table to active games on mount
   useEffect(() => {
@@ -188,30 +189,23 @@ const GameTable: React.FC = () => {
     });
   };
 
-  const activeUser = players.find(p => p.id === user.id);
-
   const handleLeaveTable = async () => {
     if (activeUser) {
-      if (tournament?.type === 'cash') {
+      if ((tournament as any)?.type === 'cash') {
         updateBalance(activeUser.balance);
       } else if (isTournamentMode && winners.length > 0) {
         if (winners[0].isHuman && winners.length === 1) {
-          updateBalance(tournament.prizePool);
-          await showAlert(`Congratulations! You won the tournament and earned $${tournament.prizePool.toLocaleString()}`, 'success', { title: 'Tournament Victory' });
+          updateBalance((tournament as any)?.prizePool || 0);
+          await showAlert(`Congratulations! You won the tournament and earned $${((tournament as any)?.prizePool || 0).toLocaleString()}`, 'success', { title: 'Tournament Victory' });
         }
       }
     }
     navigate('/dashboard');
   };
 
-  // Restored Game Logic
+  // Game state
   const [betValue, setBetValue] = useState(20);
 
-  // Start game loop
-  // Game Loop is now driven by Backend Realtime updates. 
-  // startNewHand is only called explicitly (e.g. via "Next Hand" button after showdown).
-
-  // Legacy chat state removed in favor of ChatContext
   const [showSettings, setShowSettings] = useState(false);
   const [showLobbyModal, setShowLobbyModal] = useState(false);
   const [activeLobbyTab, setActiveLobbyTab] = useState<'info' | 'players' | 'payouts'>('info');
