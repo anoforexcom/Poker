@@ -162,6 +162,7 @@ export const usePokerGame = (
         const unsubscribeGame = onSnapshot(doc(db, 'game_states', tableId), (snapshot) => {
             if (snapshot.exists()) {
                 const newState = snapshot.data();
+                console.log(`[POKER_GAME] Game state updated for ${tableId}:`, newState.phase);
                 setGameState(newState);
                 setCommunityCards((newState.community_cards || []).map(parseCard));
                 setPot(newState.current_pot || 0);
@@ -172,6 +173,8 @@ export const usePokerGame = (
                     setWinners([]);
                     setWinningHand(null);
                 }
+            } else {
+                console.warn(`[POKER_GAME] No game state found for ${tableId}`);
             }
         });
 

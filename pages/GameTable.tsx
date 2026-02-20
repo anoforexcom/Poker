@@ -42,7 +42,7 @@ const GameTable: React.FC = () => {
   const [searchParams] = useSearchParams();
   const isObserver = searchParams.get('observe') === 'true';
   const { user, updateBalance, activeGames } = useGame();
-  const { tournaments } = useLiveWorld();
+  const { tables } = useLiveWorld();
   const { showAlert } = useNotification();
 
   // Chat Connection
@@ -66,7 +66,7 @@ const GameTable: React.FC = () => {
   const chatHistory = getMessages(id || 'default');
 
   // Find tournament config
-  const tournament = tournaments.find(t => t.id === id);
+  const tournament = tables.find(t => t.id === id);
 
   // Rigorous rule derivation for each game type
   const gameConfig: GameConfig | undefined = tournament ? {
