@@ -7,6 +7,8 @@ admin.initializeApp();
 
 exports.pokerGame = onCall(async (request) => {
     const { action, amount, playerId, tableId = "main_table" } = request.data;
+    console.log(`[POKER_FUNCTIONS] Action: ${action}, Player: ${playerId}, Table: ${tableId}`);
+
     const db = admin.firestore();
     const tableRef = db.collection("tables").doc(tableId);
 
@@ -15,6 +17,7 @@ exports.pokerGame = onCall(async (request) => {
     let table = new Table(tableDoc.exists ? tableDoc.data() : null);
 
     if (action === "start") {
+        console.log(`[POKER_FUNCTIONS] Starting new table: ${tableId}`);
         table = new Table();
 
         // Fetch human player info if available
@@ -27,9 +30,10 @@ exports.pokerGame = onCall(async (request) => {
                 const profileData = profileDoc.data();
                 humanName = profileData.name || humanName;
                 humanAvatar = profileData.avatar_url || humanAvatar;
+                console.log(`[POKER_FUNCTIONS] Fetched human profile: ${humanName}`);
             }
         } catch (e) {
-            console.error("Error fetching profile for start:", e);
+            console.warn("[POKER_FUNCTIONS] Profile fetch error:", e.message);
         }
 
         table.addPlayer({
@@ -54,8 +58,12 @@ exports.pokerGame = onCall(async (request) => {
         }
 
         table.startHand();
-        await tableRef.set(table.toState());
-        return { success: true, tableState: table.toState() };
+        console.log(`[POKER_FUNCTIONS] Hand started. Phase: ${table.phase}`);
+
+        const state = table.toState();
+        await tableRef.set(state);
+        console.log(`[POKER_FUNCTIONS] State persisted to Firestore`);
+        return { success: true, tableState: state };
     }
 
     if (!tableDoc.exists) return { error: "Table not found" };

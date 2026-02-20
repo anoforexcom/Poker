@@ -99,19 +99,26 @@ export const usePokerGame = (
     const [timeToNextLevel, setTimeToNextLevel] = useState(0);
 
 
+    const [isInitializing, setIsInitializing] = useState(false);
+
     // Unified Subscription and Auto-Start
     useEffect(() => {
-        if (!tableId) return;
+        if (!tableId) {
+            console.error('[POKER_GAME] No tableId provided!');
+            return;
+        }
+
+        console.log(`[POKER_GAME] Initializing subscription for: ${tableId} (User: ${currentUserId})`);
 
         const unsubscribe = onSnapshot(doc(db, 'tables', tableId), (snapshot) => {
             if (snapshot.exists()) {
                 const data = snapshot.data();
-                console.log(`[POKER_GAME] Table state updated:`, data.phase);
+                console.log(`[POKER_GAME] Snapshot received for ${tableId}. Phase: ${data.phase}, Players: ${data.players?.length || 0}`);
 
                 setGameState(data);
 
                 // Map Players from consolidated "players" array
-                if (data.players) {
+                if (data.players && data.players.length > 0) {
                     const mappedPlayers: Player[] = data.players.map((p: any, i: number) => ({
                         id: p.id,
                         name: p.name || 'Player',
@@ -126,6 +133,9 @@ export const usePokerGame = (
                         totalContribution: p.totalHandBet || 0
                     }));
                     setPlayers(mappedPlayers);
+                } else {
+                    console.warn(`[POKER_GAME] Table has no players!`);
+                    setPlayers([]);
                 }
 
                 setCommunityCards((data.communityCards || []).map(parseCard));
@@ -133,23 +143,38 @@ export const usePokerGame = (
                 setPhase(data.phase || 'waiting');
                 setLastRaiseAmount(data.currentBet || 0);
 
-                // Auto-start if waiting or empty
-                if (data.phase === 'waiting' && currentUserId && !data.isStarting) {
-                    console.log('[POKER_GAME] Table in waiting state, triggering auto-start...');
-                    handlePlayerAction('start');
+                // More aggressive Auto-start
+                const needsInitialStart = !data.players || data.players.length === 0;
+                const isWaiting = data.phase === 'waiting';
+
+                if ((needsInitialStart || isWaiting) && currentUserId && !data.isStarting && !isInitializing) {
+                    console.log('[POKER_GAME] Triggering auto-start (Start action)...');
+                    setIsInitializing(true);
+                    handlePlayerAction('start').finally(() => {
+                        // Keep initialized for a bit to avoid bounce
+                        setTimeout(() => setIsInitializing(false), 3000);
+                    });
                 }
             } else {
-                console.warn(`[POKER_GAME] Table document ${tableId} not found, initializing...`);
-                if (currentUserId) handlePlayerAction('start');
+                console.warn(`[POKER_GAME] Table document ${tableId} not found. Triggering initialization...`);
+                if (currentUserId && !isInitializing) {
+                    setIsInitializing(true);
+                    handlePlayerAction('start').finally(() => {
+                        setTimeout(() => setIsInitializing(false), 3000);
+                    });
+                }
             }
         });
 
         return () => unsubscribe();
-    }, [tableId, currentUserId]);
+    }, [tableId, currentUserId, isInitializing]);
 
     // Handle Player Action via Cloud Function
     const handlePlayerAction = async (action: string, amount: number = 0) => {
-        if (!currentUserId) return;
+        if (!currentUserId) {
+            console.error('[POKER_GAME] Cannot call action without currentUserId');
+            return;
+        }
 
         const functions = getFunctions();
         const pokerGame = httpsCallable(functions, 'pokerGame');
@@ -166,7 +191,9 @@ export const usePokerGame = (
             if (result.data && (result.data as any).success) {
                 console.log('[ACTION] Success:', (result.data as any).tableState);
             } else {
-                console.error('[ACTION] Error:', (result.data as any).error);
+                const error = (result.data as any).error;
+                console.error('[ACTION] Server Error:', error);
+                // Notification handled by UI if needed
             }
         } catch (err) {
             console.error('[ACTION] Call failed:', err);

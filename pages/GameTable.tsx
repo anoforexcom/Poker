@@ -577,6 +577,27 @@ const GameTable: React.FC = () => {
             )}
           </div>
 
+          {/* Debug/Start Button when empty */}
+          {players.length === 0 && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center z-30 bg-black/40 backdrop-blur-sm rounded-[200px]">
+              <div className="bg-slate-900/90 p-8 rounded-3xl border border-white/10 text-center shadow-2xl max-w-sm">
+                <div className="size-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4">
+                  <span className="material-symbols-outlined text-primary text-3xl animate-pulse">play_circle</span>
+                </div>
+                <h3 className="text-xl font-black text-white uppercase italic tracking-tighter mb-2">Table is Empty</h3>
+                <p className="text-slate-400 text-xs mb-6 leading-relaxed">
+                  The bots are ready to play. If the game doesn't start automatically, click below to force initialize the table.
+                </p>
+                <button
+                  onClick={() => handlePlayerAction('start')}
+                  className="w-full bg-primary hover:brightness-110 text-white font-black py-4 rounded-xl shadow-xl shadow-primary/20 transition-all uppercase tracking-widest text-sm"
+                >
+                  Start Table & Call Bots
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Players Seats */}
           {players.map((player, index) => {
             if (player.id === user.id) return null; // Hero rendered manually or skipped here
