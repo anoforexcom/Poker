@@ -76,12 +76,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const ensureProfileExists = async (userId: string, email: string, name?: string) => {
+        console.log(`[AUTH_CONTEXT] Ensuring profile exists for: ${userId}`);
         try {
             const docRef = doc(db, 'profiles', userId);
-            const docSnap = await getDoc(docRef);
+            let docSnap = await getDoc(docRef);
 
             if (!docSnap.exists()) {
-                console.log('[AUTH_CONTEXT] Creating new profile...');
+                console.log('[AUTH_CONTEXT] Profile does not exist. Creating new profile...');
                 const profileData = {
                     name: name || email.split('@')[0],
                     avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
@@ -92,11 +93,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     level: 1,
                     created_at: serverTimestamp()
                 };
-                await setDoc(docRef, profileData);
-                return { id: userId, email, ...profileData, isAdmin: false, avatar: profileData.avatar_url };
+
+                try {
+                    await setDoc(docRef, profileData);
+                    console.log('[AUTH_CONTEXT] Profile created successfully');
+                    return { id: userId, email, ...profileData, isAdmin: false, avatar: profileData.avatar_url };
+                } catch (setErr: any) {
+                    console.error('[AUTH_CONTEXT] Error writing to Firestore:', setErr);
+                    if (setErr.code === 'permission-denied') {
+                        throw new Error('Permissão negada no Firestore. Verifique as rules.');
+                    }
+                    throw setErr;
+                }
             }
 
             const data = docSnap.data();
+            console.log('[AUTH_CONTEXT] Profile already exists:', data.name);
             return {
                 id: userId,
                 name: data.name,
@@ -108,9 +120,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 level: data.level || 1,
                 isAdmin: data.is_admin || false
             };
-        } catch (error) {
-            console.error('[AUTH_CONTEXT] Profile creation failed:', error);
-            return null;
+        } catch (error: any) {
+            console.error('[AUTH_CONTEXT] Profile check/creation failed:', error);
+            throw error;
         }
     };
 
@@ -166,19 +178,41 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const register = async (name: string, email: string, password: string) => {
         setIsProcessing(true);
+        console.log(`[AUTH_CONTEXT] Starting registration for: ${email}`);
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const firebaseUser = userCredential.user;
+            console.log('[AUTH_CONTEXT] Firebase Auth user created:', firebaseUser.uid);
 
-            await updateFirebaseProfile(firebaseUser, { displayName: name });
+            try {
+                await updateFirebaseProfile(firebaseUser, { displayName: name });
+            } catch (profileErr) {
+                console.warn('[AUTH_CONTEXT] Could not update Firebase Auth profile display name:', profileErr);
+            }
 
             const profile = await ensureProfileExists(firebaseUser.uid, email, name);
             if (profile) {
                 setUser(profile as User);
             }
-        } catch (err) {
-            console.error('[AUTH_CONTEXT] Registration error:', err);
-            throw err;
+        } catch (err: any) {
+            console.error('[AUTH_CONTEXT] Detailed Registration error:', err);
+
+            // Map common Firebase errors to user-friendly messages in Portuguese
+            let userMessage = 'Falha ao registar conta.';
+
+            if (err.code === 'auth/email-already-in-use') {
+                userMessage = 'Este email já está em uso.';
+            } else if (err.code === 'auth/invalid-email') {
+                userMessage = 'Email inválido.';
+            } else if (err.code === 'auth/weak-password') {
+                userMessage = 'A password é demasiado fraca.';
+            } else if (err.code === 'auth/operation-not-allowed') {
+                userMessage = 'O registo com email/password não está ativo no Firebase.';
+            } else if (err.message && err.message.includes('permission-denied')) {
+                userMessage = 'Erro de permissão no banco de dados (Firestore Rules).';
+            }
+
+            throw new Error(userMessage);
         } finally {
             setIsProcessing(false);
         }

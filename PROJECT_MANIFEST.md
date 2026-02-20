@@ -8,8 +8,8 @@ Lista completa dos diretórios e arquivos principais para navegação rápida.
 - [App Principal](file:///C:/Users/joaop/.gemini/antigravity/scratch/PokerProject/App.tsx) - rotas e estrutura.
 - [Hook de Lógica de Jogo](file:///C:/Users/joaop/.gemini/antigravity/scratch/PokerProject/hooks/usePokerGame.ts) - motor de jogo no cliente.
 
-## ⚙️ Backend (Supabase Edge Functions)
-- [Motor de Jogo (Simulator)](file:///C:/Users/joaop/.gemini/antigravity/scratch/PokerProject/supabase/functions/poker-simulator/index.ts) - cérebro reativo e bots.
+## ⚙️ Backend (Firebase Functions)
+- [Motor de Jogo (Simulator)](file:///c:/Users/miguel/.gemini/antigravity/scratch/Poker/functions/engine/table.js) - cérebro reativo e bots.
 
 ## 🗄️ Database (SQL Scripts)
 - [Esquema de Hardening](file:///C:/Users/joaop/.gemini/antigravity/scratch/PokerProject/v22_hardening_schema.sql) - tabelas e triggers base.
