@@ -127,6 +127,9 @@ export const usePokerGame = (
     const [blindLevel, setBlindLevel] = useState(1);
     const [timeToNextLevel, setTimeToNextLevel] = useState(0);
     const [dealerPosition, setDealerPosition] = useState(0);
+    const [isEliminated, setIsEliminated] = useState(false);
+    const [isVictory, setIsVictory] = useState(false);
+    const [victoryChips, setVictoryChips] = useState(0);
 
     const deckRef = useRef<Card[]>([]);
     const isInitialized = useRef(false);
@@ -643,6 +646,27 @@ export const usePokerGame = (
         });
     }, [dealerPosition, startHandWithPlayers]);
 
+    // ─── Check Elimination & Victory after phase changes ────────
+    useEffect(() => {
+        if (phase !== 'showdown' || !currentUserId || players.length === 0) return;
+
+        const human = players.find(p => p.id === currentUserId);
+        const playersWithChips = players.filter(p => p.balance > 0);
+
+        // Human eliminated
+        if (human && human.balance <= 0) {
+            console.log('[POKER_CLIENT] Player eliminated!');
+            setIsEliminated(true);
+        }
+
+        // Human is last one standing (victory)
+        if (human && human.balance > 0 && playersWithChips.length === 1 && playersWithChips[0].id === currentUserId) {
+            console.log('[POKER_CLIENT] VICTORY! Player is the last one standing!');
+            setIsVictory(true);
+            setVictoryChips(human.balance);
+        }
+    }, [phase, players, currentUserId]);
+
     // ─── Return API ─────────────────────────────────────────────
     return {
         players,
@@ -663,6 +687,9 @@ export const usePokerGame = (
         winners,
         winningHand,
         isTournamentMode: config.mode !== 'cash',
-        totalTurnTime
+        totalTurnTime,
+        isEliminated,
+        isVictory,
+        victoryChips
     };
 };

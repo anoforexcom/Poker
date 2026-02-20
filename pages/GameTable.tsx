@@ -129,8 +129,20 @@ const GameTable: React.FC = () => {
     timeToNextLevel,
     isTournamentMode,
     turnTimeLeft,
-    totalTurnTime
+    totalTurnTime,
+    isEliminated,
+    isVictory,
+    victoryChips
   } = usePokerGame(gameConfig?.startingStack || 0, updateBalance, gameConfig, id, user.id);
+
+  // Elimination: redirect to dashboard after 3 seconds
+  useEffect(() => {
+    if (!isEliminated) return;
+    const timer = setTimeout(() => {
+      navigate('/dashboard');
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [isEliminated, navigate]);
 
   const [startsIn, setStartsIn] = useState<string>('');
 
@@ -248,6 +260,80 @@ const GameTable: React.FC = () => {
   return (
     <div className="flex flex-col h-screen bg-[#0a0f1a] overflow-hidden select-none">
       <OrientationPrompt />
+
+      {/* Elimination Overlay */}
+      {isEliminated && (
+        <div className="absolute inset-0 z-[200] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center animate-fade-in">
+          <div className="flex flex-col items-center gap-6 text-center px-8">
+            <div className="size-24 rounded-full bg-red-500/20 border-2 border-red-500/50 flex items-center justify-center animate-pulse">
+              <span className="material-symbols-outlined text-5xl text-red-500">skull</span>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-black text-white">Eliminated!</h2>
+            <p className="text-slate-400 text-sm max-w-sm">You've run out of chips. Better luck next time!</p>
+            <div className="flex items-center gap-2 text-slate-500 text-xs">
+              <div className="size-2 bg-slate-500 rounded-full animate-pulse"></div>
+              Redirecting to dashboard...
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Victory Celebration Overlay */}
+      {isVictory && (
+        <div className="absolute inset-0 z-[200] bg-black/85 backdrop-blur-xl flex flex-col items-center justify-center animate-fade-in overflow-hidden">
+          {/* Confetti particles */}
+          {Array.from({ length: 40 }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute rounded-sm animate-bounce"
+              style={{
+                width: `${6 + Math.random() * 10}px`,
+                height: `${6 + Math.random() * 10}px`,
+                backgroundColor: ['#FFD700', '#FF6B35', '#00D4FF', '#FF3366', '#7B61FF', '#00FF88'][i % 6],
+                left: `${Math.random() * 100}%`,
+                top: `${-10 + Math.random() * 110}%`,
+                animationDelay: `${Math.random() * 2}s`,
+                animationDuration: `${1 + Math.random() * 3}s`,
+                opacity: 0.8,
+                transform: `rotate(${Math.random() * 360}deg)`,
+              }}
+            />
+          ))}
+
+          <div className="flex flex-col items-center gap-6 text-center px-8 relative z-10">
+            {/* Trophy */}
+            <div className="relative">
+              <div className="size-28 md:size-36 rounded-full bg-gradient-to-b from-amber-400/30 to-amber-600/10 border-2 border-amber-400/60 flex items-center justify-center shadow-[0_0_80px_rgba(245,158,11,0.3)]">
+                <span className="material-symbols-outlined text-6xl md:text-7xl text-amber-400" style={{ fontVariationSettings: "'FILL' 1" }}>trophy</span>
+              </div>
+              <div className="absolute -top-2 -right-2 bg-amber-500 text-black text-[10px] font-black px-2 py-0.5 rounded-full border-2 border-amber-300 shadow-lg">
+                #1
+              </div>
+            </div>
+
+            <h2 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500">
+              VICTORY!
+            </h2>
+            <p className="text-slate-300 text-sm max-w-sm">
+              You've eliminated all opponents and conquered the table!
+            </p>
+
+            {/* Chips Won */}
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl px-8 py-4 flex flex-col items-center gap-1">
+              <span className="text-[10px] font-black text-amber-500/70 uppercase tracking-widest">Total Chips</span>
+              <span className="text-3xl font-black text-amber-400 font-mono">${victoryChips.toLocaleString()}</span>
+            </div>
+
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black px-10 py-4 rounded-2xl shadow-[0_10px_40px_rgba(245,158,11,0.3)] transition-all active:scale-95 flex items-center gap-3 text-lg"
+            >
+              <span className="material-symbols-outlined">home</span>
+              RETURN TO DASHBOARD
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Table Header Overlay */}
       <div className="absolute top-4 left-4 md:top-6 md:left-8 z-20 pointer-events-none">
