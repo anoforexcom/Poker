@@ -5,10 +5,10 @@ const AdminOverview: React.FC = () => {
     const { stats } = useSimulation();
 
     const kpis = [
-        { label: 'Platform Profit (House)', value: `$${stats.houseProfit.toLocaleString()}`, icon: 'payments', color: 'text-emerald-400', trend: 'Humans Net' },
-        { label: 'Total Bots', value: stats.totalBots.toLocaleString(), icon: 'smart_toy', color: 'text-blue-400', trend: 'Active' },
+        { label: 'Economy Revenue', value: `$${stats.houseProfit.toLocaleString()}`, icon: 'payments', color: 'text-emerald-400', trend: 'Global' },
+        { label: 'Total Chips', value: (stats.houseProfit * 1000).toLocaleString(), icon: 'toll', color: 'text-gold', trend: 'Circulating' },
         { label: 'Active Tables', value: stats.runningTournaments, icon: 'casino', color: 'text-primary', trend: 'Live' },
-        { label: 'Tournaments Finished', value: stats.finishedTournaments, icon: 'check_circle', color: 'text-gold', trend: 'Total' },
+        { label: 'Total Players', value: stats.totalBots.toLocaleString(), icon: 'groups', color: 'text-blue-400', trend: 'Registered' },
     ];
 
     return (
@@ -49,10 +49,10 @@ const AdminOverview: React.FC = () => {
                     <h3 className="text-lg font-bold text-white mb-6">Recent System Events</h3>
                     <div className="space-y-4">
                         {[
-                            { event: 'New User Registration', user: 'joao_poker', time: '2m ago', icon: 'person_add', color: 'text-blue-400' },
-                            { event: 'Withdrawal Requested', user: 'expert_pro', time: '15m ago', icon: 'outbound', color: 'text-orange-400' },
-                            { event: 'Large Deposit Alert', user: 'whale_player', time: '1h ago', icon: 'warning', color: 'text-gold' },
-                            { event: 'Tournament Concluded', user: 'The Big $50', time: '2h ago', icon: 'emoji_events', color: 'text-emerald-400' },
+                            { event: 'New User Registration', user: 'poker_fan_99', time: '2m ago', icon: 'person_add', color: 'text-blue-400' },
+                            { event: 'Chip Pack Purchased', user: 'expert_pro', time: '15m ago', icon: 'shopping_cart', color: 'text-emerald-400' },
+                            { event: 'Legend Rank Reached', user: 'whale_player', time: '1h ago', icon: 'workspace_premium', color: 'text-gold' },
+                            { event: 'High Roller Game Ended', user: 'Elite Table #8', time: '2h ago', icon: 'casino', color: 'text-primary' },
                         ].map((item, i) => (
                             <div key={i} className="flex items-center gap-4 bg-background/30 p-3 rounded-xl border border-white/5">
                                 <span className={`material-symbols-outlined ${item.color}`}>{item.icon}</span>

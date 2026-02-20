@@ -14,7 +14,8 @@ const LegalPage = () => {
                 title: '1. Information We Collect',
                 content: `We collect information that you provide directly to us, including:
                 
-• Personal Information: Name, email address, date of birth, and payment information when you create an account.
+• Personal Information: Name, email address, date of birth.
+• Shop Transactions: History of virtual chip pack purchases (no credit card data is stored on our servers).
 • Gameplay Data: Hand histories, tournament results, and gameplay statistics.
 • Device Information: IP address, browser type, operating system, and device identifiers.
 • Communication Data: Messages sent through our platform and customer support interactions.`
@@ -24,7 +25,7 @@ const LegalPage = () => {
                 content: `We use the information we collect to:
 
 • Provide, maintain, and improve our services
-• Process transactions and send related information
+• Process shop transactions and send related information
 • Send technical notices, updates, and security alerts
 • Respond to your comments and questions
 • Monitor and analyze trends, usage, and activities
@@ -114,8 +115,8 @@ These terms constitute a legally binding agreement between you and Poker Pro Pla
 
 • Be at least 18 years of age (or the legal age of majority in your jurisdiction)
 • Have the legal capacity to enter into a binding contract
-• Not be located in a jurisdiction where online poker is prohibited
-• Not be on any self-exclusion list or banned from gambling activities
+• Not be located in a jurisdiction where online social gaming is restricted
+• Not be on any self-exclusion list or banned from gaming activity
 • Provide accurate and complete registration information`
             },
             {
@@ -135,24 +136,24 @@ Sharing accounts or using multiple accounts may result in permanent suspension.`
                 content: `You agree not to:
 
 • Use bots, artificial intelligence, or automated playing programs
-• Collude with other players or engage in chip dumping
+• Collude with other players or engage in unfair play
 • Use any form of external assistance or real-time advice
 • Exploit bugs or vulnerabilities in the software
 • Engage in abusive, harassing, or offensive behavior
 • Attempt to manipulate game outcomes
-• Launder money or engage in fraudulent activities
+• Engage in fraudulent activities
+• Trade virtual chips for real-world value outside the platform
 
-Violations will result in account suspension and forfeiture of funds.`
+Violations will result in account suspension and forfeiture of virtual chips.`
             },
             {
-                title: '5. Deposits and Withdrawals',
-                content: `Financial transactions are subject to:
+                title: '5. Virtual Chip Shop',
+                content: `All purchases are for virtual currency (chips) and are final.
 
-• Minimum and maximum limits as specified on the Platform
-• Verification requirements for withdrawals
-• Processing times varying by payment method
-• Potential fees for certain transaction types
-• Anti-money laundering compliance checks
+• Chips have no real-world monetary value and cannot be redeemed for cash
+• Minimum and maximum shop limits as specified on the Platform
+• Anti-fraud compliance checks
+• No refunds for virtual currency purchases
 
 We reserve the right to request additional documentation before processing withdrawals.`
             },
@@ -188,12 +189,12 @@ We reserve the right to request additional documentation before processing withd
                 content: `We are committed to responsible gaming:
 
 • Self-exclusion options are available
-• Deposit limits can be set on your account
+• Chip shop limits can be set on your account
 • Reality check reminders can be enabled
-• Links to problem gambling resources are provided
-• We comply with all responsible gaming regulations
+• Links to digital wellbeing resources are provided
+• We comply with social gaming fairness standards
 
-If you believe you have a gambling problem, please seek help immediately.`
+If you believe you have a gaming problem, please seek help immediately.`
             },
             {
                 title: '10. Termination',
@@ -204,7 +205,9 @@ If you believe you have a gambling problem, please seek help immediately.`
 • At our discretion with or without cause
 • Upon your request
 
-Upon termination, you may withdraw your remaining balance subject to verification.`
+• Upon your request
+
+Upon termination, any remaining virtual chips will be forfeited. No refunds will be issued for virtual currency.`
             },
             {
                 title: '11. Changes to Terms',

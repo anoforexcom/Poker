@@ -25,6 +25,7 @@ interface User {
     xp: number;
     level: number;
     isAdmin: boolean;
+    stats: any;
 }
 
 interface AuthContextType {
@@ -91,13 +92,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     is_admin: false,
                     xp: 0,
                     level: 1,
+                    stats: {
+                        hands_played: 0,
+                        hands_won: 0,
+                        biggest_pot: 0,
+                        best_hand: '',
+                        win_streak: 0,
+                        current_streak: 0,
+                        total_chips_won: 0,
+                        total_chips_lost: 0,
+                        login_streak: 0,
+                        last_daily_claim: null,
+                        last_login_date: null,
+                    },
                     created_at: serverTimestamp()
                 };
 
                 try {
                     await setDoc(docRef, profileData);
                     console.log('[AUTH_CONTEXT] Profile created successfully');
-                    return { id: userId, email, ...profileData, isAdmin: false, avatar: profileData.avatar_url };
+                    return { id: userId, email, ...profileData, isAdmin: false, avatar: profileData.avatar_url, stats: profileData.stats };
                 } catch (setErr: any) {
                     console.error('[AUTH_CONTEXT] Error writing to Firestore:', setErr);
                     if (setErr.code === 'permission-denied') {
@@ -118,7 +132,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 rank: data.rank,
                 xp: data.xp || 0,
                 level: data.level || 1,
-                isAdmin: data.is_admin || false
+                isAdmin: data.is_admin || false,
+                stats: data.stats || { // Ensure stats object exists, provide defaults if not
+                    hands_played: 0,
+                    hands_won: 0,
+                    biggest_pot: 0,
+                    best_hand: '',
+                    win_streak: 0,
+                    current_streak: 0,
+                    total_chips_won: 0,
+                    total_chips_lost: 0,
+                    login_streak: 0,
+                    last_daily_claim: null,
+                    last_login_date: null,
+                },
             };
         } catch (error: any) {
             console.error('[AUTH_CONTEXT] Profile check/creation failed:', error);
@@ -161,7 +188,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     rank: 'Diamond',
                     xp: 5000,
                     level: 10,
-                    isAdmin: true
+                    isAdmin: true,
+                    stats: null
                 };
                 setUser(testUser);
                 return;
@@ -192,7 +220,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     rank: 'Diamond',
                     xp: 5000,
                     level: 10,
-                    isAdmin: true
+                    isAdmin: true,
+                    stats: null
                 };
                 setUser(testUser);
                 return;
@@ -252,7 +281,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             rank: 'Platinum',
             xp: 2500,
             level: 5,
-            isAdmin: false
+            isAdmin: false,
+            stats: null
         };
 
         // For guests, we don't necessarily persist to Firestore in this version

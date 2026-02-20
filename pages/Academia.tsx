@@ -51,11 +51,11 @@ const Academia: React.FC = () => {
   };
 
   const handleUpgrade = async () => {
-    // Simulate Payment
-    const confirmed = await showAlert("Upgrade to PRO for $9.99/mo?", "info", {
+    // Simulate Unlock
+    const confirmed = await showAlert("Pass the pro certification?", "info", {
       showCancel: true,
-      confirmText: "Upgrade Now",
-      title: "Go Pro"
+      confirmText: "Unlock Now",
+      title: "Get Pro Access"
     });
 
     if (confirmed) {
@@ -113,6 +113,7 @@ const Academia: React.FC = () => {
 
     // Save Progress
     const passingScore = Math.ceil(activeModule.questions.length * 0.7);
+
     const passed = score >= passingScore;
 
     setUserProgress(prev => {
@@ -151,7 +152,7 @@ const Academia: React.FC = () => {
 
             {!isPro ? (
               <button onClick={handleUpgrade} className="px-6 py-2 bg-gradient-to-r from-amber-500 to-yellow-600 text-black font-black uppercase tracking-widest rounded-lg shadow-lg hover:scale-105 transition-transform flex items-center gap-2">
-                <span className="material-symbols-outlined">verified</span> Upgrade to PRO
+                <span className="material-symbols-outlined">verified</span> GET PRO ACCESS
               </button>
             ) : (
               <div className="px-4 py-2 bg-slate-800 border border-gold/50 text-gold font-black uppercase tracking-widest rounded-lg inline-flex items-center gap-2">

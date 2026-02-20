@@ -27,7 +27,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
         <div className="flex flex-col items-center justify-center h-screen bg-slate-900 text-white p-8 text-center">
           <span className="material-symbols-outlined text-6xl text-red-500 mb-4">error</span>
           <h2 className="text-2xl font-black mb-2">Oops! Something went wrong.</h2>
-          <p className="text-slate-400 mb-6">The game table encountered an unexpected error. Don't worry, your balance is safe.</p>
+          <p className="text-slate-400 mb-6">The game table encountered an unexpected error. Don't worry, your chips are safe.</p>
           <button onClick={() => window.location.reload()} className="px-8 py-3 bg-primary rounded-xl font-bold uppercase tracking-widest">Reload Table</button>
         </div>
       );
@@ -208,7 +208,7 @@ const GameTable: React.FC = () => {
       } else if (isTournamentMode && winners.length > 0) {
         if (winners[0].isHuman && winners.length === 1) {
           updateBalance((tournament as any)?.prizePool || 0);
-          await showAlert(`Congratulations! You won the tournament and earned $${((tournament as any)?.prizePool || 0).toLocaleString()}`, 'success', { title: 'Tournament Victory' });
+          await showAlert(`Congratulations! You won the tournament and earned ${((tournament as any)?.prizePool || 0).toLocaleString()} chips`, 'success', { title: 'Tournament Victory' });
         }
       }
     }
@@ -321,7 +321,10 @@ const GameTable: React.FC = () => {
             {/* Chips Won */}
             <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl px-8 py-4 flex flex-col items-center gap-1">
               <span className="text-[10px] font-black text-amber-500/70 uppercase tracking-widest">Total Chips</span>
-              <span className="text-3xl font-black text-amber-400 font-mono">${victoryChips.toLocaleString()}</span>
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-amber-400 text-2xl">toll</span>
+                <span className="text-3xl font-black text-amber-400 font-mono">{victoryChips.toLocaleString()}</span>
+              </div>
             </div>
 
             <button
@@ -344,7 +347,7 @@ const GameTable: React.FC = () => {
           <p className="text-white text-sm md:text-lg font-bold flex items-center gap-2">
             <span className="hidden xs:inline">NL Hold'em</span>
             <span className="text-primary text-xs md:text-sm">
-              {isTournamentMode ? `Lvl ${blindLevel}` : `$${gameConfig?.smallBlind}/$${gameConfig?.bigBlind}`}
+              {isTournamentMode ? `Lvl ${blindLevel}` : `${gameConfig?.smallBlind}/${gameConfig?.bigBlind}`}
             </span>
           </p>
         </div>
@@ -406,11 +409,11 @@ const GameTable: React.FC = () => {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
                         <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Buy-in</p>
-                        <p className="text-lg font-black text-white">${tournament?.buyIn.toLocaleString() || '0'}</p>
+                        <p className="text-lg font-black text-white">{tournament?.buyIn.toLocaleString() || '0'} 🪙</p>
                       </div>
                       <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
                         <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Prize Pool</p>
-                        <p className="text-lg font-black text-gold">${tournament?.prizePool.toLocaleString() || '0'}</p>
+                        <p className="text-lg font-black text-gold">{tournament?.prizePool.toLocaleString() || '0'} 🪙</p>
                       </div>
                       <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
                         <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Players</p>
@@ -426,11 +429,11 @@ const GameTable: React.FC = () => {
                       <div className="flex justify-between items-center pb-4 border-b border-slate-700/50">
                         <div className="space-y-1">
                           <p className="text-[10px] font-bold text-slate-500 uppercase">Current Level</p>
-                          <p className="text-white font-bold">{isTournamentMode ? `Level ${blindLevel}` : 'Cash Game'}</p>
+                          <p className="text-white font-bold">{isTournamentMode ? `Level ${blindLevel}` : 'Play Chips'}</p>
                         </div>
                         <div className="text-right space-y-1">
                           <p className="text-[10px] font-bold text-slate-500 uppercase">Blinds</p>
-                          <p className="text-primary font-black">${gameConfig?.smallBlind}/${gameConfig?.bigBlind}</p>
+                          <p className="text-primary font-black">{gameConfig?.smallBlind}/{gameConfig?.bigBlind}</p>
                         </div>
                       </div>
                       <div className="flex justify-between items-center">
@@ -469,7 +472,7 @@ const GameTable: React.FC = () => {
                           </div>
                           <span className={`text-sm font-bold ${p.isHuman ? 'text-white' : 'text-slate-300'}`}>{p.name}</span>
                         </div>
-                        <span className="text-sm font-black text-white">${p.balance.toLocaleString()}</span>
+                        <span className="text-sm font-black text-white">{p.balance.toLocaleString()} 🪙</span>
                       </div>
                     ))}
                   </div>
@@ -480,9 +483,9 @@ const GameTable: React.FC = () => {
                     <div className="bg-gold/10 border border-gold/20 p-4 rounded-2xl flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
                         <span className="material-symbols-outlined text-gold">emoji_events</span>
-                        <p className="text-sm font-bold text-white">Prêmio Total Garantido</p>
+                        <p className="text-sm font-bold text-white">Guaranteed Prize Pool</p>
                       </div>
-                      <p className="text-xl font-black text-gold">${tournament?.prizePool.toLocaleString() || '0'}</p>
+                      <p className="text-xl font-black text-gold">{tournament?.prizePool.toLocaleString() || '0'} 🪙</p>
                     </div>
                     <div className="space-y-2">
                       {[
@@ -498,8 +501,8 @@ const GameTable: React.FC = () => {
                             <span className="text-sm text-slate-400">Position</span>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm font-black text-white">${((tournament?.prizePool || 0) * (payout.percent / 100)).toLocaleString()}</p>
-                            <p className="text-[9px] font-bold text-slate-500 uppercase">{payout.percent}% do total</p>
+                            <p className="text-sm font-black text-white">{((tournament?.prizePool || 0) * (payout.percent / 100)).toLocaleString()} 🪙</p>
+                            <p className="text-[9px] font-bold text-slate-500 uppercase">{payout.percent}% of total</p>
                           </div>
                         </div>
                       ))}
@@ -567,7 +570,10 @@ const GameTable: React.FC = () => {
             <div className="flex flex-col items-center gap-1 md:gap-2">
               <div className="bg-black/40 backdrop-blur-md px-3 py-1 md:px-6 md:py-2 rounded-full border border-white/10 flex flex-col items-center">
                 <span className="text-slate-400 text-[8px] md:text-[10px] font-bold uppercase tracking-widest">Total Pot</span>
-                <span className="text-base md:text-2xl font-black text-white">${pot.toLocaleString()}</span>
+                <div className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-gold text-xs md:text-sm">toll</span>
+                  <span className="text-base md:text-2xl font-black text-white">{pot.toLocaleString()}</span>
+                </div>
               </div>
 
               {/* Side Pots */}
@@ -576,7 +582,7 @@ const GameTable: React.FC = () => {
                   {sidePots.map((sp, i) => (
                     <div key={i} className="bg-black/20 backdrop-blur-sm px-3 py-1 rounded-full border border-white/5 flex items-center gap-2">
                       <span className="text-[8px] font-bold text-slate-500 uppercase">Side {i + 1}</span>
-                      <span className="text-xs font-black text-slate-300">${sp.amount.toLocaleString()}</span>
+                      <span className="text-xs font-black text-slate-300">{sp.amount.toLocaleString()} 🪙</span>
                     </div>
                   ))}
                 </div>
@@ -616,7 +622,7 @@ const GameTable: React.FC = () => {
                 </div>
                 <div className="bg-gold/20 border border-gold/50 rounded-lg p-3 mb-6">
                   <p className="text-slate-400 text-sm mb-1">{winners.length > 1 ? 'Total Pot Split' : 'Pot Won'}</p>
-                  <p className="text-gold text-3xl font-black">${pot.toLocaleString()}</p>
+                  <p className="text-gold text-3xl font-black">{pot.toLocaleString()} 🪙</p>
                 </div>
                 <button onClick={startNewHand} className="bg-primary hover:bg-primary-light px-10 py-4 rounded-xl font-black text-white uppercase tracking-wider shadow-lg transform transition hover:scale-105">
                   Next Hand
@@ -629,8 +635,9 @@ const GameTable: React.FC = () => {
             {!isObserver && activeUser && activeUser.currentBet > 0 && (
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center animate-bounce-short z-20">
                 <ChipStack amount={activeUser.currentBet} />
-                <span className="bg-black/90 text-white text-[10px] font-black px-2 py-0.5 rounded mt-2 border border-gold/50 shadow-2xl backdrop-blur-md">
-                  ${activeUser.currentBet.toLocaleString()}
+                <span className="bg-black/90 text-white text-[10px] font-black px-2 py-0.5 rounded mt-2 border border-gold/50 shadow-2xl backdrop-blur-md flex items-center gap-1">
+                  <span className="material-symbols-outlined text-gold text-[10px]">toll</span>
+                  {activeUser.currentBet.toLocaleString()}
                 </span>
               </div>
             )}
@@ -768,8 +775,11 @@ const GameTable: React.FC = () => {
                 ))}
               </div>
               <div className="bg-black/60 backdrop-blur-md px-2 py-1 md:px-4 md:py-2 rounded-lg md:rounded-xl border border-white/10">
-                <span className="text-[7px] md:text-[8px] font-black uppercase tracking-widest text-slate-500">Stack</span>
-                <p className="text-sm md:text-lg font-black text-white font-mono">${activeUser?.balance.toLocaleString()}</p>
+                <span className="text-[7px] md:text-[8px] font-black uppercase tracking-widest text-slate-500">Chips</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-gold text-xs md:text-base">toll</span>
+                  <p className="text-sm md:text-lg font-black text-white font-mono">{activeUser?.balance.toLocaleString()}</p>
+                </div>
               </div>
             </div>
 
@@ -786,13 +796,13 @@ const GameTable: React.FC = () => {
               <div className="flex flex-col items-center gap-1.5 md:gap-2 w-full max-w-lg">
                 {/* Bet controls */}
                 <div className="flex items-center gap-1.5 md:gap-2 w-full">
-                  <span className="text-primary font-black text-xs md:text-sm">$</span>
+                  <span className="material-symbols-outlined text-primary text-xs md:text-sm">toll</span>
                   <input
                     type="range" min={gameConfig?.bigBlind || 20} max={activeUser?.balance || 1000} step={gameConfig?.smallBlind || 10}
                     value={betValue} onChange={(e) => setBetValue(Number(e.target.value))}
                     className="flex-1 h-1 md:h-1.5 bg-slate-700 rounded-full appearance-none accent-primary cursor-pointer"
                   />
-                  <span className="text-white font-black text-xs font-mono min-w-[50px] md:min-w-[60px] text-right">${betValue}</span>
+                  <span className="text-white font-black text-xs font-mono min-w-[50px] md:min-w-[60px] text-right">{betValue.toLocaleString()}</span>
                 </div>
                 <div className="grid grid-cols-4 gap-1 w-full">
                   <button onClick={() => setBetValue(Math.floor(pot / 2))} className="bg-zinc-800 hover:bg-zinc-700 text-[8px] md:text-[9px] font-black py-1 md:py-1.5 rounded-md md:rounded-lg transition uppercase text-slate-300">1/2</button>
@@ -816,7 +826,7 @@ const GameTable: React.FC = () => {
                       className="bg-zinc-800 hover:bg-emerald-600/40 text-white font-black py-2.5 md:py-3 rounded-lg md:rounded-xl shadow-lg text-[10px] md:text-xs border border-white/5 transition-all active:scale-95"
                     >
                       <span className="uppercase text-[8px] md:text-[10px] opacity-70">Call</span>
-                      <span className="block text-xs md:text-sm font-black">${activeUser ? currentBet - activeUser.currentBet : 0}</span>
+                      <span className="block text-xs md:text-sm font-black">{activeUser ? (currentBet - activeUser.currentBet).toLocaleString() : 0} 🪙</span>
                     </button>
                   )}
                   <button
@@ -918,7 +928,10 @@ const PlayerSeat = ({ position, name, balance, active, inactive, dealer, current
       {/* Player Info with Stack */}
       <div className={`bg-background/95 backdrop-blur-sm px-2 py-1 md:px-4 md:py-2 rounded-md md:rounded-lg text-center border ${inactive ? 'border-slate-800' : active ? 'border-primary' : 'border-slate-700'} min-w-[60px] md:min-w-[100px] shadow-lg`}>
         <p className={`text-[9px] md:text-xs font-bold ${inactive ? 'text-slate-600' : 'text-white'} truncate`}>{name}</p>
-        <p className={`text-[10px] md:text-sm font-black ${inactive ? 'text-slate-600' : 'text-gold'}`}>${Number(balance).toLocaleString()}</p>
+        <div className="flex items-center justify-center gap-1">
+          <span className={`material-symbols-outlined text-[10px] ${inactive ? 'text-slate-600' : 'text-gold'}`}>toll</span>
+          <p className={`text-[10px] md:text-sm font-black ${inactive ? 'text-slate-600' : 'text-gold'}`}>{Number(balance).toLocaleString()}</p>
+        </div>
       </div>
 
       {/* Dealer Button */}
@@ -930,8 +943,9 @@ const PlayerSeat = ({ position, name, balance, active, inactive, dealer, current
       {currentBet > 0 && (
         <div className="absolute -bottom-10 md:-bottom-16 flex flex-col items-center animate-bounce-short z-20 scale-75 md:scale-100">
           <ChipStack amount={currentBet} />
-          <span className="bg-black/90 text-white text-[10px] font-black px-2 py-0.5 rounded mt-2 border border-gold/50 shadow-2xl backdrop-blur-md">
-            ${currentBet.toLocaleString()}
+          <span className="bg-black/90 text-white text-[10px] font-black px-2 py-0.5 rounded mt-2 border border-gold/50 shadow-2xl backdrop-blur-md flex items-center gap-1">
+            <span className="material-symbols-outlined text-gold text-[10px]">toll</span>
+            {currentBet.toLocaleString()}
           </span>
         </div>
       )}

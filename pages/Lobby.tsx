@@ -31,7 +31,7 @@ const Lobby: React.FC = () => {
         <div className="p-3 md:p-6 border-b border-border-dark bg-surface/20">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div>
-              <h2 className="text-xl md:text-3xl font-black text-white tracking-tighter font-display uppercase italic text-primary">Cash Lobby</h2>
+              <h2 className="text-xl md:text-3xl font-black text-white tracking-tighter font-display uppercase italic text-primary">Play Chips Lobby</h2>
               <p className="text-slate-500 text-[9px] md:text-sm font-bold uppercase tracking-widest mt-0.5">High Stakes Action</p>
             </div>
             {/* Counters removed to simplify UI as requested */}
@@ -95,8 +95,8 @@ const Lobby: React.FC = () => {
                         <span className="font-mono font-bold leading-none text-white">{t.players}/{t.maxPlayers}</span>
                       </span>
                       <span className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-md">
-                        <span className="material-symbols-outlined text-sm text-slate-500">monetization_on</span>
-                        <span className="font-bold text-white">Min. Buy-in: ${t.buyIn}</span>
+                        <span className="material-symbols-outlined text-sm text-gold">toll</span>
+                        <span className="font-bold text-white">Min. Buy-in: {t.buyIn.toLocaleString()}</span>
                       </span>
                     </div>
                   </div>
@@ -118,8 +118,11 @@ const Lobby: React.FC = () => {
             <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4">Quick Stats</h3>
             <div className="space-y-4">
               <div>
-                <p className="text-xs text-slate-400 mb-1">Your Balance</p>
-                <p className="text-2xl font-black text-white">${gameUser.balance.toLocaleString()}</p>
+                <p className="text-xs text-slate-400 mb-1">Your Chips</p>
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-gold text-lg">toll</span>
+                  <p className="text-2xl font-black text-white">{gameUser.chips.toLocaleString()}</p>
+                </div>
               </div>
               <div className="pt-4 border-t border-border-dark">
                 <p className="text-[10px] text-slate-500 uppercase font-black mb-2">Active Players</p>

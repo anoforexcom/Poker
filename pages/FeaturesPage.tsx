@@ -6,13 +6,13 @@ const FeaturesPage = () => {
     const features = [
         {
             icon: 'security',
-            title: 'Bank-Grade Security',
-            description: 'Your funds and data are protected with 256-bit SSL encryption, the same technology used by major financial institutions.',
+            title: 'Modern Security',
+            description: 'Your account and stats are protected with industry-standard encryption, ensuring a safe and fair environment.',
             benefits: [
                 'Two-factor authentication',
-                'Cold storage for crypto assets',
+                'Encrypted user data',
                 'Regular security audits',
-                'PCI DSS compliant'
+                'Certified anti-cheat systems'
             ]
         },
         {
@@ -39,13 +39,13 @@ const FeaturesPage = () => {
         },
         {
             icon: 'payments',
-            title: 'Instant Transactions',
-            description: 'Deposit and withdraw your funds instantly with multiple payment methods including crypto, cards, and bank transfers.',
+            title: 'Virtual Chip Shop',
+            description: 'Top up your chip balance instantly through our integrated shop. Multiple convenient payment methods supported.',
             benefits: [
-                'Instant crypto withdrawals',
-                'No deposit fees',
-                'Multiple currencies supported',
-                'Automated KYC verification'
+                'Instant chip delivery',
+                'Secure checkout',
+                'No hidden fees',
+                'Exclusive chip pack offers'
             ]
         },
         {
@@ -94,13 +94,13 @@ const FeaturesPage = () => {
         },
         {
             icon: 'emoji_events',
-            title: 'High Stakes Action',
-            description: 'Join exclusive high-roller tables, compete for massive pots, and prove your skills in the most intense cash games.',
+            title: 'High Roller Tables',
+            description: 'Join exclusive high-stakes tables, compete for massive pots, and prove your skills against the top-ranked players.',
             benefits: [
                 '24/7 high stakes action',
-                'Large pot tracking',
-                'Professional rake structure',
-                'VIP exclusive tables'
+                'Massive pot tracking',
+                'Elite player leaderboards',
+                'Rank-exclusive tables'
             ]
         },
         {
@@ -116,13 +116,13 @@ const FeaturesPage = () => {
         },
         {
             icon: 'workspace_premium',
-            title: 'VIP Rewards Program',
-            description: 'Earn points with every hand you play and unlock exclusive rewards, cashback, and special privileges.',
+            title: 'Global Ranking System',
+            description: 'Climb the tiers from Bronze to Legend. Earn multipliers, exclusive badges, and bigger daily rewards.',
             benefits: [
-                'Tiered rewards system',
-                'Cashback on every hand',
-                'Exclusive VIP status',
-                'Personal account manager'
+                'Multi-tier ranking system',
+                'Daily bonus multipliers',
+                'Exclusive profile icons',
+                'Achievement trophies'
             ]
         },
         {

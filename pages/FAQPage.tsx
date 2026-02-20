@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // Extended FAQ data
 const ALL_FAQS = [
     // Getting Started
-    { category: "Getting Started", q: "Is this platform free to play?", a: "Yes! You can start playing with demo credits. We also offer high stakes cash games for verified users." },
+    { category: "Getting Started", q: "Is this platform free to play?", a: "Yes! Every new player starts with 10,000 free chips. You can earn more through daily bonuses, missions, and winning at the tables." },
     { category: "Getting Started", q: "How do I create an account?", a: "Click 'Start Playing' on the homepage, fill in your details, verify your email, and you're ready to go!" },
     { category: "Getting Started", q: "What poker variants are available?", a: "Currently we support No-Limit Texas Hold'em. Omaha and Short Deck are in development." },
     { category: "Getting Started", q: "Can I play on mobile?", a: "Yes, BestPoker.Cash is fully responsive and works directly in your mobile browser. Native apps coming soon." },
@@ -17,18 +17,18 @@ const ALL_FAQS = [
     { category: "Account & Security", q: "Can I change my username?", a: "Usernames can be changed once every 30 days from your profile settings." },
     { category: "Account & Security", q: "How do I enable two-factor authentication?", a: "Go to Settings > Security and enable 2FA using your preferred authenticator app." },
 
-    // Deposits & Withdrawals
-    { category: "Deposits & Withdrawals", q: "How do I withdraw my winnings?", a: "Withdrawals are processed instantly via crypto or typically within 24 hours for bank transfers." },
-    { category: "Deposits & Withdrawals", q: "What payment methods do you accept?", a: "We accept credit/debit cards, bank transfers, and major cryptocurrencies (BTC, ETH, USDT)." },
-    { category: "Deposits & Withdrawals", q: "Are there any deposit fees?", a: "No deposit fees! We cover all transaction costs for deposits." },
-    { category: "Deposits & Withdrawals", q: "What are the withdrawal limits?", a: "Minimum withdrawal is $20. Maximum depends on your verification level - up to $50,000/day for fully verified accounts." },
-    { category: "Deposits & Withdrawals", q: "How long do withdrawals take?", a: "Crypto withdrawals are instant. Bank transfers take 1-3 business days." },
+    // Virtual Chips & Shop
+    { category: "Virtual Chips & Shop", q: "How do I get more chips?", a: "You can claim free chips daily, complete missions, or top up your balance by purchasing chip packs in our virtual shop." },
+    { category: "Virtual Chips & Shop", q: "What payment methods do you accept?", a: "Our shop supports all major credit cards and app store payments for chip pack purchases." },
+    { category: "Virtual Chips & Shop", q: "Are chips worth real money?", a: "No. Chips are virtual currency for entertainment purposes only and have no real-world monetary value." },
+    { category: "Virtual Chips & Shop", q: "Can I transfer chips to friends?", a: "Currently, chips cannot be transferred between accounts to ensure fair play and prevent farming." },
+    { category: "Virtual Chips & Shop", q: "Does ranking affect my chips?", a: "Higher ranks provide larger daily bonuses and better multipliers, helping you grow your chip stack faster!" },
 
     // Gameplay
     { category: "Gameplay", q: "Is the game fair?", a: "Absolutely. We use a certified RNG (Random Number Generator) and have 24/7 anti-cheat monitoring." },
     { category: "Gameplay", q: "Can I play multiple tables at once?", a: "Yes! Premium members can play up to 6 tables simultaneously." },
-    { category: "Gameplay", q: "What are the blinds and buy-ins?", a: "We offer tables from micro stakes ($0.01/$0.02) to high stakes ($25/$50) to suit all bankrolls." },
-    { category: "Gameplay", q: "What are the rules of the house?", a: "We follow standard TDA and Las Vegas cash game rules. All decisions by the floor are final." },
+    { category: "Gameplay", q: "What are the blinds and buy-ins?", a: "We offer tables from micro stakes (10/20 chips) to high-roller tables (25,000/50,000 chips) to suit all players." },
+    { category: "Gameplay", q: "What are the rules of the house?", a: "We follow standard TDA rules. Our focus is on providing a fun, competitive, and fair environment for everyone." },
     { category: "Gameplay", q: "Can I chat with other players?", a: "Yes, each table has a chat feature. Please keep it respectful - our moderators monitor all conversations." },
 
     // Technical Support

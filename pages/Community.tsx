@@ -21,18 +21,18 @@ const Community: React.FC = () => {
       ]
     },
     {
-      id: 2, pinned: false, author: generateBotName(), title: "How to deal with aggressive limpers in Micro Stakes?",
+      id: 2, pinned: false, author: generateBotName(), title: "How to deal with aggressive limpers in Low Stakes?",
       votes: 56, comments: 2, time: "1h ago", tag: "Question", helpful: 12,
-      body: "I'm struggling against players who limp-raise every hand in NL5. It feels like they always have it or they're just clicking buttons. My current strategy is to raise them to 4x or 5x, but then they either call or jam. If they call, the SPR is so low on the flop that I feel committed with top pair. How should I adjust? Should I just be folding the bottom of my opening range against these types of 'whales' or is there a trap I'm missing?",
+      body: "I'm struggling against players who limp-raise every hand in 10/20 tables. It feels like they always have it or they're just clicking buttons. My current strategy is to raise them to 4x or 5x, but then they either call or jam. If they call, the SPR is so low on the flop that I feel committed with top pair. How should I adjust? Should I just be folding the bottom of my opening range against these types of 'whales' or is there a trap I'm missing?",
       thread: [
         { id: 201, author: generateBotName(), text: "In micro stakes, limp-raise is usually AA/KK. Just fold unless you have a set mine opportunity.", time: "30m ago", upvotes: 15 },
         { id: 202, author: generateBotName(), text: "Actually, some whales do it with air. Check their VPIP and previous showdowns.", time: "5m ago", upvotes: 3 }
       ]
     },
     {
-      id: 3, pinned: false, author: generateBotName(), title: "My journey from NL2 to NL25 in 3 months",
+      id: 3, pinned: false, author: generateBotName(), title: "My journey from Bronze to Gold in 3 months",
       votes: 128, comments: 3, time: "5h ago", tag: "Success", helpful: 89,
-      body: "It wasn't easy, but strict bankroll management (50 buy-ins) was key to surviving the variance. I started with $100 and ground NL2 for a month until I had $250. Moving to NL5 was the hardest part of the jump because people actually started three-betting more often. I spent about 2 hours a day in the Academia section here studying ranges. If I can do it, anyone can! My next goal is NL50 by winter.",
+      body: "It wasn't easy, but strict chip management was key to surviving the variance. I started with 10,000 chips and ground the 10/20 tables for a month until I had 50,000. Moving to 50/100 was the hardest part of the jump because people actually started three-betting more often. I spent about 2 hours a day in the Academia section here studying ranges. If I can do it, anyone can! My next goal is Platinum rank by winter.",
       thread: [
         { id: 301, author: generateBotName(), text: "Congrats! That's a huge step. NL25 is where the real game starts.", time: "4h ago", upvotes: 24 },
         { id: 302, author: generateBotName(), text: "What was your winrate at NL10?", time: "2h ago", upvotes: 2 },
@@ -47,7 +47,7 @@ const Community: React.FC = () => {
     "After 10,000 hands this month, I've realized that my biggest leak is defending the big blind against small raises. I need to tighten up or learn how to 3-bet bluff more effectively.",
     "Does anyone have recommendations for HUD settings? I recently switched platforms and feel like I'm missing the information I used to rely on for exploitative play.",
     "I just had the most insane dynamic go down at a deep-stacked table. I had top two on the flop against a guy who has been over-betting every river. Should I have jammed earlier?",
-    "Mental game is everything. I was on a 10 buy-in downswing and almost quit, but taking a week off and reading Jared Tendler's book saved my bankroll.",
+    "Mental game is everything. I was on a 100,000 chip downswing and almost quit, but taking a week off and reading Jared Tendler's book saved my record.",
     "PLO is a completely different beast. I'm finding it much harder to keep track of equities on the turn compared to Hold'em. Any specialist here to mentor?",
     "The new tournament structures are great. More play in the mid-stages really rewards the better technical players. What's your favorite event so far?"
   ];
@@ -98,7 +98,7 @@ const Community: React.FC = () => {
     "Funny hand: We both had the same flush.",
     "Double or Nothing: The safest grind?",
     "Improving post-flop play with 40BB.",
-    "Satellite strategy for the Sunday Million.",
+    "Satellite strategy for the Mega Championship.",
     "What's your biggest win ever?",
     "Poker and Fitness: Stay healthy, play better.",
     "Reviewing my stats after 100k hands."

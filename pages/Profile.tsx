@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { useGame } from '../contexts/GameContext';
+import { useGame, RANKS } from '../contexts/GameContext';
 import { useNotification } from '../contexts/NotificationContext';
 
 const AVATAR_PRESETS = [
@@ -14,7 +14,7 @@ const AVATAR_PRESETS = [
 ];
 
 const Profile: React.FC = () => {
-    const { user, updateUser } = useGame();
+    const { user, updateUser, getRank, getNextRank, getRankProgress } = useGame();
     const { showAlert } = useNotification();
     const [name, setName] = useState(user.name);
     const [isEditing, setIsEditing] = useState(false);
@@ -125,16 +125,43 @@ const Profile: React.FC = () => {
                             </h3>
                         )}
 
-                        <p className="text-gold font-bold uppercase tracking-wider text-sm mb-6">{user.rank}</p>
+                        <p className="text-sm mb-6" style={{ color: getRank().color }}>{getRank().icon} {user.rank}</p>
 
                         <div className="grid grid-cols-2 gap-4 w-full">
                             <div className="bg-black/20 rounded-xl p-3">
-                                <p className="text-slate-400 text-xs uppercase font-bold">Balance</p>
-                                <p className="text-white font-mono font-bold text-lg">${user.balance.toLocaleString()}</p>
+                                <p className="text-slate-400 text-xs uppercase font-bold">Chips</p>
+                                <div className="flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-gold text-sm">toll</span>
+                                    <p className="text-gold font-mono font-bold text-lg">{user.chips.toLocaleString()}</p>
+                                </div>
                             </div>
                             <div className="bg-black/20 rounded-xl p-3">
                                 <p className="text-slate-400 text-xs uppercase font-bold">Level</p>
-                                <p className="text-white font-mono font-bold text-lg">42</p>
+                                <p className="text-white font-mono font-bold text-lg">{user.level}</p>
+                            </div>
+                        </div>
+
+                        {/* XP Progress */}
+                        <div className="w-full mt-4">
+                            <div className="flex justify-between text-[9px] font-bold uppercase tracking-wider mb-1">
+                                <span className="text-slate-500">{user.xp.toLocaleString()} XP</span>
+                                <span className="text-primary">{getRankProgress()}%</span>
+                            </div>
+                            <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
+                                <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${getRankProgress()}%` }} />
+                            </div>
+                            {getNextRank() && <p className="text-[9px] text-slate-500 mt-1">Next: {getNextRank()!.icon} {getNextRank()!.name}</p>}
+                        </div>
+
+                        {/* Quick Stats */}
+                        <div className="grid grid-cols-2 gap-3 w-full mt-4">
+                            <div className="bg-black/20 rounded-lg p-2 text-center">
+                                <p className="text-[8px] font-bold uppercase text-slate-500">Win Rate</p>
+                                <p className="text-white font-bold text-sm">{user.stats.hands_played > 0 ? Math.round((user.stats.hands_won / user.stats.hands_played) * 100) : 0}%</p>
+                            </div>
+                            <div className="bg-black/20 rounded-lg p-2 text-center">
+                                <p className="text-[8px] font-bold uppercase text-slate-500">Hands</p>
+                                <p className="text-white font-bold text-sm">{user.stats.hands_played}</p>
                             </div>
                         </div>
                     </div>

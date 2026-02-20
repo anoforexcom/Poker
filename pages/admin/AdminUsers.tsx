@@ -68,7 +68,7 @@ const AdminUsers: React.FC = () => {
                     <thead>
                         <tr className="bg-background/50 border-b border-white/5">
                             <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">User</th>
-                            <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">Balance</th>
+                            <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">Chips</th>
                             <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">Rank</th>
                             <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-right">Actions</th>
                         </tr>
@@ -95,7 +95,10 @@ const AdminUsers: React.FC = () => {
                                     </div>
                                 </td>
                                 <td className="px-6 py-4">
-                                    <p className="text-sm font-mono font-bold text-gold">${user.balance.toLocaleString()}</p>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="material-symbols-outlined text-gold text-sm">toll</span>
+                                        <p className="text-sm font-mono font-bold text-gold">{user.balance.toLocaleString()}</p>
+                                    </div>
                                 </td>
                                 <td className="px-6 py-4">
                                     <span className="text-[10px] font-black uppercase px-2 py-1 bg-surface border border-white/10 rounded-md text-slate-400">
@@ -105,18 +108,18 @@ const AdminUsers: React.FC = () => {
                                 <td className="px-6 py-4 text-right">
                                     <div className="flex items-center justify-end gap-2">
                                         <button
-                                            onClick={() => updateBalance(user.id, user.balance, 1000)}
+                                            onClick={() => updateBalance(user.id, user.balance, 10000)}
                                             className="px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded text-[10px] font-black hover:bg-emerald-500/20"
-                                            title="Add $1,000"
+                                            title="Add 10k chips"
                                         >
-                                            +$1k
+                                            +10k 🪙
                                         </button>
                                         <button
-                                            onClick={() => updateBalance(user.id, user.balance, -1000)}
+                                            onClick={() => updateBalance(user.id, user.balance, -10000)}
                                             className="px-3 py-1 bg-red-500/10 text-red-500 rounded text-[10px] font-black hover:bg-red-500/20"
-                                            title="Remove $1,000"
+                                            title="Remove 10k chips"
                                         >
-                                            -$1k
+                                            -10k 🪙
                                         </button>
                                         <button className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg">
                                             <span className="material-symbols-outlined text-sm">edit</span>

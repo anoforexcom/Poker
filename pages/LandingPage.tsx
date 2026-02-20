@@ -22,8 +22,8 @@ const FadeIn = ({ children, delay = 0, className = "" }: { children: React.React
 // --- Mock Data ---
 
 const FAQS = [
-    { q: "Is this platform free to play?", a: "Yes! You can start playing with demo credits. We also offer high stakes cash games for verified users." },
-    { q: "How do I withdraw my winnings?", a: "Withdrawals are processed instantly via crypto or typically within 24 hours for bank transfers." },
+    { q: "Is this platform free to play?", a: "Yes! Every new player starts with 10,000 free chips. You can earn more through daily bonuses, missions, and winning at the tables." },
+    { q: "How do I earn more chips?", a: "You get a daily bonus every 24 hours. You can also complete daily missions, level up your rank, or pick up chip packs in our shop." },
     { q: "Is the game fair?", a: "Absolutely. We use a certified RNG (Random Number Generator) and have 24/7 anti-cheat monitoring." },
     { q: "Can I play on mobile?", a: "Yes, BestPoker.Cash is fully responsive and works directly in your mobile browser. Native apps coming soon." },
     { q: "What poker variants are available?", a: "Currently we support No-Limit Texas Hold'em. Omaha and Short Deck are in development." },
@@ -34,7 +34,7 @@ const TESTIMONIALS = [
     { name: "Sarah J.", role: "Casual Player", text: "I love the community features. Learning from others has improved my game significantly.", avatar: "https://i.pravatar.cc/150?u=sarah" },
     { name: "Mike T.", role: "Cash Game Pro", text: "The cash game action is non-stop. Great stakes and smooth gameplay at every table.", avatar: "https://i.pravatar.cc/150?u=mike" },
     { name: "Emily R.", role: "Newbie", text: "Very beginner friendly. The academia section helped me understand the basics quickly.", avatar: "https://i.pravatar.cc/150?u=emily" },
-    { name: "David L.", role: "High Roller", text: "Security is top notch. I feel safe depositing large amounts here.", avatar: "https://i.pravatar.cc/150?u=david" },
+    { name: "David L.", role: "High Roller", text: "The ranking system is super competitive. I've been grinding for Diamond rank for weeks!", avatar: "https://i.pravatar.cc/150?u=david" },
 ];
 
 // --- Sections ---
@@ -106,7 +106,7 @@ const HeroSection = () => {
                         transition={{ duration: 0.8, delay: 0.2 }}
                         className="text-lg text-slate-400 max-w-xl mx-auto lg:mx-0 leading-relaxed"
                     >
-                        Join the fastest growing poker community. Experience fair play, instant withdrawals, and a sleek, modern interface designed for the pros.
+                        Join the fastest growing poker community. Experience fair play, climb the global rankings, and enjoy a sleek, modern interface designed for true competitors.
                     </motion.p>
 
                     <motion.div
@@ -142,8 +142,8 @@ const HeroSection = () => {
                         </div>
                         <div className="w-px h-8 sm:h-10 bg-white/10" />
                         <div className="text-center">
-                            <p className="text-xl sm:text-2xl font-bold text-white">$2M+</p>
-                            <p className="text-[10px] text-slate-500 uppercase tracking-widest">Paid Out</p>
+                            <p className="text-xl sm:text-2xl font-bold text-white">1M+</p>
+                            <p className="text-[10px] text-slate-500 uppercase tracking-widest">Hands Played</p>
                         </div>
                         <div className="w-px h-8 sm:h-10 bg-white/10" />
                         <div className="text-center">
@@ -201,7 +201,7 @@ const HeroSection = () => {
                             </div>
                             <div>
                                 <p className="text-xs text-slate-400">Recent Win</p>
-                                <p className="text-white font-bold">+$1,250.00</p>
+                                <p className="text-white font-bold">+12,500 Chips</p>
                             </div>
                         </div>
                     </motion.div>
@@ -243,7 +243,7 @@ const FeaturesSection = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {[
                         { icon: "security", title: "Unmatched Security", desc: "Advanced encryption and anti-cheat systems ensure fair play at all times." },
-                        { icon: "speed", title: "Lightning Fast", desc: "Experience zero-lag gameplay and instant deposits/withdrawals." },
+                        { icon: "speed", title: "Lightning Fast", desc: "Experience zero-lag gameplay and seamless access across all your devices." },
                         { icon: "groups", title: "Vibrant Community", desc: "Join thousands of players, join clans, and climb the leaderboards." },
                     ].map((feature, i) => (
                         <div key={i}>
@@ -380,7 +380,7 @@ const CTASection = () => {
             <div className="container mx-auto px-4 relative z-10 text-center">
                 <FadeIn>
                     <h2 className="text-3xl sm:text-4xl lg:text-6xl font-display font-black text-white mb-6 md:mb-8">Ready to Deal In?</h2>
-                    <p className="text-xl text-slate-300 mb-10 max-w-2xl mx-auto">Join thousands of players today and claim your welcome bonus.</p>
+                    <p className="text-xl text-slate-300 mb-10 max-w-2xl mx-auto">Join thousands of players today and claim your 10,000 free chips.</p>
                     <Link to="/register" className="inline-block bg-white text-primary px-10 py-5 rounded-full font-bold text-xl hover:scale-105 transition-transform shadow-2xl">
                         Get Started Now
                     </Link>

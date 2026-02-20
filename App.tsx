@@ -6,7 +6,8 @@ import Dashboard from './pages/Dashboard';
 import Academia from './pages/Academia';
 import Community from './pages/Community';
 // import TournamentLobby from './pages/TournamentLobby'; // Deleted as per simplification
-import Cashier from './pages/Cashier';
+import Cashier from './pages/Cashier'; // Now the Shop
+import Leaderboard from './pages/Leaderboard';
 import Rewards from './pages/Rewards';
 import Profile from './pages/Profile';
 import SimulationDashboard from './pages/SimulationDashboard';
@@ -58,13 +59,14 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
 
   const navItems = [
     { name: 'Play', path: '/play', icon: 'casino' },
+    { name: 'Leaderboard', path: '/leaderboard', icon: 'leaderboard' },
     { name: 'Learn', path: '/academia', icon: 'menu_book' },
     { name: 'Community', path: '/community', icon: 'groups' },
     { name: 'Analytics', path: '/dashboard', icon: 'grid_view' },
   ];
 
   const managementItems = [
-    { name: 'Cashier', path: '/cashier', icon: 'account_balance_wallet' },
+    { name: 'Shop', path: '/shop', icon: 'storefront' },
     { name: 'Rewards', path: '/rewards', icon: 'military_tech' },
   ];
 
@@ -176,18 +178,22 @@ const Header = ({ onToggle }: { onToggle: () => void }) => {
         </button>
 
         <div className="hidden md:flex items-center bg-[#1a2333] rounded-xl px-3 py-1.5 border border-white/5 shadow-inner">
-          <span className="text-gold text-[10px] font-black mr-2 uppercase tracking-widest opacity-70">Balance:</span>
-          <span className="text-white font-mono text-sm">${user.balance.toLocaleString()}</span>
+          <span className="material-symbols-outlined text-gold text-sm mr-1.5">toll</span>
+          <span className="text-gold text-[10px] font-black mr-2 uppercase tracking-widest opacity-70">Chips:</span>
+          <span className="text-white font-mono text-sm">{user.balance.toLocaleString()}</span>
         </div>
-        {/* Mobile Balance display next to deposit */}
+        {/* Mobile chip display */}
         <div className="md:hidden flex flex-col justify-center">
-          <span className="text-white font-mono text-xs font-black shadow-sm">${user.balance.toLocaleString()}</span>
-          <span className="text-[7px] text-emerald-400 font-bold uppercase tracking-tighter -mt-0.5">Available</span>
+          <div className="flex items-center gap-1">
+            <span className="material-symbols-outlined text-gold text-xs">toll</span>
+            <span className="text-white font-mono text-xs font-black">{user.balance.toLocaleString()}</span>
+          </div>
+          <span className="text-[7px] text-gold font-bold uppercase tracking-tighter -mt-0.5">Chips</span>
         </div>
 
-        <Link to="/cashier" className="bg-primary hover:brightness-110 text-white text-[10px] font-black py-2 px-3 md:px-5 rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-primary/20">
+        <Link to="/shop" className="bg-amber-500 hover:bg-amber-400 text-black text-[10px] font-black py-2 px-3 md:px-5 rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-amber-500/20">
           <span className="material-symbols-outlined text-sm">add_circle</span>
-          <span className="hidden md:inline">DEPOSIT</span>
+          <span className="hidden md:inline">GET CHIPS</span>
         </Link>
       </div>
 
@@ -261,9 +267,9 @@ const ProtectedLayout = ({ children }: { children: React.ReactNode }) => {
                   <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface/95 backdrop-blur-lg border-t border-border-dark flex items-center justify-around py-2 safe-area-bottom">
                     {[
                       { name: 'Play', path: '/play', icon: 'casino' },
-                      { name: 'Learn', path: '/academia', icon: 'menu_book' },
+                      { name: 'Ranking', path: '/leaderboard', icon: 'leaderboard' },
                       { name: 'Home', path: '/dashboard', icon: 'grid_view' },
-                      { name: 'Community', path: '/community', icon: 'groups' },
+                      { name: 'Shop', path: '/shop', icon: 'storefront' },
                       { name: 'Profile', path: '/profile', icon: 'person' },
                     ].map(item => {
                       const active = location.pathname === item.path || (item.path === '/play' && location.pathname.startsWith('/table'));
@@ -313,6 +319,8 @@ const AppRoutes = () => {
           <Route path="/academia" element={<ProtectedLayout><Academia /></ProtectedLayout>} />
           <Route path="/community" element={<ProtectedLayout><Community /></ProtectedLayout>} />
           <Route path="/cashier" element={<ProtectedLayout><Cashier /></ProtectedLayout>} />
+          <Route path="/shop" element={<ProtectedLayout><Cashier /></ProtectedLayout>} />
+          <Route path="/leaderboard" element={<ProtectedLayout><Leaderboard /></ProtectedLayout>} />
           <Route path="/rewards" element={<ProtectedLayout><Rewards /></ProtectedLayout>} />
           <Route path="/profile" element={<ProtectedLayout><Profile /></ProtectedLayout>} />
           <Route path="/simulation" element={<ProtectedLayout><SimulationDashboard /></ProtectedLayout>} />
