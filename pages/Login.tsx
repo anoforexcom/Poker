@@ -18,7 +18,7 @@ const Login: React.FC = () => {
         try {
             await login(email, password);
             // Redirect to lobby after successful login
-            navigate('/play');
+            navigate('/dashboard');
         } catch (err: any) {
             setError(err.message || 'Failed to login');
             setIsSubmitting(false);
@@ -109,7 +109,7 @@ const Login: React.FC = () => {
                         type="button"
                         onClick={() => {
                             continueAsGuest();
-                            navigate('/play');
+                            navigate('/dashboard');
                         }}
                         className="w-full bg-gold hover:bg-yellow-600 text-slate-900 font-black py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
                     >

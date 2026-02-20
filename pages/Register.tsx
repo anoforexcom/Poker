@@ -15,7 +15,7 @@ const Register: React.FC = () => {
     // Safety: If we become authenticated while on this page, move to play
     React.useEffect(() => {
         if (isAuthenticated) {
-            navigate('/play');
+            navigate('/dashboard');
         }
     }, [isAuthenticated, navigate]);
 

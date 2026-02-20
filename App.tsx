@@ -283,8 +283,8 @@ const AppRoutes = () => {
         <Route path="/privacy" element={<LegalPage />} />
 
         {/* Auth Routes - Now inside PublicLayout */}
-        <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/play" />} />
-        <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/play" />} />
+        <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
+        <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" />} />
       </Route>
 
       {/* Protected Routes */}
