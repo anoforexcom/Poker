@@ -10,21 +10,30 @@ const PWAInstallPrompt: React.FC = () => {
             e.preventDefault();
             setDeferredPrompt(e);
 
-            // Show prompt only if not already installed and on mobile
+            // Show prompt automatically only on mobile after a delay
             const isMobile = window.innerWidth < 768;
             if (isMobile) {
-                setTimeout(() => setIsVisible(true), 5000); // Wait 5s before showing
+                setTimeout(() => setIsVisible(true), 15000);
             }
         };
 
+        const manualHandler = () => {
+            console.log('[PWA] Manual trigger received');
+            setIsVisible(true);
+        };
+
         window.addEventListener('beforeinstallprompt', handler);
+        window.addEventListener('trigger-pwa-install', manualHandler);
 
         // Check if already installed
         if (window.matchMedia('(display-mode: standalone)').matches) {
             setIsVisible(false);
         }
 
-        return () => window.removeEventListener('beforeinstallprompt', handler);
+        return () => {
+            window.removeEventListener('beforeinstallprompt', handler);
+            window.removeEventListener('trigger-pwa-install', manualHandler);
+        };
     }, []);
 
     const handleInstall = async () => {
@@ -43,36 +52,53 @@ const PWAInstallPrompt: React.FC = () => {
         <AnimatePresence>
             {isVisible && (
                 <motion.div
-                    initial={{ y: 100, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: 100, opacity: 0 }}
-                    className="fixed bottom-20 left-4 right-4 z-[9999] md:hidden"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-[10000] flex items-end md:items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
                 >
-                    <div className="bg-slate-900/90 backdrop-blur-xl border border-primary/30 p-4 rounded-2xl shadow-2xl flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="size-12 bg-primary/20 rounded-xl flex items-center justify-center border border-primary/20">
-                                <span className="material-symbols-outlined text-primary text-2xl">install_mobile</span>
+                    <motion.div
+                        initial={{ y: 100, scale: 0.9 }}
+                        animate={{ y: 0, scale: 1 }}
+                        exit={{ y: 100, scale: 0.9 }}
+                        className="w-full max-w-sm bg-slate-900 border border-primary/30 p-5 rounded-2xl shadow-2xl"
+                    >
+                        <div className="flex flex-col gap-4">
+                            <div className="flex items-center gap-4">
+                                <div className="size-14 bg-primary/20 rounded-2xl flex items-center justify-center border border-primary/20 shrink-0">
+                                    <span className="material-symbols-outlined text-primary text-3xl">install_mobile</span>
+                                </div>
+                                <div>
+                                    <h4 className="text-white font-black text-lg uppercase tracking-tight">BestPoker App</h4>
+                                    <p className="text-slate-400 text-xs">Instale para ter a melhor experiência mobile.</p>
+                                </div>
                             </div>
-                            <div>
-                                <h4 className="text-white font-bold text-sm">Install App</h4>
-                                <p className="text-slate-400 text-[10px] leading-tight">Get the full-screen experience and better performance.</p>
+
+                            {!deferredPrompt && (
+                                <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-lg flex gap-2">
+                                    <span className="material-symbols-outlined text-amber-500 text-sm">info</span>
+                                    <p className="text-[10px] text-amber-200/70 leading-relaxed italic">
+                                        Se o botão não funcionar, usa 'Adicionar ao Ecrã Principal' no menu do teu browser.
+                                    </p>
+                                </div>
+                            )}
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setIsVisible(false)}
+                                    className="flex-1 px-4 py-3 bg-slate-800 text-slate-300 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-700 transition-all"
+                                >
+                                    AGORA NÃO
+                                </button>
+                                <button
+                                    onClick={handleInstall}
+                                    className="flex-1 bg-primary text-white px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-primary/20 active:scale-95 hover:bg-blue-600 transition-all"
+                                >
+                                    INSTALAR
+                                </button>
                             </div>
                         </div>
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => setIsVisible(false)}
-                                className="px-3 py-2 text-slate-400 text-xs font-bold"
-                            >
-                                Later
-                            </button>
-                            <button
-                                onClick={handleInstall}
-                                className="bg-primary text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg shadow-primary/20 active:scale-95 transition-all"
-                            >
-                                Install
-                            </button>
-                        </div>
-                    </div>
+                    </motion.div>
                 </motion.div>
             )}
         </AnimatePresence>

@@ -52,7 +52,7 @@ const Cashier: React.FC = () => {
           <span className="material-symbols-outlined text-gold text-xl">toll</span>
           <div>
             <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Your Chips</p>
-            <p className="text-xl font-black text-gold">{user.chips.toLocaleString()}</p>
+            <p className="text-xl font-black text-gold">{(user.chips || 0).toLocaleString()}</p>
           </div>
         </div>
       </div>
@@ -93,8 +93,8 @@ const Cashier: React.FC = () => {
                   onClick={() => handlePurchase(pack)}
                   disabled={purchasing !== null}
                   className={`w-full py-3 rounded-xl font-black text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${purchasing === pack.id
-                      ? 'bg-slate-700 text-slate-400'
-                      : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black active:scale-95 shadow-lg'
+                    ? 'bg-slate-700 text-slate-400'
+                    : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black active:scale-95 shadow-lg'
                     }`}
                 >
                   {purchasing === pack.id ? (
@@ -152,8 +152,8 @@ const Cashier: React.FC = () => {
               onClick={handleClaimBonus}
               disabled={!canClaimDailyBonus() || claimingBonus}
               className={`w-full py-3 rounded-xl font-black text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${canClaimDailyBonus()
-                  ? 'bg-amber-500 hover:bg-amber-400 text-black active:scale-95 shadow-lg'
-                  : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                ? 'bg-amber-500 hover:bg-amber-400 text-black active:scale-95 shadow-lg'
+                : 'bg-slate-700 text-slate-500 cursor-not-allowed'
                 }`}
             >
               <span className="material-symbols-outlined text-sm">{claimingBonus ? 'hourglass_empty' : 'redeem'}</span>

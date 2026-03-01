@@ -22,10 +22,10 @@ const FadeIn = ({ children, delay = 0, className = "" }: { children: React.React
 // --- Mock Data ---
 
 const FAQS = [
-    { q: "Is this platform free to play?", a: "Yes! Every new player starts with 10,000 free chips. You can earn more through daily bonuses, missions, and winning at the tables." },
+    { q: "Is this platform free to play?", a: "Yes! Every new player starts with 1,000,000 free chips. You can earn more through daily bonuses, missions, and winning at the tables." },
     { q: "How do I earn more chips?", a: "You get a daily bonus every 24 hours. You can also complete daily missions, level up your rank, or pick up chip packs in our shop." },
     { q: "Is the game fair?", a: "Absolutely. We use a certified RNG (Random Number Generator) and have 24/7 anti-cheat monitoring." },
-    { q: "Can I play on mobile?", a: "Yes, BestPoker.Cash is fully responsive and works directly in your mobile browser. Native apps coming soon." },
+    { q: "Can I play on mobile?", a: "Yes, BestPoker.Cards is fully responsive and works directly in your mobile browser. Native apps coming soon." },
     { q: "What poker variants are available?", a: "Currently we support No-Limit Texas Hold'em. Omaha and Short Deck are in development." },
 ];
 
@@ -71,32 +71,7 @@ const HeroSection = () => {
                         </span>
                         <h1 className="text-4xl xs:text-5xl lg:text-7xl font-display font-black leading-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400">
                             ELEVATE YOUR <br />
-                            <span
-                                className="text-primary cursor-default select-none"
-                                onClick={() => {
-                                    setAdminClicks(prev => {
-                                        const newVal = prev + 1;
-                                        if (newVal >= 6) {
-                                            // Secret Admin Access Trigger (Firebase)
-                                            import('../utils/firebase').then(async ({ auth, db }) => {
-                                                const user = auth.currentUser;
-                                                if (user) {
-                                                    console.log('[SECRET] Promoting user to Admin...');
-                                                    const { doc, updateDoc } = await import('firebase/firestore');
-                                                    await updateDoc(doc(db, 'profiles', user.uid), { isAdmin: true });
-                                                    navigate('/admin');
-                                                } else {
-                                                    navigate('/login');
-                                                }
-                                            });
-                                            return 0;
-                                        }
-                                        return newVal;
-                                    });
-                                }}
-                            >
-                                GAME
-                            </span>
+                            <span className="text-primary truncate">POKER GAME</span>
                         </h1>
                     </motion.div>
 
@@ -235,7 +210,7 @@ const FeaturesSection = () => {
             <div className="container mx-auto px-4">
                 <FadeIn>
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl lg:text-4xl font-display font-bold text-white mb-4">Why Choose BestPoker.Cash?</h2>
+                        <h2 className="text-3xl lg:text-4xl font-display font-bold text-white mb-4">Why Choose BestPoker.Cards?</h2>
                         <p className="text-slate-400 text-lg max-w-2xl mx-auto">We've built the most secure and feature-rich platform in the industry.</p>
                     </div>
                 </FadeIn>
@@ -380,7 +355,7 @@ const CTASection = () => {
             <div className="container mx-auto px-4 relative z-10 text-center">
                 <FadeIn>
                     <h2 className="text-3xl sm:text-4xl lg:text-6xl font-display font-black text-white mb-6 md:mb-8">Ready to Deal In?</h2>
-                    <p className="text-xl text-slate-300 mb-10 max-w-2xl mx-auto">Join thousands of players today and claim your 10,000 free chips.</p>
+                    <p className="text-xl text-slate-300 mb-10 max-w-2xl mx-auto">Join thousands of players today and claim your 1,000,000 free chips.</p>
                     <Link to="/register" className="inline-block bg-white text-primary px-10 py-5 rounded-full font-bold text-xl hover:scale-105 transition-transform shadow-2xl">
                         Get Started Now
                     </Link>

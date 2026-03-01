@@ -38,7 +38,7 @@ const Login: React.FC = () => {
                     <div className="inline-flex items-center justify-center mb-4">
                         <img src="/logo.png" className="size-16 rounded-full shadow-lg border border-primary/20 object-cover" alt="Logo" />
                     </div>
-                    <h1 className="text-3xl font-black text-white font-display mb-2">BESTPOKER.CASH</h1>
+                    <h1 className="text-3xl font-black text-white font-display mb-2">BESTPOKER.CARDS</h1>
                     <p className="text-slate-400">Welcome back. Ready to fold 'em?</p>
                 </div>
 
@@ -105,17 +105,37 @@ const Login: React.FC = () => {
                         )}
                     </button>
 
-                    <button
-                        type="button"
-                        onClick={() => {
-                            continueAsGuest();
-                            navigate('/dashboard');
-                        }}
-                        className="w-full bg-gold hover:bg-yellow-600 text-slate-900 font-black py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
-                    >
-                        TRY DEMO
-                        <span className="material-symbols-outlined">play_circle</span>
-                    </button>
+                    <div className="relative pt-2">
+                        <div className="absolute -top-1 left-1/2 -translate-x-1/2 bg-blue-600 text-[8px] font-black text-white px-2 py-0.5 rounded-full z-20 shadow-lg tracking-widest uppercase">
+                            Flippa Demo Access
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                continueAsGuest();
+                                navigate('/dashboard');
+                            }}
+                            className="w-full bg-slate-800 hover:bg-slate-700 text-gold font-black py-4 rounded-xl border border-gold/20 shadow-lg transition-all flex flex-col items-center justify-center relative overflow-hidden group"
+                        >
+                            <div className="flex items-center gap-2 relative z-10 text-sm">
+                                SEE CLIEND DASHBOARD
+                                <span className="material-symbols-outlined text-lg">dashboard</span>
+                            </div>
+                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter mt-0.5 relative z-10 px-4 text-center leading-tight">
+                                Explore full features and game mechanics instantly
+                            </span>
+                            <div className="absolute inset-0 bg-gold/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        </button>
+                    </div>
+
+                    <div className="bg-emerald-500/5 border border-emerald-500/10 p-3 rounded-xl">
+                        <div className="flex gap-2">
+                            <span className="material-symbols-outlined text-emerald-500 text-sm shrink-0">verified</span>
+                            <p className="text-[10px] text-slate-400 leading-relaxed italic">
+                                <b>Nota para Compradores:</b> Esta plataforma está pronta para produção, 100% autónoma e com bots realistas integrados.
+                            </p>
+                        </div>
+                    </div>
                 </form>
 
                 <div className="mt-6 text-center">

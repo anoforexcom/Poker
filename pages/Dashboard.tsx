@@ -19,7 +19,7 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const days = timeframe === '1W' ? 7 : timeframe === '1M' ? 30 : 365;
     const history: any[] = [];
-    const baseChips = gameUser?.chips || 0;
+    const baseChips = gameUser?.chips || user?.balance || 0;
 
     for (let i = days; i >= 0; i--) {
       const d = new Date();
@@ -32,7 +32,7 @@ const Dashboard: React.FC = () => {
     }
     history[history.length - 1].chips = baseChips;
     setChartData(history);
-  }, [gameUser?.chips, timeframe]);
+  }, [gameUser?.chips, user?.balance, timeframe]);
 
   const handleClaimBonus = async () => {
     setClaimingBonus(true);
@@ -96,7 +96,7 @@ const Dashboard: React.FC = () => {
         {/* Quick Stats Grid */}
         <div className="col-span-12 md:col-span-8 grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label: 'Chip Balance', value: gameUser.chips.toLocaleString(), icon: 'toll', color: 'text-gold', prefix: '' },
+            { label: 'Chip Balance', value: (gameUser.chips || user.balance || 0).toLocaleString(), icon: 'toll', color: 'text-gold', prefix: '' },
             { label: 'Win Rate', value: `${winRate}%`, icon: 'trending_up', color: winRate >= 50 ? 'text-emerald-400' : 'text-red-400' },
             { label: 'Hands Played', value: stats.hands_played.toLocaleString(), icon: 'playing_cards', color: 'text-white' },
             { label: 'Hands Won', value: stats.hands_won.toLocaleString(), icon: 'emoji_events', color: 'text-primary' },
@@ -157,8 +157,8 @@ const Dashboard: React.FC = () => {
               onClick={handleClaimBonus}
               disabled={!canClaimDailyBonus() || claimingBonus}
               className={`w-full py-2.5 rounded-xl font-black text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${canClaimDailyBonus()
-                  ? 'bg-amber-500 hover:bg-amber-400 text-black active:scale-95 shadow-lg'
-                  : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                ? 'bg-amber-500 hover:bg-amber-400 text-black active:scale-95 shadow-lg'
+                : 'bg-slate-700 text-slate-500 cursor-not-allowed'
                 }`}
             >
               <span className="material-symbols-outlined text-sm">{claimingBonus ? 'hourglass_empty' : 'redeem'}</span>

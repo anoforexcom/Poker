@@ -79,7 +79,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
       <div className="p-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <img src="/logo.png" className="size-10 rounded-full object-cover" alt="Logo" />
-          <h1 className="text-xl font-bold tracking-tight text-white font-display">BESTPOKER.CASH</h1>
+          <h1 className="text-xl font-bold tracking-tight text-white font-display">BESTPOKER.CARDS</h1>
         </div>
         <button onClick={onClose} className="md:hidden text-slate-400 hover:text-white">
           <span className="material-symbols-outlined">close</span>
@@ -134,6 +134,16 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
           </div>
         )}
 
+        <button
+          onClick={() => {
+            window.dispatchEvent(new CustomEvent('trigger-pwa-install'));
+            onClose();
+          }}
+          className="flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-slate-400 hover:text-white hover:bg-white/5 transition-all w-full text-left mt-2"
+        >
+          <span className="material-symbols-outlined text-xl">install_mobile</span>
+          Instalar App
+        </button>
       </nav>
 
       <div className="p-4 border-t border-border-dark mt-auto">

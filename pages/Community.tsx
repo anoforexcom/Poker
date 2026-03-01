@@ -56,7 +56,7 @@ const Community: React.FC = () => {
   const tags = ["Strategy", "Hand Analysis", "General", "Question", "Success", "Tilt", "Bad Beat"];
   const titles = [
     "Folded KK pre-flop. Did I overthink it?",
-    "Best hours to play on BestPoker.Cash?",
+    "Best hours to play on BestPoker.Cards?",
     "Is it worth it to buy a HUD in 2026?",
     "Tournament bubble strategy: Tight or Aggressive?",
     "Dealing with 4-bets from the blinds",

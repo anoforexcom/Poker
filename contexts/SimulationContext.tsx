@@ -24,13 +24,22 @@ export const SimulationProvider: React.FC<{ children: ReactNode }> = ({ children
     const [topBots, setTopBots] = useState<any[]>([]);
 
     const fetchData = async () => {
+        // Mocking real traffic based on the 3000 bot population
         setStats(prev => ({
             ...prev,
-            totalBots: 5,
+            totalBots: 3000,
             houseProfit: 0
         }));
-        setTournaments([]);
-        setTopBots([]);
+        setTournaments([
+            { id: '1', name: 'Micro Stakes', players: 9, maxPlayers: 9, status: 'running' },
+            { id: '2', name: 'High Roller', players: 6, maxPlayers: 9, status: 'running' },
+            { id: '3', name: 'Turbo Spin', players: 3, maxPlayers: 3, status: 'registering' },
+        ]);
+        setTopBots([
+            { name: 'TexasPro', winnings: 1250000 },
+            { name: 'RiverShark', winnings: 980000 },
+            { name: 'AceCollector', winnings: 750000 },
+        ]);
     };
 
     useEffect(() => {

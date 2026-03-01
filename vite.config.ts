@@ -19,12 +19,13 @@ export default defineConfig(({ mode }) => {
         },
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
         manifest: {
-          name: 'BestPoker.Cash',
+          name: 'BestPoker.Cards',
           short_name: 'BestPoker',
-          description: 'Official BestPoker.Cash App - Play 24/7',
+          description: 'Official BestPoker.Cards App - Play 24/7',
           theme_color: '#0f172a',
           background_color: '#0f172a',
           display: 'standalone',
+          orientation: 'portrait',
           icons: [
             {
               src: 'pwa-192x192.png',

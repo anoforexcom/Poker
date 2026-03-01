@@ -46,7 +46,7 @@ const AdminLayout: React.FC = () => {
                                     <img src="/logo.png" className="size-10 rounded-full object-cover" alt="Logo" />
                                     <div>
                                         <h1 className="text-lg font-bold text-white leading-none">ADMIN</h1>
-                                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">BestPoker.Cash</p>
+                                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">BestPoker.Cards</p>
                                     </div>
                                 </div>
                             </div>
