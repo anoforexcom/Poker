@@ -245,7 +245,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             console.error('[AUTH_CONTEXT] Detailed Registration error:', err);
 
             // Map common Firebase errors to user-friendly messages in Portuguese
-            let userMessage = 'Falha ao registar conta.';
+            let userMessage = err.message || 'Falha ao registar conta.';
 
             if (err.code === 'auth/email-already-in-use') {
                 userMessage = 'Este email já está em uso.';
@@ -255,10 +255,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 userMessage = 'A password é demasiado fraca.';
             } else if (err.code === 'auth/operation-not-allowed') {
                 userMessage = 'O registo com email/password não está ativo no Firebase.';
-            } else if (err.message && err.message.includes('permission-denied')) {
+            } else if (err.code === 'permission-denied' || (err.message && err.message.includes('permission-denied'))) {
                 userMessage = 'Erro de permissão no banco de dados (Firestore Rules).';
             }
 
+            console.error('[AUTH_CONTEXT] Threw final user exception:', userMessage);
             throw new Error(userMessage);
         } finally {
             setIsProcessing(false);

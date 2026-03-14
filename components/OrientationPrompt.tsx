@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 
 export const OrientationPrompt: React.FC = () => {
-    const [isPortrait, setIsPortrait] = useState(false);
+    const [isLandscape, setIsLandscape] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
     const [dismissed, setDismissed] = useState(false);
 
     useEffect(() => {
         const checkOrientation = () => {
-            const portrait = window.innerHeight > window.innerWidth;
+            const landscape = window.innerWidth > window.innerHeight;
             const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 1024;
 
-            setIsPortrait(portrait);
+            setIsLandscape(landscape);
             setIsMobile(mobile);
         };
 
@@ -24,23 +24,23 @@ export const OrientationPrompt: React.FC = () => {
         };
     }, []);
 
-    if (!isMobile || !isPortrait || dismissed) return null;
+    if (!isMobile || !isLandscape || dismissed) return null;
 
     return (
         <div className="fixed inset-0 z-[100] bg-[#0a0f1a] flex flex-col items-center justify-center p-6 text-center animate-fade-in">
             <div className="relative mb-8">
-                <div className="w-24 h-44 border-4 border-slate-700 rounded-[2rem] relative animate-bounce-slow">
-                    <div className="absolute top-4 left-1/2 -translate-x-1/2 w-8 h-1 bg-slate-700 rounded-full"></div>
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-4 h-4 border-2 border-slate-700 rounded-full"></div>
+                <div className="w-44 h-24 border-4 border-slate-700 rounded-[2rem] relative animate-bounce-slow">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 h-8 w-1 bg-slate-700 rounded-full"></div>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 border-2 border-slate-700 rounded-full"></div>
                 </div>
                 <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-primary text-5xl animate-spin-slow">screen_rotation</span>
+                    <span className="material-symbols-outlined text-primary text-5xl animate-spin-slow" style={{ transform: 'rotate(-90deg)' }}>screen_rotation</span>
                 </div>
             </div>
 
             <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-tighter italic">Rotate your device</h2>
             <p className="text-slate-400 text-sm max-w-[250px] leading-relaxed">
-                For the best gaming experience, please use <span className="text-primary font-bold">Landscape Mode (Horizontal)</span>.
+                For the best gaming experience, please use <span className="text-primary font-bold">Portrait Mode (Vertical)</span>.
             </p>
 
             <div className="mt-8 flex flex-col gap-4 w-full max-w-[200px]">
@@ -49,12 +49,6 @@ export const OrientationPrompt: React.FC = () => {
                     <div className="size-2 bg-primary/60 rounded-full animate-pulse delay-75"></div>
                     <div className="size-2 bg-primary/30 rounded-full animate-pulse delay-150"></div>
                 </div>
-                <button
-                    onClick={() => setDismissed(true)}
-                    className="mt-4 px-6 py-2 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all"
-                >
-                    Play in Portrait
-                </button>
             </div>
         </div>
     );
